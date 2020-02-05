@@ -64,16 +64,6 @@ invalidUrl =
     }
 
 
-cantFetchPrices : UserNotice msg
-cantFetchPrices =
-    { label = "cantFetchPrices"
-    , noticeType = Caution
-    , mainParagraphs =
-        [ [ Element.text "Error encountered fetching crypto prices." ] ]
-    , align = BottomRight
-    }
-
-
 noWeb3Provider : UserNotice msg
 noWeb3Provider =
     { label = "noWeb3Provider"
@@ -173,33 +163,6 @@ web3MiningError label errStr =
     }
 
 
-cantFindTradeWillRetry : UserNotice msg
-cantFindTradeWillRetry =
-    { label = "cantFindTradeWillRetry"
-    , noticeType = Error
-    , mainParagraphs =
-        [ [ Element.text "Can't find a trade by that ID. I'll try again in half a second." ] ]
-    , align = BottomRight
-    }
-
-
-fromBadFetchResultMaybe : String -> Result Http.Error (Maybe a) -> UserNotice msg
-fromBadFetchResultMaybe label badFetchResultMaybe =
-    case badFetchResultMaybe of
-        Err httpErr ->
-            web3FetchError label httpErr
-
-        Ok Nothing ->
-            unexpectedError
-                ("Couldn't decode the fetched \"" ++ label ++ "\" result.")
-                Nothing
-
-        wut ->
-            unexpectedError
-                "fromBadFetchResultMaybe being called with an 'OK (Just a)' value"
-                wut
-
-
 walletError : String -> UserNotice msg
 walletError errStr =
     unexpectedError
@@ -213,26 +176,6 @@ inputError errStr =
     , noticeType = Error
     , mainParagraphs =
         [ [ Element.text errStr ] ]
-    , align = BottomRight
-    }
-
-
-tradeParametersNotDefault : UserNotice msg
-tradeParametersNotDefault =
-    { label = "tradeParametersNotDefault"
-    , noticeType = Error
-    , mainParagraphs =
-        [ [ Element.text "Sorry, I'm not yet able to deal with this kind of trade. This must have been created by some other DAIHard interface." ] ]
-    , align = BottomRight
-    }
-
-
-oldPriceDataWarning : UserNotice msg
-oldPriceDataWarning =
-    { label = "oldPriceDataWarning"
-    , noticeType = Caution
-    , mainParagraphs =
-        [ [ Element.text "Uh oh, it looks like our price data might be out of date. You might want to double check the math..." ] ]
     , align = BottomRight
     }
 
