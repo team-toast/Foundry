@@ -134,10 +134,6 @@ update msg prevModel =
                                     getCurrentBucketId bucketSale newNow prevModel.testMode
                             in
                             if newFocusedId /= getCurrentBucketId bucketSale prevModel.now prevModel.testMode then
-                                let
-                                    _ =
-                                        Debug.log "fetching" ""
-                                in
                                 fetchBucketDataCmd
                                     newFocusedId
                                     (Wallet.userInfo prevModel.wallet)
@@ -524,6 +520,13 @@ update msg prevModel =
                 { prevModel
                     | showReferralModal = False
                 }
+
+        GenerateReferralClicked address ->
+            UpdateResult
+                prevModel
+                Cmd.none
+                ChainCmd.none
+                [ CmdUp.NewReferralGenerated address ]
 
         UnlockDaiButtonClicked ->
             let
@@ -973,6 +976,22 @@ runCmdDown cmdDown prevModel =
                     _ ->
                         Cmd.none
                 )
+                ChainCmd.none
+                []
+
+        CmdDown.UpdateReferral address ->
+            UpdateResult
+                { prevModel
+                    | enterUXModel =
+                        let
+                            prevEnterUXModel =
+                                prevModel.enterUXModel
+                        in
+                        { prevEnterUXModel
+                            | referrer = Just address
+                        }
+                }
+                Cmd.none
                 ChainCmd.none
                 []
 

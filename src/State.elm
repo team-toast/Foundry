@@ -1,6 +1,5 @@
 port module State exposing (init, subscriptions, update)
 
-import List.Extra
 import Browser
 import Browser.Events
 import Browser.Navigation
@@ -17,6 +16,7 @@ import Eth.Types exposing (Address)
 import Eth.Utils
 import Json.Decode
 import Json.Encode
+import List.Extra
 import Maybe.Extra
 import Routing
 import Time
@@ -148,25 +148,25 @@ type alias EncryptedMessage =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg prevModel =
     case msg of
         CmdUp cmdUp ->
             case cmdUp of
                 CmdUp.Web3Connect ->
-                    model
+                    prevModel
                         |> update ConnectToWeb3
 
                 CmdUp.GotoRoute newRoute ->
-                    model
+                    prevModel
                         |> update (GotoRoute newRoute)
 
                 CmdUp.GTag gtag ->
-                    ( model
+                    ( prevModel
                     , gTagOut (encodeGTag gtag)
                     )
 
                 CmdUp.UserNotice userNotice ->
-                    ( model |> addUserNotice userNotice
+                    ( prevModel |> addUserNotice userNotice
                     , gTagOut <|
                         encodeGTag <|
                             GTagData
@@ -176,8 +176,21 @@ update msg model =
                                 0
                     )
 
+                CmdUp.NewReferralGenerated address ->
+                    { prevModel
+                        | maybeReferrer = Just address
+                    }
+                        |> runCmdDown (CmdDown.UpdateReferral address)
+                        |> Tuple.mapSecond
+                            (\submodelCmd ->
+                                Cmd.batch
+                                    [ submodelCmd
+                                    , storeNewReferrerCmd address
+                                    ]
+                            )
+
         Resize width _ ->
-            { model
+            { prevModel
                 | dProfile = screenWidthToDisplayProfile width
             }
                 |> update NoOp
@@ -187,18 +200,18 @@ update msg model =
                 cmd =
                     case urlRequest of
                         Browser.Internal url ->
-                            Browser.Navigation.pushUrl model.key (Url.toString url)
+                            Browser.Navigation.pushUrl prevModel.key (Url.toString url)
 
                         Browser.External href ->
                             Browser.Navigation.load href
             in
-            ( model, cmd )
+            ( prevModel, cmd )
 
         UrlChanged url ->
-            model |> updateFromPageRoute (url |> Routing.urlToFullRoute |> .pageRoute)
+            prevModel |> updateFromPageRoute (url |> Routing.urlToFullRoute |> .pageRoute)
 
         GotoRoute pageRoute ->
-            model
+            prevModel
                 |> gotoPageRoute pageRoute
                 |> Tuple.mapSecond
                     (\cmd ->
@@ -210,51 +223,62 @@ update msg model =
                                         "GotoRoute"
                                         "navigation"
                                         (Routing.routeToString
-                                            (Routing.FullRoute model.testMode pageRoute Nothing)
+                                            (Routing.FullRoute prevModel.testMode pageRoute Nothing)
                                         )
                                         0
                             , Browser.Navigation.pushUrl
-                                model.key
+                                prevModel.key
                                 (Routing.routeToString
-                                    (Routing.FullRoute model.testMode pageRoute Nothing)
+                                    (Routing.FullRoute prevModel.testMode pageRoute Nothing)
                                 )
                             ]
                     )
 
         Tick newTime ->
-            ( { model | now = newTime }, Cmd.none )
+            ( { prevModel | now = newTime }, Cmd.none )
 
         ConnectToWeb3 ->
-            case model.wallet of
+            case prevModel.wallet of
                 Wallet.NoneDetected ->
-                    ( model |> addUserNotice UN.cantConnectNoWeb3
+                    ( prevModel |> addUserNotice UN.cantConnectNoWeb3
                     , Cmd.none
                     )
 
                 _ ->
-                    ( model
+                    ( prevModel
                     , connectToWeb3 ()
                     )
 
         WalletStatus walletSentry ->
-            ( { model
+            let
+                newWallet =
+                    case walletSentry.account of
+                        Just address ->
+                            Wallet.Active <|
+                                UserInfo
+                                    walletSentry.networkId
+                                    address
+
+                        Nothing ->
+                            Wallet.OnlyNetwork walletSentry.networkId
+            in
+            { prevModel
                 | userAddress = walletSentry.account
-                , wallet = Wallet.OnlyNetwork walletSentry.networkId
-              }
-            , Cmd.none
-            )
+                , wallet = newWallet
+            }
+                |> runCmdDown (CmdDown.UpdateWallet newWallet)
 
         BucketSaleMsg bucketSaleMsg ->
-            case model.submodel of
+            case prevModel.submodel of
                 BucketSaleModel bucketSaleModel ->
                     let
                         updateResult =
                             BucketSale.State.update bucketSaleMsg bucketSaleModel
 
                         ( newTxSentry, chainCmd, userNotices ) =
-                            ChainCmd.execute model.txSentry (ChainCmd.map BucketSaleMsg updateResult.chainCmd)
+                            ChainCmd.execute prevModel.txSentry (ChainCmd.map BucketSaleMsg updateResult.chainCmd)
                     in
-                    ( { model
+                    ( { prevModel
                         | submodel = BucketSaleModel updateResult.model
                         , txSentry = newTxSentry
                       }
@@ -269,12 +293,12 @@ update msg model =
                             )
 
                 _ ->
-                    ( model, Cmd.none )
+                    ( prevModel, Cmd.none )
 
         TxSentryMsg subMsg ->
             let
                 ( newTxSentry, subCmd ) =
-                    case model.txSentry of
+                    case prevModel.txSentry of
                         Just txSentry ->
                             TxSentry.update subMsg txSentry
                                 |> Tuple.mapFirst Just
@@ -282,45 +306,45 @@ update msg model =
                         Nothing ->
                             ( Nothing, Cmd.none )
             in
-            ( { model | txSentry = newTxSentry }, subCmd )
+            ( { prevModel | txSentry = newTxSentry }, subCmd )
 
         ClickHappened ->
-            model |> runCmdDown CmdDown.CloseAnyDropdownsOrModals
-        
+            prevModel |> runCmdDown CmdDown.CloseAnyDropdownsOrModals
+
         DismissNotice id ->
-            ( { model
+            ( { prevModel
                 | userNotices =
-                    model.userNotices |> List.Extra.removeAt id
+                    prevModel.userNotices |> List.Extra.removeAt id
               }
             , Cmd.none
             )
 
         NoOp ->
-            ( model, Cmd.none )
+            ( prevModel, Cmd.none )
 
         Test s ->
             let
                 _ =
                     Debug.log "test" s
             in
-            ( model, Cmd.none )
+            ( prevModel, Cmd.none )
 
 
 runCmdUps : List (CmdUp.CmdUp Msg) -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-runCmdUps cmdUps ( model, prevCmd ) =
+runCmdUps cmdUps ( prevModel, prevCmd ) =
     List.foldl
         runCmdUp
-        ( model, prevCmd )
+        ( prevModel, prevCmd )
         cmdUps
 
 
 runCmdUp : CmdUp.CmdUp Msg -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-runCmdUp cmdUp ( model, prevCmd ) =
+runCmdUp cmdUp ( prevModel, prevCmd ) =
     let
         ( newModel, newCmd ) =
             update
                 (CmdUp cmdUp)
-                model
+                prevModel
     in
     ( newModel
     , Cmd.batch
@@ -371,14 +395,14 @@ encodeGenPrivkeyArgs address signMsg =
 
 
 updateFromPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )
-updateFromPageRoute pageRoute model =
-    if model.pageRoute == pageRoute then
-        ( model
+updateFromPageRoute pageRoute prevModel =
+    if prevModel.pageRoute == pageRoute then
+        ( prevModel
         , Cmd.none
         )
 
     else
-        gotoPageRoute pageRoute model
+        gotoPageRoute pageRoute prevModel
 
 
 gotoPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )

@@ -60,6 +60,7 @@ type Msg
     | DaiInputChanged String
     | ReferralIndicatorClicked
     | CloseReferralModal
+    | GenerateReferralClicked Address
     | UnlockDaiButtonClicked
     | AllowanceFetched (Result Http.Error BigInt)
     | ClaimClicked UserInfo ExitInfo

@@ -1,8 +1,9 @@
 module CmdUp exposing (CmdUp(..), gTag, map, mapList)
 
-import UserNotice as UN exposing (UserNotice)
 import CommonTypes exposing (..)
+import Eth.Types exposing (Address)
 import Routing
+import UserNotice as UN exposing (UserNotice)
 
 
 type CmdUp msg
@@ -10,6 +11,7 @@ type CmdUp msg
     | GotoRoute Routing.PageRoute
     | GTag GTagData
     | UserNotice (UserNotice msg)
+    | NewReferralGenerated Address
 
 
 gTag : String -> String -> String -> Int -> CmdUp msg
@@ -33,7 +35,10 @@ map f cmdUp =
 
         GTag data ->
             GTag data
-        
+
+        NewReferralGenerated address ->
+            NewReferralGenerated address
+
         UserNotice userNotice ->
             UserNotice (userNotice |> UN.map f)
 

@@ -141,6 +141,7 @@ focusedBucketPane bucketSale bucketId wallet enterUXModel referralModalActive no
         )
         ([ focusedBucketHeaderEl
             bucketId
+            (Wallet.userInfo wallet)
             enterUXModel.referrer
             referralModalActive
             testMode
@@ -307,8 +308,8 @@ totalExitedBlock maybeTotalExited =
                 ]
 
 
-focusedBucketHeaderEl : Int -> Maybe Address -> Bool -> Bool -> Element Msg
-focusedBucketHeaderEl bucketId maybeReferrer referralModalActive testMode =
+focusedBucketHeaderEl : Int -> Maybe UserInfo -> Maybe Address -> Bool -> Bool -> Element Msg
+focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
         [ Element.spacing 8
         , Element.width Element.fill
@@ -327,7 +328,22 @@ focusedBucketHeaderEl bucketId maybeReferrer referralModalActive testMode =
                         ++ String.fromInt bucketId
                 , nextBucketArrow bucketId
                 ]
-            , Element.el
+            , maybeReferralIndicatorAndModal
+                maybeUserInfo
+                maybeReferrer
+                referralModalActive
+            ]
+        ]
+
+
+maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> Element Msg
+maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive =
+    case maybeUserInfo of
+        Nothing ->
+            Element.none
+
+        Just userInfo ->
+            Element.el
                 [ Element.alignRight
                 , Element.onRight <|
                     if referralModalActive then
@@ -337,7 +353,7 @@ focusedBucketHeaderEl bucketId maybeReferrer referralModalActive testMode =
                             , Element.moveUp 50
                             , EH.moveToFront
                             ]
-                            (referralModal maybeReferrer)
+                            (referralModal userInfo maybeReferrer)
 
                     else
                         Element.none
@@ -353,12 +369,10 @@ focusedBucketHeaderEl bucketId maybeReferrer referralModalActive testMode =
                     else
                         Element.none
                 ]
-              <|
+            <|
                 referralBonusIndicator
                     (maybeReferrer /= Nothing)
                     referralModalActive
-            ]
-        ]
 
 
 focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
@@ -546,7 +560,7 @@ bidImpactBlock : EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
 bidImpactBlock enterUXModel bucketInfo testMode =
     centerpaneBlockContainer PassiveStyle <|
         [ emphasizedText PassiveStyle "Your current bid standing:" ]
-            ++ (case Debug.log "impact" ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
+            ++ (case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
                     ( Just totalValueEntered, Just userBuy ) ->
                         let
                             existingBidAmount =
@@ -1022,18 +1036,19 @@ referralBonusIndicator hasReferral focusedStyle =
         , Element.pointer
         , Element.Events.onClick ReferralIndicatorClicked
         , Element.Background.color
-            (if hasReferral then
+            ((if hasReferral then
                 green
 
-             else
+              else
                 red
-                    |> EH.addAlpha
-                        (if focusedStyle then
-                            1
+             )
+                |> EH.addAlpha
+                    (if focusedStyle then
+                        1
 
-                         else
-                            0.05
-                        )
+                     else
+                        0.05
+                    )
             )
         , Element.Font.color
             (if focusedStyle then
@@ -1055,8 +1070,8 @@ referralBonusIndicator hasReferral focusedStyle =
         )
 
 
-referralModal : Maybe Address -> Element Msg
-referralModal maybeReferrer =
+referralModal : UserInfo -> Maybe Address -> Element Msg
+referralModal userInfo maybeReferrer =
     let
         highlightedText text =
             Element.el
@@ -1104,25 +1119,36 @@ referralModal maybeReferrer =
                             , Element.Font.color deepBlue
                             ]
                             [ Element.text "Your Referral Link" ]
+                      , EH.button
+                            Desktop
+                            [ Element.width Element.fill ]
+                            ( deepBlue, deepBlueWithAlpha 0.8, deepBlueWithAlpha 0.6 )
+                            EH.white
+                            [ "Generate My Referral Link" ]
+                            (GenerateReferralClicked userInfo.address)
                       ]
                     )
 
                 Just referrer ->
-                    ( [ Element.paragraph
-                            [ Element.Font.size 24
-                            , Element.Font.bold
-                            , Element.Font.color green
-                            ]
-                            [ Element.text "Nice! You’ve got a referral bonus." ]
-                      ]
-                    , [ Element.paragraph
-                            [ Element.Font.size 24
-                            , Element.Font.bold
-                            , Element.Font.color deepBlue
-                            ]
-                            [ Element.text "Your Referral Link" ]
-                      ]
-                    )
+                    if referrer == userInfo.address then
+                        ( [ Element.text "your own shit" ], [] )
+
+                    else
+                        ( [ Element.paragraph
+                                [ Element.Font.size 24
+                                , Element.Font.bold
+                                , Element.Font.color green
+                                ]
+                                [ Element.text "Nice! You’ve got a referral bonus." ]
+                          ]
+                        , [ Element.paragraph
+                                [ Element.Font.size 24
+                                , Element.Font.bold
+                                , Element.Font.color deepBlue
+                                ]
+                                [ Element.text "Your Referral Link" ]
+                          ]
+                        )
     in
     Element.column
         [ Element.Border.rounded 6
@@ -1130,7 +1156,8 @@ referralModal maybeReferrer =
         , Element.width <| Element.px 480
         ]
         [ Element.column
-            [ Element.Border.widthEach
+            [ Element.width Element.fill
+            , Element.Border.widthEach
                 { bottom = 1
                 , top = 0
                 , right = 0
@@ -1143,7 +1170,8 @@ referralModal maybeReferrer =
             ]
             firstElsChunk
         , Element.column
-            [ Element.padding 30
+            [ Element.width Element.fill
+            , Element.padding 30
             , Element.spacing 30
             ]
             secondElsChunk
