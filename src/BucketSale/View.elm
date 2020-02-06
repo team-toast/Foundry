@@ -17,6 +17,7 @@ import FormatFloat exposing (formatFloat)
 import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
+import Html.Attributes
 import Images
 import List.Extra
 import Maybe.Extra
@@ -332,12 +333,13 @@ focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive t
                 maybeUserInfo
                 maybeReferrer
                 referralModalActive
+                testMode
             ]
         ]
 
 
-maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> Element Msg
-maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive =
+maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> Bool -> Element Msg
+maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive testMode =
     case maybeUserInfo of
         Nothing ->
             Element.none
@@ -353,7 +355,7 @@ maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive =
                             , Element.moveUp 50
                             , EH.moveToFront
                             ]
-                            (referralModal userInfo maybeReferrer)
+                            (referralModal userInfo maybeReferrer testMode)
 
                     else
                         Element.none
@@ -1070,8 +1072,8 @@ referralBonusIndicator hasReferral focusedStyle =
         )
 
 
-referralModal : UserInfo -> Maybe Address -> Element Msg
-referralModal userInfo maybeReferrer =
+referralModal : UserInfo -> Maybe Address -> Bool -> Element Msg
+referralModal userInfo maybeReferrer testMode =
     let
         highlightedText text =
             Element.el
@@ -1088,7 +1090,7 @@ referralModal userInfo maybeReferrer =
                 ]
                 (Element.text text)
 
-        ( firstElsChunk, secondElsChunk ) =
+        ( firstElsChunk, maybeSecondElsChunk ) =
             case maybeReferrer of
                 Nothing ->
                     ( [ Element.paragraph
@@ -1102,36 +1104,54 @@ referralModal userInfo maybeReferrer =
                             , Element.width Element.fill
                             , Element.Font.size 18
                             ]
-                            [ Element.paragraph
-                                []
-                                [ Element.text "You don't have a referral. I cannot believe how stupid you are. My goodness. If you got a referral you'd get a really nice "
+                            [ Element.paragraph []
+                                [ Element.text "You're missing out on some nice bonuses! The referred user gets a "
                                 , highlightedText "10% bonus"
-                                , Element.text ". Wouldn't that be nice?"
+                                , Element.text " bid into the next bucket, and the referrer is rewarded as well!"
                                 ]
-                            , Element.paragraph
-                                []
-                                [ Element.text "...idiot" ]
+                            , Element.paragraph []
+                                [ Element.text "If you haven’t been given a referral link you can generate one for yourself below." ]
                             ]
                       ]
-                    , [ Element.paragraph
+                    , Just <|
+                        [ Element.paragraph
                             [ Element.Font.size 24
                             , Element.Font.bold
                             , Element.Font.color deepBlue
                             ]
                             [ Element.text "Your Referral Link" ]
-                      , EH.button
+                        , EH.button
                             Desktop
                             [ Element.width Element.fill ]
                             ( deepBlue, deepBlueWithAlpha 0.8, deepBlueWithAlpha 0.6 )
                             EH.white
                             [ "Generate My Referral Link" ]
                             (GenerateReferralClicked userInfo.address)
-                      ]
+                        ]
                     )
 
                 Just referrer ->
                     if referrer == userInfo.address then
-                        ( [ Element.text "your own shit" ], [] )
+                        ( [ Element.paragraph
+                                [ Element.Font.size 24
+                                , Element.Font.bold
+                                , Element.Font.color green
+                                ]
+                                [ Element.text "Nice! You're using your own referral link." ]
+                          , Element.paragraph []
+                                [ Element.text "This means you'll get both bonuses!" ]
+                          ]
+                        , Just <|
+                            [ Element.paragraph
+                                [ Element.Font.size 24
+                                , Element.Font.bold
+                                , Element.Font.color deepBlue
+                                ]
+                                [ Element.text "Your Referral Link" ]
+                            , referralLinkElement referrer testMode
+                            , referralLinkCopyButton
+                            ]
+                        )
 
                     else
                         ( [ Element.paragraph
@@ -1141,13 +1161,7 @@ referralModal userInfo maybeReferrer =
                                 ]
                                 [ Element.text "Nice! You’ve got a referral bonus." ]
                           ]
-                        , [ Element.paragraph
-                                [ Element.Font.size 24
-                                , Element.Font.bold
-                                , Element.Font.color deepBlue
-                                ]
-                                [ Element.text "Your Referral Link" ]
-                          ]
+                        , Nothing
                         )
     in
     Element.column
@@ -1169,13 +1183,59 @@ referralModal userInfo maybeReferrer =
             , Element.spacing 30
             ]
             firstElsChunk
-        , Element.column
-            [ Element.width Element.fill
-            , Element.padding 30
-            , Element.spacing 30
-            ]
-            secondElsChunk
+        , Maybe.map
+            (Element.column
+                [ Element.width Element.fill
+                , Element.padding 30
+                , Element.spacing 30
+                ]
+            )
+            maybeSecondElsChunk
+            |> Maybe.withDefault Element.none
         ]
+
+
+referralLinkElement : Address -> Bool -> Element Msg
+referralLinkElement referrerAddress testMode =
+    Element.el
+        [ Element.width Element.fill
+        , Element.Background.color <| deepBlueWithAlpha 0.05
+        , Element.paddingXY 0 15
+        , Element.Font.color deepBlue
+        , Element.Font.size 12
+        , Element.clipX
+        , Element.scrollbarX
+        ]
+        (Element.el
+            [ EH.withIdAttribute "copyable-link" ]
+         <|
+            Element.text
+                (Routing.FullRoute
+                    testMode
+                    Routing.Sale
+                    (Just referrerAddress)
+                    |> Routing.routeToString
+                    |> (\path -> "https://daihard.exchange" ++ path)
+                )
+        )
+
+
+referralLinkCopyButton : Element Msg
+referralLinkCopyButton =
+    EH.button
+        Desktop
+        [ Element.width Element.fill
+        , Element.htmlAttribute <|
+            Html.Attributes.attribute
+                "data-clipboard-target"
+                "#copyable-link"
+        , Element.htmlAttribute <|
+            Html.Attributes.class "link-copy-btn"
+        ]
+        ( deepBlue, deepBlueWithAlpha 0.8, deepBlueWithAlpha 0.6 )
+        EH.white
+        [ "Copy Link" ]
+        NoOp
 
 
 progressBarElement : Element.Color -> List ( Float, Element.Color ) -> Element Msg

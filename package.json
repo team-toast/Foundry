@@ -35,6 +35,7 @@
     "webpack-merge": "^4.1.0"
   },
   "dependencies": {
+    "clipboard": "^2.0.4",
     "elm-ethereum-ports": "1.0.0",
     "elm-format": "^0.8.1",
     "node-forge": "^0.8.1"

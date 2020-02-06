@@ -1,5 +1,6 @@
 var elm_ethereum_ports = require('elm-ethereum-ports');
 var networkChangeNotifier = require('./networkChangeNotifier');
+var clipboardLib = require('clipboard');
 
 import { Elm } from '../../src/App'
 
@@ -11,6 +12,8 @@ window.addEventListener('load', function () {
 });
 
 function startDapp() {
+    var clipboard = new clipboardLib('.link-copy-btn');
+
     if (typeof web3 !== 'undefined') {
         web3.version.getNetwork(function (e, networkId) {
             var id;

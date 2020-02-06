@@ -711,6 +711,12 @@ grayButton dProfile attributes text msg =
 -- STYLE HELPERS
 
 
+withIdAttribute : String -> Attribute msg
+withIdAttribute s =
+    Html.Attributes.id s
+        |> Element.htmlAttribute
+
+
 textWithoutTextCursor : String -> Element msg
 textWithoutTextCursor s =
     Html.Styled.styled
