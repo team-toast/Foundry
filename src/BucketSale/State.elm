@@ -511,7 +511,12 @@ update msg prevModel =
         ReferralIndicatorClicked ->
             justModelUpdate
                 { prevModel
-                    | showReferralModal = True
+                    | showReferralModal =
+                        if prevModel.showReferralModal then
+                            False
+
+                        else
+                            True
                 }
 
         CloseReferralModal ->
