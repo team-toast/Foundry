@@ -20,10 +20,10 @@ kovanHttpProviderUrl =
 daiContractAddress : Bool -> Address
 daiContractAddress testMode =
     if testMode then
-        Eth.Utils.unsafeToAddress "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        Eth.Utils.unsafeToAddress "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa"
 
     else
-        Eth.Utils.unsafeToAddress "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa"
+        Eth.Utils.unsafeToAddress "0x6B175474E89094C44Da98b954EedeAC495271d0F"
 
 
 fryAddress : Bool -> Address
