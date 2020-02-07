@@ -38,7 +38,7 @@ fryAddress testMode =
 bucketSaleAddress : Bool -> Address
 bucketSaleAddress testMode =
     if testMode then
-        Eth.Utils.unsafeToAddress "0xc5CDB6fF1a357E24f530aa2E2c78564b824787F1"
+        Eth.Utils.unsafeToAddress "0xAa3A3eABE664f873B5FF6eC10967C3e619a0a764"
 
     else
         Debug.todo "No address for non-testMode bucketSale"
@@ -56,7 +56,7 @@ bucketSaleScriptsAddress testMode =
 bucketSaleBucketInterval : Bool -> Time.Posix
 bucketSaleBucketInterval testMode =
     if testMode then
-        Time.millisToPosix <| 1000 * 60 * 10
+        Time.millisToPosix <| 1000 * 60 * 60 * 7
 
     else
         Debug.todo "blocks per bucket in non-test-mode"
@@ -65,8 +65,7 @@ bucketSaleBucketInterval testMode =
 bucketSaleTokensPerBucket : Bool -> TokenValue
 bucketSaleTokensPerBucket testMode =
     if testMode then
-        TokenValue.tokenValue <|
-            BigInt.fromInt 150
+        TokenValue.fromIntTokenValue 50000
 
     else
         Debug.todo "tokens per bucket in non-test mode"
