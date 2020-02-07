@@ -387,7 +387,7 @@ focusedBucketSubheaderEl bucketInfo =
                 ]
                 [ emphasizedText PassiveStyle <|
                     TokenValue.toConciseString totalValueEntered
-                , Element.text " DAI has been bid on this bcuket so far. All bids are irreversible."
+                , Element.text " DAI has been bid on this bucket so far. All bids are irreversible."
                 ]
 
         _ ->
@@ -879,6 +879,7 @@ trackedTxRow : TrackedTx -> Element Msg
 trackedTxRow trackedTx =
     Element.row
         [ Element.Font.color grayTextColor
+        , Element.Font.size 12
         , Element.Border.width 1
         , Element.Border.color <| Element.rgb 0.8 0.8 0.8
         , Element.Background.color <| Element.rgb 0.95 0.95 0.95
@@ -890,7 +891,7 @@ trackedTxRow trackedTx =
             [ Element.padding 5
             , Element.Border.rounded 4
             , Element.Background.color <| Element.rgb 0.8 0.8 0.8
-            , Element.width <| Element.px 130
+            , Element.width <| Element.px 90
             ]
             (case trackedTx.status of
                 Signing ->

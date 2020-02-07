@@ -15,6 +15,7 @@ import Eth.Types exposing (Address, HttpProvider, Tx, TxHash, TxReceipt)
 import Helpers.BigInt as BigIntHelpers
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
+import Eth.Net
 import List.Extra
 import Maybe.Extra
 import Task
@@ -26,42 +27,46 @@ import Wallet
 
 init : Maybe Address -> Bool -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
 init maybeReferrer testMode wallet now =
-    if testMode then
-        ( { wallet = wallet
-          , testMode = testMode
-          , now = now
-          , timezone = Nothing
-          , saleStartTime = Nothing
-          , bucketSale = Nothing
-          , totalTokensExited = Nothing
-          , userFryBalance = Nothing
-          , bucketView = ViewCurrent
-          , enterUXModel = initEnterUXModel maybeReferrer
-          , userExitInfo = Nothing
-          , trackedTxs = []
-          , confirmModal = Nothing
-          , showReferralModal = False
-          }
-        , Cmd.batch
-            ([ fetchSaleStartTimestampCmd testMode
-             , fetchTotalTokensExitedCmd testMode
-             , Task.perform TimezoneGot Time.here
-             ]
-                ++ (case Wallet.userInfo wallet of
-                        Just userInfo ->
-                            [ fetchUserExitInfoCmd userInfo testMode
-                            , fetchUserAllowanceForSaleCmd userInfo testMode
-                            , fetchUserFryBalanceCmd userInfo testMode
-                            ]
+    case ( testMode, Wallet.network wallet ) of
+        ( True, Just Eth.Net.Kovan ) ->
+            ( { wallet = wallet
+              , testMode = testMode
+              , now = now
+              , timezone = Nothing
+              , saleStartTime = Nothing
+              , bucketSale = Nothing
+              , totalTokensExited = Nothing
+              , userFryBalance = Nothing
+              , bucketView = ViewCurrent
+              , enterUXModel = initEnterUXModel maybeReferrer
+              , userExitInfo = Nothing
+              , trackedTxs = []
+              , confirmModal = Nothing
+              , showReferralModal = False
+              }
+            , Cmd.batch
+                ([ fetchSaleStartTimestampCmd testMode
+                 , fetchTotalTokensExitedCmd testMode
+                 , Task.perform TimezoneGot Time.here
+                 ]
+                    ++ (case Wallet.userInfo wallet of
+                            Just userInfo ->
+                                [ fetchUserExitInfoCmd userInfo testMode
+                                , fetchUserAllowanceForSaleCmd userInfo testMode
+                                , fetchUserFryBalanceCmd userInfo testMode
+                                ]
 
-                        Nothing ->
-                            []
-                   )
+                            Nothing ->
+                                []
+                       )
+                )
             )
-        )
 
-    else
-        Debug.todo "must use test mode"
+        (False, _) ->
+            Debug.todo "must use test mode"
+        
+        _ ->
+            Debug.todo "wrong network"
 
 
 initEnterUXModel : Maybe Address -> EnterUXModel
@@ -104,11 +109,29 @@ update msg prevModel =
                             (Wallet.userInfo prevModel.wallet)
                             |> Maybe.withDefault []
                         )
+
+                bucketDataCmd =
+                    prevModel.bucketSale
+                        |> (Maybe.map << Result.map)
+                            (\bucketSale ->
+                                fetchBucketDataCmd
+                                    (getFocusedBucketId
+                                        bucketSale
+                                        prevModel.bucketView
+                                        prevModel.now
+                                        prevModel.testMode
+                                    )
+                                    (Wallet.userInfo prevModel.wallet)
+                                    prevModel.testMode
+                            )
+                        |> Maybe.withDefault (Ok Cmd.none)
+                        |> Result.withDefault Cmd.none
             in
             UpdateResult
                 prevModel
                 (Cmd.batch
                     [ fetchTotalTokensExitedCmd prevModel.testMode
+                    , bucketDataCmd
                     , fetchUserInfoCmds
                     ]
                 )
@@ -774,6 +797,22 @@ update msg prevModel =
                                             userInfo
                                             prevModel.testMode
                                         ]
+
+                                ( Enter, _ ) ->
+                                    case prevModel.bucketSale of
+                                        Just (Ok bucketSale) ->
+                                            fetchBucketDataCmd
+                                                (getFocusedBucketId
+                                                    bucketSale
+                                                    prevModel.bucketView
+                                                    prevModel.now
+                                                    prevModel.testMode
+                                                )
+                                                (Wallet.userInfo prevModel.wallet)
+                                                prevModel.testMode
+
+                                        _ ->
+                                            Cmd.none
 
                                 _ ->
                                     Cmd.none
