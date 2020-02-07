@@ -8,6 +8,7 @@ contracts/tests/fsharp/packages/
 build/
 bin/
 obj/
+html.tar
 .ionide/
 /.ionide/
 smart-contracts/bucket-sale/tests/.vs/Tests/v16/.suo
