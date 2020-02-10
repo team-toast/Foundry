@@ -13,6 +13,7 @@ open Nethereum.Web3.Accounts
 open Nethereum.RPC.Eth.DTOs
 open Nethereum.Contracts
 open System.Text
+open System.Linq
 
 [<Specification("BucketSale", "misc", 0)>]
 [<Fact>]
@@ -138,106 +139,6 @@ let ``E005 - Cannot enter a bucket if payment reverts (with no referrer)``() =
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; currentBucket; 1UL; zeroAddress |] forwarder
     let forwardEvent = forwarder.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage ""
-
-
-let referrerReward amount =
-    ((amount / BigInteger 1000000000000000000UL) + BigInteger 10000UL)
-
-let enterBucket sender buyer bucketToEnter valueToEnter referrer =
-    let approveDaiTxReceipt = DAI.ExecuteFunction "approve" [| bucketSale.Address; valueToEnter |]
-    approveDaiTxReceipt |> shouldSucceed
-
-    let currentBucket = bucketSale.Query "currentBucket" [||]
-    let referredTotalBefore = bucketSale.Query "referredTotal" [| referrer |]
-    let referrerRewardPercBefore = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
-    let calculatedReferrerRewardPercBefore = referrerReward referredTotalBefore
-    referrerRewardPercBefore |> should equal calculatedReferrerRewardPercBefore
-    let senderDaiBalanceBefore = DAI.Query "balanceOf" [| sender |]
-    let bucketDaiBalanceBefore = DAI.Query "balanceOf" [| bucketSale.Address |]
-    let buyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter; buyer |]
-    let buyerRewardBuyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
-    let referrerRewardBuyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
-    let bucketBefore = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter |]
-    let referralBucketBefore = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
-
-    // act
-    let receipt = bucketSale.ExecuteFunction "enter" [| buyer; bucketToEnter; valueToEnter; referrer |]
-
-    // assert
-    receipt |> shouldSucceed
-
-    // event validation
-    let referredTotalAfter = bucketSale.Query "referredTotal" [| referrer |]
-    referredTotalAfter |> should equal (referredTotalBefore + valueToEnter)
-    let calculatedReferrerRewardPercAfter = referrerReward referredTotalAfter
-    let referrerRewardPercAfter = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
-    referrerRewardPercAfter |> should equal calculatedReferrerRewardPercAfter
-    let buyerReward = valueToEnter / BigInteger 10UL
-    let referrerReward = valueToEnter * calculatedReferrerRewardPercAfter / BigInteger 100000
-
-    let enteredEvent = receipt |> decodeFirstEvent<EnteredEventDTO>
-    if referrer <> EthAddress.Zero then
-        enteredEvent.BucketId |> should equal bucketToEnter
-        enteredEvent.Buyer |> shouldEqualIgnoringCase buyer
-        enteredEvent.BuyerReferralReward |> should equal buyerReward
-        enteredEvent.Sender |> shouldEqualIgnoringCase sender
-        enteredEvent.Referrer |> shouldEqualIgnoringCase referrer
-        enteredEvent.ReferrerReferralReward |> should equal referrerReward
-        enteredEvent.ValueEntered |> should equal valueToEnter
-    else
-        enteredEvent.BucketId |> should equal bucketToEnter
-        enteredEvent.Buyer |> shouldEqualIgnoringCase buyer
-        enteredEvent.BuyerReferralReward |> should equal BigInteger.Zero
-        enteredEvent.Sender |> shouldEqualIgnoringCase sender
-        enteredEvent.Referrer |> shouldEqualIgnoringCase referrer
-        enteredEvent.ReferrerReferralReward |> should equal BigInteger.Zero
-        enteredEvent.ValueEntered |> should equal valueToEnter
-
-    // state validation
-    // unchanged state
-    bucketSale.Query "owner" [||] |> shouldEqualIgnoringCase ethConn.Account.Address
-    bucketSale.Query "startOfSale" [||] |> should equal startOfSale
-    bucketSale.Query "bucketPeriod" [||] |> should equal bucketPeriod
-    bucketSale.Query "bucketSupply" [||] |> should equal bucketSupply
-    bucketSale.Query "bucketCount" [||] |> should equal bucketCount
-    bucketSale.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase FRY.Address
-    bucketSale.Query "tokenSoldFor" [||] |> shouldEqualIgnoringCase DAI.Address
-
-    // changed state
-    let senderDaiBalanceAfter = DAI.Query "balanceOf" [| sender |]
-    senderDaiBalanceAfter |> should equal (senderDaiBalanceBefore - valueToEnter)
-    let bucketDaiBalanceAfter = DAI.Query "balanceOf" [| bucketSale.Address |]
-    bucketDaiBalanceAfter |> should equal (bucketDaiBalanceBefore + valueToEnter)
-
-    let buyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter; buyer |]
-    buyForBucketAfter.ValueEntered |> should equal (buyForBucketBefore.ValueEntered + valueToEnter)
-    buyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
-
-    let bucketAfter = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter |]
-    bucketAfter.TotalValueEntered |> should equal (bucketBefore.TotalValueEntered + valueToEnter)
-
-    if referrer <> EthAddress.Zero then
-        let buyerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
-        buyerRewardBuyForBucketAfter.ValueEntered |> should equal (buyerRewardBuyForBucketBefore.ValueEntered + buyerReward)
-        buyerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
-
-        let referrerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
-        referrerRewardBuyForBucketAfter.ValueEntered |> should equal (referrerRewardBuyForBucketBefore.ValueEntered + referrerReward)
-        referrerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
-
-        let referralBucketAfter = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
-        referralBucketAfter.TotalValueEntered |> should equal (referralBucketBefore.TotalValueEntered + referrerReward + buyerReward)
-    else
-        let buyerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
-        buyerRewardBuyForBucketAfter.ValueEntered |> should equal BigInteger.Zero
-        buyerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
-
-        let referrerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
-        buyerRewardBuyForBucketAfter.ValueEntered |> should equal BigInteger.Zero
-        referrerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
-
-        let referralBucketAfter = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
-        referralBucketAfter.TotalValueEntered |> should equal (referralBucketBefore.TotalValueEntered)
 
 
 [<Specification("BucketSale", "enter", 6)>]
@@ -403,7 +304,7 @@ let ``EX003 - Cannot exit a buy you have already exited``() =
     secondForwardEvent |> shouldRevertWithMessage "already withdrawn"
 
 
-[<Specification("BucketSale", "exit", 3)>]
+[<Specification("BucketSale", "exit", 4)>]
 [<Fact>]
 let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
     seedBucketWithFries()
@@ -447,3 +348,72 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
     exitForwardEvent.Wei |> should equal BigInteger.Zero
     exitForwardEvent |> shouldRevertWithMessage "" //unknown internal revert of the ERC20, error is not necessarily known
 
+[<Specification("BucketSale", "exit", 5)>]
+[<Fact>]
+let ``EX005 - Can exit a valid past bucket that was entered``() =
+    // goal:
+    // 1. prove that any bucket that may be existed, can be exited on behalf of a legitimate buyer
+    // 2. prove one during the sale and after the sale has concluded
+
+    // logic:
+    // *seed the bucket with fries
+    // *move some time into the future
+    // *make a list of buyers and buckets for them to enter
+    // *for each 
+    //      *move forward in time to just beyond each bucket's closing time
+    //      *exit the bucket on behalf of the buyer (with another connection)
+    //      *check the logs
+    //      *check the altered state of buckets, the balances of buyer and the balance of the account checking out
+    
+    seedBucketWithFries()
+
+    let initialTimeJump = rnd.Next(0, (bucketCount * bucketPeriod / (BigInteger 2)) |> int32) |> uint64
+    initialTimeJump |> ethConn.TimeTravel 
+
+    let bucketBeforeEntering:BigInteger = bucketSale.Query "currentBucket" [||]
+    bucketBeforeEntering |> should lessThan bucketCount
+    let sender = ethConn.Account.Address
+
+    let makeBuy _ =
+        let bucketToEnter = rnd.Next(0, bucketCount - bucketBeforeEntering - BigInteger.One |> int32) |> BigInteger |> (+) bucketBeforeEntering
+        bucketToEnter |> should greaterThanOrEqualTo bucketBeforeEntering
+        bucketToEnter |> should lessThanOrEqualTo (bucketCount - BigInteger.One) 
+
+        bucketToEnter, 
+        makeAccount().Address,
+        rnd.Next(1, 100) |> BigInteger,
+        makeAccount().Address
+        
+    let enterBucketTuple (bucketToEnter, buyer, valueToEnter, referrer) = 
+        enterBucket 
+            sender
+            buyer
+            bucketToEnter
+            valueToEnter
+            referrer
+        
+    let numberOfBuysToPerform = rnd.Next(5,10)
+    let buysToPerform = 
+        {1 |> int32 .. numberOfBuysToPerform}
+        |> Seq.map makeBuy 
+        |> Seq.toArray
+
+    buysToPerform |> Seq.length |> should greaterThanOrEqualTo 5 //|> should not' (be Empty)
+
+    for buy in buysToPerform do
+        enterBucketTuple buy
+
+    let bucketAfterEntering:BigInteger = bucketSale.Query "currentBucket" [||]
+    bucketAfterEntering |> should greaterThanOrEqualTo bucketBeforeEntering
+
+    let jumpAfterBuys = (bucketCount - bucketAfterEntering - BigInteger.One) * bucketPeriod |> int64
+    jumpAfterBuys |> ethConn.TimeTravel
+
+    let exitBucketTuple (bucketEntered, buyer, valueEntered, _) = 
+        exitBucket 
+            buyer
+            bucketEntered  
+            valueEntered
+
+    for buy in buysToPerform do
+        exitBucketTuple buy

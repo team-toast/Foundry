@@ -1,72 +1,7 @@
-﻿module BucketSaleTestBase
+module bucketSaleHelpers
 
-open TestBase
-open System.Numerics
-open FsUnit.Xunit
-open DAIHard.Contracts.BucketSale.ContractDefinition
-open Constants
+open BucketSaleTestBase
 
-let DAI =
-    let abi = Abi("../../../../build/contracts/TestToken.json")
-
-    let deployTxReceipt =
-        ethConn.DeployContractAsync abi
-            [| "MCD DAI stable coin"
-               "DAI"
-               ethConn.Account.Address
-               bucketSupply * bucketCount * BigInteger(100UL) |]
-        |> runNow
-
-    let result = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
-    result.Query "balanceOf" [| ethConn.Account.Address |] |> should equal (bucketSupply * bucketCount * BigInteger(100UL) * BigInteger(1000000000000000000UL))
-    result
-
-
-let FRY =
-    let abi = Abi("../../../../build/contracts/TestToken.json")
-
-    let deployTxReceipt =
-        ethConn.DeployContractAsync abi
-            [| "Foundry logistics token"
-               "FRY"
-               ethConn.Account.Address
-               BigInteger(1000000UL) |]
-        |> runNow
-
-    let result = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
-    result
-
-
-let referrerReward amount =
-    ((amount / BigInteger 1000000000000000000UL) + BigInteger 10000UL)
-        
-
-let bucketSale =
-    let abi = Abi("../../../../build/contracts/BucketSale.json")
-
-    let deployTxReceipt =
-        ethConn.DeployContractAsync abi
-            [| ethConn.Account.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; FRY.Address; DAI.Address |]
-        |> runNow
-
-    ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
-
-
-let seedBucketWithFries() =
-    let frySupplyBefore = FRY.Query "balanceOf" [| bucketSale.Address |]
-    let transferFryTxReceipt =
-        FRY.ExecuteFunction "transfer"
-            [| bucketSale.Address
-               bucketSupply * bucketCount |]
-    transferFryTxReceipt |> shouldSucceed
-    FRY.Query "balanceOf" [| bucketSale.Address |] |> should equal (frySupplyBefore + bucketSupply * bucketCount)
-
-
-let seedWithDAI (recipient:string) (amount:BigInteger) =
-    let balanceBefore = DAI.Query "balanceOf" [| recipient |] 
-    let transferDaiTxReceipt = DAI.ExecuteFunction "transfer" [| recipient; amount |]
-    transferDaiTxReceipt |> shouldSucceed
-    DAI.Query "balanceOf" [| recipient |] |> should equal (balanceBefore + amount)
 
 let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     let approveDaiTxReceipt = DAI.ExecuteFunction "approve" [| bucketSale.Address; valueToEnter |]
@@ -168,25 +103,25 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
 let exitBucket buyer bucketEntered valueEntered =
     let buyerBalanceBefore = FRY.Query "balanceOf" [| buyer |]
     let bucketSaleBalanceBefore = FRY.Query "balanceOf" [| bucketSale.Address |]
-    let totalTokensExitedBefore = bucketSale.Query "totalExitedTokens" [||]
+    let totalTokensExitedBefore = bucketSale.Query "totalTokensExited" [||]
 
     let exitBucketReceipt = bucketSale.ExecuteFunction "exit" [| bucketEntered; buyer |] 
     exitBucketReceipt |> shouldSucceed
 
     let bucket = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketEntered |]
     let amountToExit = 
-        (bucketSupply * (BigInteger 100000UL) * valueEntered) / (bucket.TotalValueEntered * (BigInteger 100000UL))
+        (BigInteger 100000UL) * valueEntered / bucket.TotalValueEntered
 
     let exitEvent = exitBucketReceipt |> decodeFirstEvent<ExitedEventDTO>
     exitEvent.BucketId |> should equal bucketEntered
-    exitEvent.Buyer |> shouldEqualIgnoringCase buyer
+    exitEvent.Buyer |> should equal buyer
     exitEvent.TokensExited |> should equal amountToExit
 
     let buy = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketEntered; buyer |]
     buy.BuyerTokensExited |> should equal amountToExit
     buy.ValueEntered |> should equal valueEntered
 
-    let totalTokensExitedAfter = bucketSale.Query "totalExitedTokens" [||]
+    let totalTokensExitedAfter = bucketSale.Query "totalTokensExited" [||]
     totalTokensExitedAfter |> should equal (totalTokensExitedBefore + amountToExit) 
     
     let buyerBalanceAfter = FRY.Query "balanceOf" [| buyer |]

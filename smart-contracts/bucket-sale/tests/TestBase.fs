@@ -32,7 +32,7 @@ let rec rndRange min max  =
 let startOfSale = DateTimeOffset(DateTime.Now.AddDays(-1.0)).ToUnixTimeSeconds() |> BigInteger
 let bucketPeriod = 7UL * hours |> BigInteger
 let bucketSupply = 50000UL |> BigInteger
-let bucketCount = 100UL |> BigInteger
+let bucketCount = 1250UL |> BigInteger
 
 let tokenOnSale = zeroAddress
 let tokenSoldFor = zeroAddress
@@ -77,7 +77,7 @@ type EthereumConnection(nodeURI: string, privKey: string) =
             this.Gas, this.GasPrice, 
             hexBigInt 0UL, 
             null, 
-            arguments)
+            arguments)  
     
     member this.TimeTravel seconds = 
         this.Web3.Client.SendRequestAsync(method = "evm_increaseTime", paramList = [| seconds |]) 
@@ -87,14 +87,13 @@ type EthereumConnection(nodeURI: string, privKey: string) =
         |> Async.AwaitTask 
         |> Async.RunSynchronously
 
-
 type Profile = { FunctionName: string; Duration: string }
 
 let profileMe f =
     let start = DateTime.Now
     let result = f()
     let duration = DateTime.Now - start
-    (f.GetType(), duration) |> printf "(Functio, Duration) = %A\n"
+    (f.GetType(), duration) |> printf "(Function, Duration) = %A\n"
     result
 
 
