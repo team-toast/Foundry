@@ -414,3 +414,17 @@ let ``F001 - Cannot be called by a non-owner``() =
     
     let forwarderForwardedEvent = forwardReceipt |> decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
     forwarderForwardedEvent |> shouldRevertWithMessage "only owner"
+
+[<Specification("BucketSale", "foward", 2)>]
+[<Fact>]
+let ``F002 - Should return event indication revert if the message fails``() =
+    seedWithDAI bucketSale.Address (BigInteger 100UL)
+    let receiver = makeAccount()
+    let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 101UL |] // will revert the inner most call
+    let forwardReceipt = bucketSale.ExecuteFunction "forward"  [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]
+    forwardReceipt |> shouldSucceed
+    
+    let forwardedEvent = forwardReceipt |> decodeFirstEvent<DAIHard.Contracts.BucketSale.ContractDefinition.ForwardedEventDTO>
+    forwardedEvent.Data |> should equal (daiTransferData.HexToByteArray())
+    forwardedEvent.Success |> should equal false
+    forwardedEvent.To |> should equal DAI.Address
