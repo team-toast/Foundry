@@ -351,20 +351,6 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
 [<Specification("BucketSale", "exit", 5)>]
 [<Fact>]
 let ``EX005 - Can exit a valid past bucket that was entered``() =
-    // goal:
-    // 1. prove that any bucket that may be existed, can be exited on behalf of a legitimate buyer
-    // 2. prove one during the sale and after the sale has concluded
-
-    // logic:
-    // *seed the bucket with fries
-    // *move some time into the future
-    // *make a list of buyers and buckets for them to enter
-    // *for each 
-    //      *move forward in time to just beyond each bucket's closing time
-    //      *exit the bucket on behalf of the buyer (with another connection)
-    //      *check the logs
-    //      *check the altered state of buckets, the balances of buyer and the balance of the account checking out
-    
     seedBucketWithFries()
 
     let initialTimeJump = rnd.Next(0, (bucketCount * bucketPeriod / (BigInteger 2)) |> int32) |> uint64
@@ -379,18 +365,10 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
         bucketToEnter |> should greaterThanOrEqualTo bucketBeforeEntering
         bucketToEnter |> should lessThanOrEqualTo (bucketCount - BigInteger.One) 
 
-        bucketToEnter, 
         makeAccount().Address,
+        bucketToEnter, 
         rnd.Next(1, 100) |> BigInteger,
         makeAccount().Address
-        
-    let enterBucketTuple (bucketToEnter, buyer, valueToEnter, referrer) = 
-        enterBucket 
-            sender
-            buyer
-            bucketToEnter
-            valueToEnter
-            referrer
         
     let numberOfBuysToPerform = rnd.Next(5,10)
     let buysToPerform = 
@@ -398,10 +376,15 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
         |> Seq.map makeBuy 
         |> Seq.toArray
 
-    buysToPerform |> Seq.length |> should greaterThanOrEqualTo 5 //|> should not' (be Empty)
+    buysToPerform |> Seq.length |> should greaterThanOrEqualTo 5
 
-    for buy in buysToPerform do
-        enterBucketTuple buy
+    for (buyer, bucketToEnter, valueToEnter, referrer) in buysToPerform do
+        enterBucket
+            sender
+            buyer
+            bucketToEnter
+            valueToEnter
+            referrer 
 
     let bucketAfterEntering:BigInteger = bucketSale.Query "currentBucket" [||]
     bucketAfterEntering |> should greaterThanOrEqualTo bucketBeforeEntering
@@ -409,11 +392,25 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
     let jumpAfterBuys = (bucketCount - bucketAfterEntering - BigInteger.One) * bucketPeriod |> int64
     jumpAfterBuys |> ethConn.TimeTravel
 
-    let exitBucketTuple (bucketEntered, buyer, valueEntered, _) = 
+    for (buyer, bucketEntered, valueEntered, _) in buysToPerform do
         exitBucket 
-            buyer
-            bucketEntered  
+            buyer 
+            bucketEntered 
             valueEntered
 
-    for buy in buysToPerform do
-        exitBucketTuple buy
+
+[<Specification("BucketSale", "foward", 1)>]
+[<Fact>]
+let ``F001 - Cannot be called by a non-owner``() =
+    seedWithDAI bucketSale.Address (BigInteger 100UL)
+    let receiver = makeAccount()
+    let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 100UL |]
+    let forwardReceipt = 
+        bucketSale.ExecuteFunctionFrom 
+            "forward" 
+            [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]
+            forwarder
+    forwardReceipt |> shouldSucceed
+    
+    let forwarderForwardedEvent = forwardReceipt |> decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
+    forwarderForwardedEvent |> shouldRevertWithMessage "only owner"
