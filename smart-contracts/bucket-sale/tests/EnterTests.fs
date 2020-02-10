@@ -417,7 +417,7 @@ let ``F001 - Cannot be called by a non-owner``() =
 
 [<Specification("BucketSale", "foward", 2)>]
 [<Fact>]
-let ``F002 - Should return event indication revert if the message fails``() =
+let ``F002 - Should return event indication revert if the forward fails``() =
     seedWithDAI bucketSale.Address (BigInteger 100UL)
     let receiver = makeAccount()
     let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 101UL |] // will revert the inner most call
@@ -428,3 +428,26 @@ let ``F002 - Should return event indication revert if the message fails``() =
     forwardedEvent.Data |> should equal (daiTransferData.HexToByteArray())
     forwardedEvent.Success |> should equal false
     forwardedEvent.To |> should equal DAI.Address
+
+[<Specification("BucketSale", "foward", 3)>]
+[<Fact>]
+let ``F003 - Should be able to forward if sent from owner and call is valid``() =
+    // arrange
+    seedWithDAI bucketSale.Address (BigInteger 100UL)
+    let receiver = makeAccount()
+    let daiReceiverBalanceBefore = DAI.Query "balanceOf" [| receiver.Address |]
+    let bucketSaleBalanceBefore = DAI.Query "balanceOf" [| bucketSale.Address |]
+    let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 100UL |] // will revert the inner most call
+    
+    // act
+    let forwardReceipt = bucketSale.ExecuteFunction "forward"  [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]
+    forwardReceipt |> shouldSucceed
+    
+    // assert
+    let forwardedEvent = forwardReceipt |> decodeFirstEvent<DAIHard.Contracts.BucketSale.ContractDefinition.ForwardedEventDTO>
+    forwardedEvent.Data |> should equal (daiTransferData.HexToByteArray())
+    forwardedEvent.Success |> should equal true
+    forwardedEvent.To |> should equal DAI.Address
+
+    DAI.Query "balanceOf" [| receiver.Address |] |> should equal (daiReceiverBalanceBefore + (BigInteger 100UL))
+    DAI.Query "balanceOf" [| bucketSale.Address |] |> should equal (bucketSaleBalanceBefore - (BigInteger 100UL))
