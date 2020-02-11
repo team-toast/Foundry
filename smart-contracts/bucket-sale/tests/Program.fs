@@ -4,14 +4,12 @@ open Microsoft.FSharp.Reflection
 open System
 open FsUnit.Xunit
 
-open ConstructorTests
 open Newtonsoft.Json
 open System.IO
 open Newtonsoft.Json.Linq
 open System.Linq
 
 open TestBase
-open ConstructorTests
 open System.Numerics
 open Constants
 

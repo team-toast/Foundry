@@ -17,7 +17,7 @@ open System.Linq
 
 [<Specification("BucketSale", "misc", 0)>]
 [<Fact>]
-let ``M00 - Can send eth``() =
+let ``M000 - Can send eth``() =
     let balance = ethConn.Web3.Eth.GetBalance.SendRequestAsync(ethConn.Account.Address) |> runNow
     balance.Value |> should greaterThan (bigInt 0UL)
 
@@ -36,7 +36,7 @@ let ``M00 - Can send eth``() =
 
 [<Specification("BucketSale", "constructor", 1)>]
 [<Fact>]
-let ``C00 - Can construct the contract``() =
+let ``C000 - Can construct the contract``() =
     let abi = Abi("../../../../build/contracts/BucketSale.json")
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
@@ -170,6 +170,7 @@ let ``E006 - Can enter a bucket with no referrer``() =
                 valueToEnter
                 referrer)
 
+
 [<Specification("BucketSale", "enter", 8)>]
 [<Fact>]
 let ``E008 - Cannot enter a bucket beyond the designated bucket count - 1 (because of referrer)``() =
@@ -255,6 +256,7 @@ let ``EX001 - Cannot exit a bucket that is not yet concluded``() =
     secondForwardEvent.Wei |> should equal BigInteger.Zero
     secondForwardEvent |> shouldRevertWithMessage "can only exit from concluded buckets"
 
+
 [<Specification("BucketSale", "exit", 2)>]
 [<Fact>]
 let ``EX002 - Cannot exit a bucket you did not enter``() =
@@ -268,6 +270,7 @@ let ``EX002 - Cannot exit a bucket you did not enter``() =
     firstForwardEvent.To |> should equal bucketSale.Address
     firstForwardEvent.Wei |> should equal BigInteger.Zero
     firstForwardEvent |> shouldRevertWithMessage "can't take out if you didn't put in"
+
 
 [<Specification("BucketSale", "exit", 3)>]
 [<Fact>]
@@ -347,6 +350,7 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
     exitForwardEvent.To |> should equal bucketSale.Address
     exitForwardEvent.Wei |> should equal BigInteger.Zero
     exitForwardEvent |> shouldRevertWithMessage "" //unknown internal revert of the ERC20, error is not necessarily known
+
 
 [<Specification("BucketSale", "exit", 5)>]
 [<Fact>]
@@ -429,6 +433,7 @@ let ``F002 - Should return event indication revert if the forward fails``() =
     forwardedEvent.Success |> should equal false
     forwardedEvent.To |> should equal DAI.Address
 
+    
 [<Specification("BucketSale", "foward", 3)>]
 [<Fact>]
 let ``F003 - Should be able to forward if sent from owner and call is valid``() =
