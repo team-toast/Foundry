@@ -223,7 +223,7 @@ contract BucketSale
     {
         if (_referrerAddress == address(0))
         {
-            return 0;
+            return 0; // Do we still need this case? Is it redundant? If so should we keep it for secure reasonings?
         }
         else
         {
@@ -239,6 +239,9 @@ contract BucketSale
             However, because we are already using 3 digits of precision for bonus values,
             the integer amount of Dai happens to exactly equal the bonusPercent value we want
             (i.e. 10,000 Dai == 10000 == 10*ONE_PERC)
+
+            So, if multiplier = daiContributed + (10*ONE_PERC), this increases the multiplier
+            by 10% for every 10k Dai, which is what we want.
             */
             uint multiplier = daiContributed.add(ONE_PERC.mul(10)); // this guarentees every referrer gets at least 10% of what the buyer is buying
 

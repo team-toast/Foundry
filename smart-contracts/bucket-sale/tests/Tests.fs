@@ -181,6 +181,7 @@ let ``E008 - Cannot enter a bucket beyond the designated bucket count - 1 (becau
     seedBucketWithFries()
     seedWithDAI forwarder.ContractPlug.Address valueToEnter
 
+    // named correctly?
     let receiptDaiReceipt =  DAI.ExecuteFunctionFrom "approve" [| bucketSale.Address; valueToEnter |] forwarder
     receiptDaiReceipt |> shouldSucceed
 
@@ -199,7 +200,7 @@ let ``E008 - Cannot enter a bucket beyond the designated bucket count - 1 (becau
 [<Fact>]
 let ``E009 - Cannot enter a bucket if payment reverts (with referrer)``() =
     seedBucketWithFries()
-    seedWithDAI forwarder.ContractPlug.Address (BigInteger(10UL))
+    seedWithDAI forwarder.ContractPlug.Address (BigInteger(10UL)) // Why seed with DAI? Shouldn't the Forwarder not have any DAI at all? Or are we relying on the lack of approve to make it fail? If so, should incldue comment, or even explicitly remove approval
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; currentBucket; 1UL; forwarder.ContractPlug.Address |] forwarder
     let forwardEvent = forwarder.DecodeForwardedEvents receipt |> Seq.head
@@ -208,7 +209,7 @@ let ``E009 - Cannot enter a bucket if payment reverts (with referrer)``() =
 
 [<Specification("BucketSale", "enter", 10)>]
 [<Fact>]
-let ``E010 - Can enter a bucket with no referrer``() =
+let ``E010 - Can enter a bucket with a referrer``() =
     // arrange
     seedBucketWithFries()
 
@@ -217,6 +218,7 @@ let ``E010 - Can enter a bucket with no referrer``() =
     let valueToEnter = BigInteger 10UL
     let buyer = ethConn.Account.Address
     let sender = ethConn.Account.Address
+    let randomReferrer = makeAccount().Address
 
     let bucketsToEnter =
         rndRange (currentBucket |> int) (bucketCount - BigInteger 2UL  |> int)
@@ -232,7 +234,7 @@ let ``E010 - Can enter a bucket with no referrer``() =
                 buyer
                 bucketToEnter
                 valueToEnter
-                (makeAccount().Address))
+                randomReferrer)
 
 
 [<Specification("BucketSale", "exit", 1)>]

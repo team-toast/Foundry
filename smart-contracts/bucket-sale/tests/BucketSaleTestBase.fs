@@ -97,6 +97,8 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     let referredTotalAfter = bucketSale.Query "referredTotal" [| referrer |]
     referredTotalAfter |> should equal (referrerReferredTotalBefore + valueToEnter)
     let calculatedReferrerRewardPercAfter = referrerReward referredTotalAfter
+    // ^ calculated, or after? after to me implies the state of the contract; calculated implies what we should expect
+    // Apply to buyerReward and referrerReward too
     let referrerRewardPercAfter = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
     referrerRewardPercAfter |> should equal calculatedReferrerRewardPercAfter
     let buyerReward = valueToEnter / BigInteger 10UL
