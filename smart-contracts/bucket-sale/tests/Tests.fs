@@ -88,9 +88,9 @@ let ``E002 - Cannot enter bucket sale if there are not enough tokens to payout``
         |> runNow
     moveFryTxReceipt |> shouldSucceed
 
-    let balanceBeforeEntry = FRY.Query "balanceOf" [| bucketSale.Address |]
-    balanceBeforeEntry |> should equal BigInteger.Zero
-    balanceBeforeEntry |> should lessThan (bucketCount * bucketSupply)
+    let bucketSaleBalanceBeforeEntry = FRY.Query "balanceOf" [| bucketSale.Address |]
+    bucketSaleBalanceBeforeEntry |> should equal BigInteger.Zero
+    bucketSaleBalanceBeforeEntry |> should lessThan (bucketCount * bucketSupply)
 
     let data = bucketSale.FunctionData "enter" [| ethConn.Account.Address; currentBucket; 1UL; zeroAddress |]
 
@@ -124,8 +124,9 @@ let ``E003|E007 - Cannot enter a past bucket``() =
 [<Fact>]
 let ``E004 - Cannot enter a bucket beyond the designated bucket count (no referrer)``() =
     seedBucketWithFries()
-    let bucketCount = bucketSale.Query "bucketCount" [||] // will be one bucket beyond what is allowed
+    let bucketCount = bucketSale.Query "bucketCount" [||] // will be one bucket beyond what is allowed UNCLEAR
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; bucketCount; 1UL; zeroAddress |] forwarder
+    // ^ different form than above? Does it do the same thing? Try using multiple lines too? so 'from forwarder' idea is easier to see at a glance
     let forwardEvent = forwarder.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage "invalid bucket id--past end of sale"
 
@@ -138,7 +139,7 @@ let ``E005 - Cannot enter a bucket if payment reverts (with no referrer)``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; currentBucket; 1UL; zeroAddress |] forwarder
     let forwardEvent = forwarder.DecodeForwardedEvents receipt |> Seq.head
-    forwardEvent |> shouldRevertWithMessage ""
+    forwardEvent |> shouldRevertWithMessage "" // intent unclear. Maybe shouldRevertWithMessage should take a Maybe? Or make a shouldRevertWithUnknownMessage?
 
 
 [<Specification("BucketSale", "enter", 6)>]
@@ -148,6 +149,7 @@ let ``E006 - Can enter a bucket with no referrer``() =
     seedBucketWithFries()
 
     let currentBucket:BigInteger = bucketSale.Query "currentBucket" [||]
+    // suddenly using currentBucket:BigInteger, but before was just currentBucket
 
     let valueToEnter = BigInteger 10UL
     let referrer = zeroAddress

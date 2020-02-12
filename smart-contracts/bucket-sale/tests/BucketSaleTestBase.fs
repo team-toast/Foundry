@@ -69,17 +69,19 @@ let seedWithDAI (recipient:string) (amount:BigInteger) =
     DAI.Query "balanceOf" [| recipient |] |> should equal (balanceBefore + amount)
 
 let enterBucket sender buyer bucketToEnter valueToEnter referrer =
-    let approveDaiTxReceipt = DAI.ExecuteFunction "approve" [| bucketSale.Address; valueToEnter |]
+    let approveDaiTxReceipt = DAI.ExecuteFunction "approve" [| bucketSale.Address; valueToEnter |] // Should we call this DAI, or increase the scope of the audit to any ERC20 token? And call it TokenSoldFor?
     approveDaiTxReceipt |> shouldSucceed
 
-    let currentBucket = bucketSale.Query "currentBucket" [||]
-    let referredTotalBefore = bucketSale.Query "referredTotal" [| referrer |]
+    // unneeded?
+    //let currentBucket = bucketSale.Query "currentBucket" [||]
+    let referrerReferredTotalBefore = bucketSale.Query "referredTotal" [| referrer |]
     let referrerRewardPercBefore = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
-    let calculatedReferrerRewardPercBefore = referrerReward referredTotalBefore
+    let calculatedReferrerRewardPercBefore = referrerReward referrerReferredTotalBefore
     referrerRewardPercBefore |> should equal calculatedReferrerRewardPercBefore
     let senderDaiBalanceBefore = DAI.Query "balanceOf" [| sender |]
     let bucketDaiBalanceBefore = DAI.Query "balanceOf" [| bucketSale.Address |]
     let buyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter; buyer |]
+    // The following 3 var names are confusing to me; discuss.
     let buyerRewardBuyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
     let referrerRewardBuyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
     let bucketBefore = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter |]
@@ -93,7 +95,7 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
 
     // event validation
     let referredTotalAfter = bucketSale.Query "referredTotal" [| referrer |]
-    referredTotalAfter |> should equal (referredTotalBefore + valueToEnter)
+    referredTotalAfter |> should equal (referrerReferredTotalBefore + valueToEnter)
     let calculatedReferrerRewardPercAfter = referrerReward referredTotalAfter
     let referrerRewardPercAfter = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
     referrerRewardPercAfter |> should equal calculatedReferrerRewardPercAfter
@@ -114,7 +116,7 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
         enteredEvent.Buyer |> shouldEqualIgnoringCase buyer
         enteredEvent.BuyerReferralReward |> should equal BigInteger.Zero
         enteredEvent.Sender |> shouldEqualIgnoringCase sender
-        enteredEvent.Referrer |> shouldEqualIgnoringCase referrer
+        enteredEvent.Referrer |> shouldEqualIgnoringCase EthAddress.Zero // for clarity, right?
         enteredEvent.ReferrerReferralReward |> should equal BigInteger.Zero
         enteredEvent.ValueEntered |> should equal valueToEnter
 
@@ -131,12 +133,12 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     // changed state
     let senderDaiBalanceAfter = DAI.Query "balanceOf" [| sender |]
     senderDaiBalanceAfter |> should equal (senderDaiBalanceBefore - valueToEnter)
-    let bucketDaiBalanceAfter = DAI.Query "balanceOf" [| bucketSale.Address |]
-    bucketDaiBalanceAfter |> should equal (bucketDaiBalanceBefore + valueToEnter)
+    let bucketSaleDaiBalanceAfter = DAI.Query "balanceOf" [| bucketSale.Address |]
+    bucketSaleDaiBalanceAfter |> should equal (bucketDaiBalanceBefore + valueToEnter)
 
     let buyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter; buyer |]
     buyForBucketAfter.ValueEntered |> should equal (buyForBucketBefore.ValueEntered + valueToEnter)
-    buyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
+    buyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero // Should move up to 'unchanged state' block? Hmm
 
     let bucketAfter = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter |]
     bucketAfter.TotalValueEntered |> should equal (bucketBefore.TotalValueEntered + valueToEnter)
