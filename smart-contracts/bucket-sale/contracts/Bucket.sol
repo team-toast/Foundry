@@ -192,8 +192,8 @@ contract BucketSale
         Note that buyToWithdraw.buyerTokensExited serves a dual purpose:
         First, it is always set to a non-zero value when a buy has been exited from,
         and checked in the line above to guard against repeated exits.
-        Second, it's used as simple record-keeping for future analysis; hence the use of uint
-        rather than something like bool buyerTokensHaveExited.
+        Second, it's used as simple record-keeping for future analysis;
+        hence the use of uint rather than something like bool buyerTokensHaveExited.
         */
 
         buyToWithdraw.buyerTokensExited = calculateExitableTokens(_bucketId, _buyer);

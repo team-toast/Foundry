@@ -249,9 +249,11 @@ let ``EX001 - Cannot exit a bucket that is not yet concluded``() =
     firstForwardEvent.To |> should equal bucketSale.Address
     firstForwardEvent.Wei |> should equal BigInteger.Zero
     firstForwardEvent |> shouldRevertWithMessage "can only exit from concluded buckets"
+    // ^ Why such extensive testing on the structure of firstForwardEvent?
 
-    let laterBucker = rnd.Next((currentBucket + BigInteger.One) |> int32, (bucketCount - BigInteger 1UL) |> int32)
-    let secondReceipt = bucketSale.ExecuteFunctionFrom "exit" [| laterBucker; EthAddress.Zero |] forwarder
+    // E006 and others iterate through a range; should we do so here?
+    let laterBucket = rnd.Next((currentBucket + BigInteger.One) |> int32, (bucketCount - BigInteger 1UL) |> int32)
+    let secondReceipt = bucketSale.ExecuteFunctionFrom "exit" [| laterBucket; EthAddress.Zero |] forwarder
 
     let secondForwardEvent = decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> secondReceipt
     secondForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
@@ -285,15 +287,17 @@ let ``EX003 - Cannot exit a buy you have already exited``() =
     let valueToEnter = BigInteger 10UL
     let buyer = ethConn.Account.Address
     let sender = ethConn.Account.Address
+    let randomReferrer = makeAccount().Address
 
     enterBucket
         sender
         buyer
         currentBucket
         valueToEnter
-        (makeAccount().Address)
+        randomReferrer
 
-    7UL * hours |> ethConn.TimeTravel 
+    7UL * hours |> ethConn.TimeTravel
+    // ^ better to fetch bucket length from contract; otherwise technically this tests in a way assumes the 7h is hardcoded
 
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] forwarder
     let firstForwardEvent = decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
@@ -320,19 +324,21 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
     let valueToEnter = BigInteger 10UL
     let buyer = ethConn.Account.Address
     let sender = ethConn.Account.Address
+    let randomReferrer = makeAccount().Address
 
     enterBucket
         sender
         buyer
         currentBucket
         valueToEnter
-        (makeAccount().Address)
+        randomReferrer
 
     7UL * hours |> ethConn.TimeTravel 
     
-    let fryBalance = FRY.Query<BigInteger> "balanceOf" [| bucketSale.Address |] 
+    let bucketSaleFryBalance = FRY.Query<BigInteger> "balanceOf" [| bucketSale.Address |] 
     
-    let moveTokensData = FRY.FunctionData "transfer" [| makeAccount().Address; fryBalance |]
+    // move tokens away from bucketSale
+    let moveTokensData = FRY.FunctionData "transfer" [| makeAccount().Address; bucketSaleFryBalance |]
     let moveTokensForwardReciept = 
         bucketSale.ExecuteFunction 
             "forward" 
@@ -343,7 +349,7 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
             |]
     moveTokensForwardReciept |> shouldSucceed
     let forwardEvent = moveTokensForwardReciept.DecodeAllEvents<ForwardedEventDTO>() |> Seq.head
-    let errorMessage = Encoding.ASCII.GetString(forwardEvent.Event.ResultData) 
+    let errorMessage = Encoding.ASCII.GetString(forwardEvent.Event.ResultData) // this isn't used?
     forwardEvent.Event.Success |> should equal true
     FRY.Query "balanceOf" [| bucketSale.Address |] |> should lessThan (bucketCount * bucketSupply)
 
@@ -361,14 +367,16 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
 let ``EX005 - Can exit a valid past bucket that was entered``() =
     seedBucketWithFries()
 
+    // Ah, bucketPeriod used here. But in other tests the '7 hours' is directly used?
     let initialTimeJump = rnd.Next(0, (bucketCount * bucketPeriod / (BigInteger 2)) |> int32) |> uint64
-    initialTimeJump |> ethConn.TimeTravel 
+    initialTimeJump |> ethConn.TimeTravel
 
     let bucketBeforeEntering:BigInteger = bucketSale.Query "currentBucket" [||]
     bucketBeforeEntering |> should lessThan bucketCount
     let sender = ethConn.Account.Address
 
     let makeBuy _ =
+        // Maybe change next line to multiline to make the logic with random range clearer?
         let bucketToEnter = rnd.Next(0, bucketCount - bucketBeforeEntering - BigInteger.One |> int32) |> BigInteger |> (+) bucketBeforeEntering
         bucketToEnter |> should greaterThanOrEqualTo bucketBeforeEntering
         bucketToEnter |> should lessThanOrEqualTo (bucketCount - BigInteger.One) 
@@ -396,6 +404,7 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
 
     let bucketAfterEntering:BigInteger = bucketSale.Query "currentBucket" [||]
     bucketAfterEntering |> should greaterThanOrEqualTo bucketBeforeEntering
+    // Not sure what this ^ test is actually proving / asserting?
 
     let jumpAfterBuys = (bucketCount - bucketAfterEntering - BigInteger.One) * bucketPeriod |> int64
     jumpAfterBuys |> ethConn.TimeTravel
@@ -436,6 +445,7 @@ let ``F002 - Should return event indication revert if the forward fails``() =
     forwardedEvent.Data |> should equal (daiTransferData.HexToByteArray())
     forwardedEvent.Success |> should equal false
     forwardedEvent.To |> should equal DAI.Address
+    // Shouldn't we somehow check to see that we can get the innermost revert message?
 
     
 [<Specification("BucketSale", "foward", 3)>]
@@ -446,7 +456,7 @@ let ``F003 - Should be able to forward if sent from owner and call is valid``() 
     let receiver = makeAccount()
     let daiReceiverBalanceBefore = DAI.Query "balanceOf" [| receiver.Address |]
     let bucketSaleBalanceBefore = DAI.Query "balanceOf" [| bucketSale.Address |]
-    let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 100UL |] // will revert the inner most call
+    let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 100UL |]
     
     // act
     let forwardReceipt = bucketSale.ExecuteFunction "forward"  [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]

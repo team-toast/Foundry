@@ -175,6 +175,7 @@ let exitBucket buyer bucketEntered valueEntered =
     let totalTokensExitedBefore = bucketSale.Query "totalExitedTokens" [||]
 
     let exitBucketReceipt = bucketSale.ExecuteFunction "exit" [| bucketEntered; buyer |] 
+    // from which account does this happen?
     exitBucketReceipt |> shouldSucceed
 
     let bucket = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketEntered |]
