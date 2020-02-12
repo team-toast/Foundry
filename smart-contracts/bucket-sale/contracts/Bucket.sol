@@ -163,7 +163,7 @@ contract BucketSale
 
         // If at any point the sale cannot support all planned buckets, prevent all entry for any bucket.
         require(
-            tokenOnSale.balanceOf(address(this)).add(totalExitedTokens) >= _bucketId.add(1).mul(bucketSupply),
+            tokenOnSale.balanceOf(address(this)).add(totalExitedTokens) >= bucketCount.mul(bucketSupply),
             "insufficient tokens to sell");
 
         Buy storage buy = buys[_bucketId][_buyer];
