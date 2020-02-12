@@ -197,6 +197,9 @@ let shouldRevertWithMessage expectedMessage (forwardedEvent: ForwardedEventDTO) 
     | None -> failwith "not a revert message"
     | Some actualMessage -> actualMessage |> should haveSubstring expectedMessage
 
+let shouldRevertWithUnknownMessage (forwardedEvent: ForwardedEventDTO) =
+    shouldRevertWithMessage "" forwardedEvent
+
 let decodeEvents<'a when 'a: (new: unit -> 'a)> (receipt: TransactionReceipt) =
     receipt.DecodeAllEvents<'a>() |> Seq.map (fun e -> e.Event)
 

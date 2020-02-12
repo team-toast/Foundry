@@ -72,16 +72,15 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     let approveDaiTxReceipt = DAI.ExecuteFunction "approve" [| bucketSale.Address; valueToEnter |]
     approveDaiTxReceipt |> shouldSucceed
 
-    let currentBucket = bucketSale.Query "currentBucket" [||]
-    let referredTotalBefore = bucketSale.Query "referredTotal" [| referrer |]
+    let referrerReferredTotalBefore = bucketSale.Query "referredTotal" [| referrer |]
     let referrerRewardPercBefore = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
-    let calculatedReferrerRewardPercBefore = referrerReward referredTotalBefore
+    let calculatedReferrerRewardPercBefore = referrerReward referrerReferredTotalBefore
     referrerRewardPercBefore |> should equal calculatedReferrerRewardPercBefore
     let senderDaiBalanceBefore = DAI.Query "balanceOf" [| sender |]
     let bucketDaiBalanceBefore = DAI.Query "balanceOf" [| bucketSale.Address |]
     let buyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter; buyer |]
-    let buyerRewardBuyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
-    let referrerRewardBuyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
+    let buyerRewardBuyBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
+    let referrerRewardBuyBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
     let bucketBefore = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter |]
     let referralBucketBefore = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
 
@@ -93,7 +92,7 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
 
     // event validation
     let referredTotalAfter = bucketSale.Query "referredTotal" [| referrer |]
-    referredTotalAfter |> should equal (referredTotalBefore + valueToEnter)
+    referredTotalAfter |> should equal (referrerReferredTotalBefore + valueToEnter)
     let calculatedReferrerRewardPercAfter = referrerReward referredTotalAfter
     let referrerRewardPercAfter = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
     referrerRewardPercAfter |> should equal calculatedReferrerRewardPercAfter
@@ -114,12 +113,11 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
         enteredEvent.Buyer |> shouldEqualIgnoringCase buyer
         enteredEvent.BuyerReferralReward |> should equal BigInteger.Zero
         enteredEvent.Sender |> shouldEqualIgnoringCase sender
-        enteredEvent.Referrer |> shouldEqualIgnoringCase referrer
+        enteredEvent.Referrer |> shouldEqualIgnoringCase EthAddress.Zero
         enteredEvent.ReferrerReferralReward |> should equal BigInteger.Zero
         enteredEvent.ValueEntered |> should equal valueToEnter
 
     // state validation
-    // unchanged state
     bucketSale.Query "owner" [||] |> shouldEqualIgnoringCase ethConn.Account.Address
     bucketSale.Query "startOfSale" [||] |> should equal startOfSale
     bucketSale.Query "bucketPeriod" [||] |> should equal bucketPeriod
@@ -128,11 +126,10 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     bucketSale.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase FRY.Address
     bucketSale.Query "tokenSoldFor" [||] |> shouldEqualIgnoringCase DAI.Address
 
-    // changed state
     let senderDaiBalanceAfter = DAI.Query "balanceOf" [| sender |]
     senderDaiBalanceAfter |> should equal (senderDaiBalanceBefore - valueToEnter)
-    let bucketDaiBalanceAfter = DAI.Query "balanceOf" [| bucketSale.Address |]
-    bucketDaiBalanceAfter |> should equal (bucketDaiBalanceBefore + valueToEnter)
+    let bucketSaleDaiBalanceAfter = DAI.Query "balanceOf" [| bucketSale.Address |]
+    bucketSaleDaiBalanceAfter |> should equal (bucketDaiBalanceBefore + valueToEnter)
 
     let buyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter; buyer |]
     buyForBucketAfter.ValueEntered |> should equal (buyForBucketBefore.ValueEntered + valueToEnter)
@@ -143,11 +140,11 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
 
     if referrer <> EthAddress.Zero then
         let buyerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
-        buyerRewardBuyForBucketAfter.ValueEntered |> should equal (buyerRewardBuyForBucketBefore.ValueEntered + buyerReward)
+        buyerRewardBuyForBucketAfter.ValueEntered |> should equal (buyerRewardBuyBefore.ValueEntered + buyerReward)
         buyerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
 
         let referrerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
-        referrerRewardBuyForBucketAfter.ValueEntered |> should equal (referrerRewardBuyForBucketBefore.ValueEntered + referrerReward)
+        referrerRewardBuyForBucketAfter.ValueEntered |> should equal (referrerRewardBuyBefore.ValueEntered + referrerReward)
         referrerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
 
         let referralBucketAfter = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
