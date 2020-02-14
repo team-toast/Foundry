@@ -192,7 +192,7 @@ let ``E010 - Can enter a bucket with a referrer``() =
     // arrange
     seedBucketWithFries()
 
-    let currentBucket:BigInteger = bucketSale.Query "currentBucket" [||]
+    let currentBucket = bucketSale.Query "currentBucket" [||]
 
     let valueToEnter = BigInteger 10UL
     let buyer = ethConn.Account.Address
@@ -260,17 +260,18 @@ let ``EX002 - Cannot exit a bucket you did not enter``() =
 let ``EX003 - Cannot exit a buy you have already exited``() =
     seedBucketWithFries()
 
-    let currentBucket:BigInteger = bucketSale.Query "currentBucket" [||]
+    let currentBucket = bucketSale.Query "currentBucket" [||]
     let valueToEnter = BigInteger 10UL
     let buyer = ethConn.Account.Address
     let sender = ethConn.Account.Address
+    let randomReferrer = makeAccount().Address
 
     enterBucket
         sender
         buyer
         currentBucket
         valueToEnter
-        (makeAccount().Address)
+        randomReferrer
 
     bucketPeriod |> ethConn.TimeTravel 
 
@@ -295,24 +296,26 @@ let ``EX003 - Cannot exit a buy you have already exited``() =
 let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
     seedBucketWithFries()
 
-    let currentBucket:BigInteger = bucketSale.Query "currentBucket" [||]
+    let currentBucket = bucketSale.Query "currentBucket" [||]
     let valueToEnter = BigInteger 10UL
     let buyer = ethConn.Account.Address
     let sender = ethConn.Account.Address
+    let randomReferrer = makeAccount().Address
 
     enterBucket
         sender
         buyer
         currentBucket
         valueToEnter
-        (makeAccount().Address)
+        randomReferrer
 
     bucketPeriod |> ethConn.TimeTravel 
     
     let bucketSaleFryBalance = FRY.Query<BigInteger> "balanceOf" [| bucketSale.Address |] 
+    let randomAddress = makeAccount().Address
     
     // move tokens away from bucketSale
-    let moveTokensData = FRY.FunctionData "transfer" [| makeAccount().Address; bucketSaleFryBalance |]
+    let moveTokensData = FRY.FunctionData "transfer" [| randomAddress; bucketSaleFryBalance |]
     let moveTokensForwardReciept = 
         bucketSale.ExecuteFunction 
             "forward" 
@@ -343,9 +346,11 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
     let initialTimeJump = rnd.Next(0, (bucketCount * bucketPeriod / (BigInteger 2)) |> int32) |> uint64
     initialTimeJump |> ethConn.TimeTravel 
 
-    let bucketBeforeEntering:BigInteger = bucketSale.Query "currentBucket" [||]
+    let bucketBeforeEntering = bucketSale.Query "currentBucket" [||]
     bucketBeforeEntering |> should lessThan bucketCount
     let sender = ethConn.Account.Address
+    let randomBuyer = makeAccount().Address
+    let randomReferrer = makeAccount().Address
 
     let makeBuy _ =
         let bucketToEnter = 
@@ -355,10 +360,10 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
         bucketToEnter |> should greaterThanOrEqualTo bucketBeforeEntering
         bucketToEnter |> should lessThanOrEqualTo (bucketCount - BigInteger.One) 
 
-        makeAccount().Address,
+        randomBuyer,
         bucketToEnter, 
         rnd.Next(1, 100) |> BigInteger,
-        makeAccount().Address
+        randomReferrer
         
     let numberOfBuysToPerform = rnd.Next(5,10)
     let buysToPerform = 
@@ -376,10 +381,7 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
             valueToEnter
             referrer 
 
-    let bucketAfterEntering:BigInteger = bucketSale.Query "currentBucket" [||]
-    bucketAfterEntering |> should greaterThanOrEqualTo bucketBeforeEntering
-
-    let jumpAfterBuys = (bucketCount - bucketAfterEntering - BigInteger.One) * bucketPeriod |> int64
+    let jumpAfterBuys = (bucketCount - bucketBeforeEntering - BigInteger.One) * bucketPeriod |> int64
     jumpAfterBuys |> ethConn.TimeTravel
 
     for (buyer, bucketEntered, valueEntered, _) in buysToPerform do
@@ -393,8 +395,8 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
 [<Fact>]
 let ``F001 - Cannot be called by a non-owner``() =
     seedWithDAI bucketSale.Address (BigInteger 100UL)
-    let receiver = makeAccount()
-    let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 100UL |]
+    let randomReceiver = makeAccount().Address
+    let daiTransferData = DAI.FunctionData "transfer" [| randomReceiver; 100UL |]
     let forwardReceipt = 
         bucketSale.ExecuteFunctionFrom 
             "forward" 
@@ -409,8 +411,8 @@ let ``F001 - Cannot be called by a non-owner``() =
 [<Fact>]
 let ``F002 - Should return event indicating revert if the forward fails``() =
     seedWithDAI bucketSale.Address (BigInteger 100UL)
-    let receiver = makeAccount()
-    let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 101UL |] // will revert the inner most call
+    let randomReceiver = makeAccount().Address
+    let daiTransferData = DAI.FunctionData "transfer" [| randomReceiver; 101UL |] // will revert the inner most call
     let forwardReceipt = bucketSale.ExecuteFunction "forward"  [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]
     forwardReceipt |> shouldSucceed
     
@@ -425,10 +427,10 @@ let ``F002 - Should return event indicating revert if the forward fails``() =
 let ``F003 - Should be able to forward if sent from owner and call is valid``() =
     // arrange
     seedWithDAI bucketSale.Address (BigInteger 100UL)
-    let receiver = makeAccount()
-    let daiReceiverBalanceBefore = DAI.Query "balanceOf" [| receiver.Address |]
+    let randomReceiver = makeAccount().Address
+    let daiReceiverBalanceBefore = DAI.Query "balanceOf" [| randomReceiver |]
     let bucketSaleBalanceBefore = DAI.Query "balanceOf" [| bucketSale.Address |]
-    let daiTransferData = DAI.FunctionData "transfer" [| receiver.Address; 100UL |]
+    let daiTransferData = DAI.FunctionData "transfer" [| randomReceiver; 100UL |]
     
     // act
     let forwardReceipt = bucketSale.ExecuteFunction "forward"  [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]
@@ -440,5 +442,5 @@ let ``F003 - Should be able to forward if sent from owner and call is valid``() 
     forwardedEvent.Success |> should equal true
     forwardedEvent.To |> should equal DAI.Address
 
-    DAI.Query "balanceOf" [| receiver.Address |] |> should equal (daiReceiverBalanceBefore + (BigInteger 100UL))
+    DAI.Query "balanceOf" [| randomReceiver |] |> should equal (daiReceiverBalanceBefore + (BigInteger 100UL))
     DAI.Query "balanceOf" [| bucketSale.Address |] |> should equal (bucketSaleBalanceBefore - (BigInteger 100UL))
