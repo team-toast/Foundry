@@ -15,7 +15,7 @@ The **enter** method takes an optional referrer value (optional meaning that 0x0
 
 This bonus takes the form of a "free" entry into the next bucket, proportional to the amount the buyer is entering into the target bucket. The public **enter** function does this by making 3 separate calls to the internal **registerEnter** call: first for the initial "normal" enter, second for the buyer's bonus (10% of the amount they are entering with), and third for the referrer's bonus (10%-100% of the amount the buyer is entering with). The referrer's bonus starts at 10% and increases 1% for every 1000 `tokenSoldFor` the referrer has referred in the past, and caps out at 100%.
 
-Note that since `registerEnter` reverts on an invalid bucket, calling `enter` with a referrer on the last bucket valid will also revert, as it will not be able to register the bonuses.
+Note that since `registerEnter` reverts on an invalid bucket, attempting to `enter` the last valid bucket with a referrer will also revert, as there will be no "next bucket" to register the bonuses in.
 
 ### Owner Can "Break" The Sale
 
