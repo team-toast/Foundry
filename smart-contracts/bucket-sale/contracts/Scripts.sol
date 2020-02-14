@@ -15,7 +15,7 @@ contract Scripts {
     function getExitInfo(BucketSale _bucketSale, address _buyer)
         public
         view
-        returns (uint[1253] memory) // Max 7-hour buckets in 1 year = 1252. Add 1 for the first element, which will be the total exitable tokens.
+        returns (uint[1201] memory) // Assume 1200 max buckets. Add 1 for the first element, which will be the total exitable tokens.
     {
         // goal:
         // 1. return the total FRY the buyer can extract
@@ -25,11 +25,11 @@ contract Scripts {
         // *loop over all concluded buckets
         //   *check the .buys for this _buyer
         //   *if there is a buy
-        //      *add to the first array element
-        //      *add the bucketId to the array
+        //      *add buy amount to the first array element
+        //      *append the bucketId to the array
 
-        
-        uint[1253] memory results;
+
+        uint[1201] memory results;
         uint pointer = 0;
         for (uint bucketId = 0; bucketId < _bucketSale.currentBucket(); bucketId = bucketId.add(1))
         {

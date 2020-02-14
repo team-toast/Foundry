@@ -41,7 +41,7 @@ bucketSaleAddress testMode =
         Eth.Utils.unsafeToAddress "0xAa3A3eABE664f873B5FF6eC10967C3e619a0a764"
 
     else
-        Eth.Utils.unsafeToAddress "0x008200C41C6744460D74547Ef934fe124feC9608"
+        Eth.Utils.unsafeToAddress "0x1D86DaA6CAeD0913F273E37791D00dc54EAaFc0D"
 
 
 bucketSaleScriptsAddress : Bool -> Address
@@ -50,7 +50,7 @@ bucketSaleScriptsAddress testMode =
         Eth.Utils.unsafeToAddress "0x9439E2755CaA6C97CD1AAE82FA97Ce91c93d9137"
 
     else
-        Eth.Utils.unsafeToAddress "0x237CFfc6c21DF0c58a0b4CcD1d5fe3d43818A27B"
+        Eth.Utils.unsafeToAddress "0x487Ac5423555B1D83F5b8BA13F260B296E9D0777"
 
 
 bucketSaleBucketInterval : Bool -> Time.Posix

@@ -2,7 +2,6 @@ module Contracts.BucketSale.Generated.BucketSale exposing
     ( Buy
     , Entered
     , Exited
-    , Forwarded
     , bucketCount
     , bucketPeriod
     , bucketSupply
@@ -10,6 +9,7 @@ module Contracts.BucketSale.Generated.BucketSale exposing
     , buyerReferralRewardPerc
     , buys
     , buysDecoder
+    , calculateExitableTokens
     , currentBucket
     , enter
     , enteredDecoder
@@ -17,8 +17,6 @@ module Contracts.BucketSale.Generated.BucketSale exposing
     , exit
     , exitedDecoder
     , exitedEvent
-    , forwardedDecoder
-    , forwardedEvent
     , owner
     , referredTotal
     , referrerReferralRewardPerc
@@ -106,16 +104,16 @@ buckets contractAddress a =
     }
 
 
-{-| "buyerReferralRewardPerc(address)" function
+{-| "buyerReferralRewardPerc()" function
 -}
-buyerReferralRewardPerc : Address -> Address -> Call BigInt
-buyerReferralRewardPerc contractAddress referrerAddress =
+buyerReferralRewardPerc : Address -> Call BigInt
+buyerReferralRewardPerc contractAddress =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| AbiEncode.functionCall "buyerReferralRewardPerc(address)" [ AbiEncode.address referrerAddress ]
+    , data = Just <| AbiEncode.functionCall "buyerReferralRewardPerc()" []
     , nonce = Nothing
     , decoder = toElmDecoder AbiDecode.uint
     }
@@ -148,6 +146,21 @@ buysDecoder =
         |> andMap AbiDecode.uint
         |> andMap AbiDecode.uint
         |> toElmDecoder
+
+
+{-| "calculateExitableTokens(uint256,address)" function
+-}
+calculateExitableTokens : Address -> BigInt -> Address -> Call BigInt
+calculateExitableTokens contractAddress bucketId buyer =
+    { to = Just contractAddress
+    , from = Nothing
+    , gas = Nothing
+    , gasPrice = Nothing
+    , value = Nothing
+    , data = Just <| AbiEncode.functionCall "calculateExitableTokens(uint256,address)" [ AbiEncode.uint bucketId, AbiEncode.address buyer ]
+    , nonce = Nothing
+    , decoder = toElmDecoder AbiDecode.uint
+    }
 
 
 {-| "currentBucket()" function
@@ -380,33 +393,3 @@ exitedDecoder =
         |> custom (data 0 AbiDecode.uint)
         |> custom (topic 1 AbiDecode.address)
         |> custom (data 1 AbiDecode.uint)
-
-
-{-| "Forwarded(address,bytes,uint256,bool,bytes)" event
--}
-type alias Forwarded =
-    { to : Address
-    , data : String
-    , wei : BigInt
-    , success : Bool
-    , resultData : String
-    }
-
-
-forwardedEvent : Address -> LogFilter
-forwardedEvent contractAddress =
-    { fromBlock = LatestBlock
-    , toBlock = LatestBlock
-    , address = contractAddress
-    , topics = [ Just <| U.keccak256 "Forwarded(address,bytes,uint256,bool,bytes)" ]
-    }
-
-
-forwardedDecoder : Decoder Forwarded
-forwardedDecoder =
-    succeed Forwarded
-        |> custom (data 0 AbiDecode.address)
-        |> custom (data 1 AbiDecode.dynamicBytes)
-        |> custom (data 2 AbiDecode.uint)
-        |> custom (data 3 AbiDecode.bool)
-        |> custom (data 4 AbiDecode.dynamicBytes)
