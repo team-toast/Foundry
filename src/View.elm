@@ -1,7 +1,5 @@
 module View exposing (root)
 
-import Home.View
-import UserNotice as UN exposing (UserNotice)
 import Browser
 import BucketSale.View
 import CommonTypes exposing (..)
@@ -11,9 +9,11 @@ import Element.Border
 import Element.Events
 import Element.Font
 import Helpers.Element as EH
+import Home.View
 import Images exposing (Image)
 import Routing
 import Types exposing (..)
+import UserNotice as UN exposing (UserNotice)
 
 
 root : Model -> Browser.Document Msg
@@ -81,7 +81,7 @@ pageElementAndModal dProfile model =
         [ Element.el
             [ Element.height (Element.px (60 |> changeForMobile 110 dProfile)) ]
             Element.none
-        , maybeTestnetIndicator 
+        , maybeTestnetIndicator
         , submodelEl
         ]
     , modalEls ++ userNoticeEls dProfile model.userNotices
@@ -119,28 +119,29 @@ headerContent dProfile model =
         , Element.spacing (30 |> changeForMobile 10 dProfile)
         , Element.paddingXY 30 17 |> changeForMobile (Element.padding 10) dProfile
         ]
-        [ let
-            smLinks =
-                [ Element.el
-                    [ Element.centerY
-                    , Element.alignRight
-                    ]
-                  <|
-                    headerExternalLink dProfile "Blog" "https://medium.com/daihard-buidlers"
-                , Element.el
-                    [ Element.centerY
-                    , Element.alignRight
-                    ]
-                  <|
-                    headerExternalLink dProfile "Reddit" "https://reddit.com/r/DAIHard"
-                , Element.el
-                    [ Element.centerY
-                    , Element.alignRight
-                    ]
-                  <|
-                    headerExternalLink dProfile "Telegram" "https://t.me/daihardexchange_group"
-                ]
-          in
+        [ 
+        --     let
+        --     smLinks =
+        --         [ Element.el
+        --             [ Element.centerY
+        --             , Element.alignRight
+        --             ]
+        --           <|
+        --             headerExternalLink dProfile "Blog" "https://medium.com/daihard-buidlers"
+        --         , Element.el
+        --             [ Element.centerY
+        --             , Element.alignRight
+        --             ]
+        --           <|
+        --             headerExternalLink dProfile "Reddit" "https://reddit.com/r/DAIHard"
+        --         , Element.el
+        --             [ Element.centerY
+        --             , Element.alignRight
+        --             ]
+        --           <|
+        --             headerExternalLink dProfile "Telegram" "https://t.me/daihardexchange_group"
+        --         ]
+        --   in
           case dProfile of
             Desktop ->
                 Element.column
@@ -152,7 +153,8 @@ headerContent dProfile model =
                     , Element.row
                         [ Element.spacing 10
                         ]
-                        smLinks
+                        []
+                        -- smLinks
                     ]
 
             Mobile ->
@@ -161,7 +163,8 @@ headerContent dProfile model =
                     , Element.alignTop
                     , Element.alignRight
                     ]
-                    ([ logoElement dProfile ] ++ smLinks)
+                    -- ([ logoElement dProfile ] ++ smLinks)
+                    [ logoElement dProfile]
         ]
 
 
@@ -284,7 +287,9 @@ submodelElementAndModal dProfile model =
         ( submodelEl, modalEls ) =
             case model.submodel of
                 Home ->
-                    Home.View.root
+                    ( Home.View.root dProfile
+                    , []
+                    )
 
                 BucketSaleModel bucketSaleModel ->
                     BucketSale.View.root bucketSaleModel
@@ -300,6 +305,7 @@ submodelElementAndModal dProfile model =
         submodelEl
     , modalEls
     )
+
 
 userNoticeEls : DisplayProfile -> List (UserNotice Msg) -> List (Element Msg)
 userNoticeEls dProfile notices =
