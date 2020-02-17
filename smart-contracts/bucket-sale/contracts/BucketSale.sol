@@ -2,7 +2,6 @@ pragma solidity ^0.5.11;
 
 import "../../common/openzeppelin/math/Math.sol";
 import "../../common/openzeppelin/math/SafeMath.sol";
-import "../../common/ERC20Interface.sol";
 import "../../common/openzeppelin/token/ERC20/ERC20Mintable.sol";
 
 contract BucketSale
@@ -48,7 +47,7 @@ contract BucketSale
     uint public bucketCount;
     uint public totalExitedTokens;
     ERC20Mintable public tokenOnSale;       // we assume the bucket sale contract has minting rights for this contract
-    ERC20Interface public tokenSoldFor;
+    IERC20 public tokenSoldFor;
 
     constructor (
             address _treasury,
@@ -57,7 +56,7 @@ contract BucketSale
             uint _bucketSupply,
             uint _bucketCount,
             ERC20Mintable _tokenOnSale,    // FRY in our case
-            ERC20Interface _tokenSoldFor)    // typically DAI
+            IERC20 _tokenSoldFor)    // typically DAI
         public
     {
         treasury = _treasury;
