@@ -2,7 +2,7 @@
 
 We request an audit for certain pieces of the code on [this specific commit of this repo LINK NEEDED](LINKNEEDED). We include three contracts in this audit: [BucketSale.sol](bucket-sale/), the [FRY token](fry-token/) and [Forwarder.sol](forwarder/).
 
-The FRY token was composed from [OpenZeppelin's composeable ERC20 contracts](https://github.com/OpenZeppelin/openzeppelin-contracts/tree/master/contracts/token/ERC20). Given that these OpenZeppelin contracts have already been audited, we request verification that the contracts used (included in common/openzeppelin) were faithfully copied and responsibly composed. (DO WE USE flattened file or redeploy from truffle?)
+The FRY token was composed from [OpenZeppelin's composeable ERC20 contracts](https://github.com/OpenZeppelin/openzeppelin-contracts/tree/b1e811430a0a57211bdc5d48bee0fe0ba9101139/contracts/token/ERC20). Given that these OpenZeppelin contracts have already been audited, we request verification that the contracts used (included here in common/openzeppelin) were faithfully copied and responsibly composed. (DO WE USE flattened file or redeploy from truffle?)
 
 Note that another contract, [Scripts.sol](bucket-sale/contracts/Scripts.sol), is used by the Bucket Sale interface. However we consider this outside the scope of this audit, as it only interacts with the Bucket Sale as a kind of proxy user, and has no special privileges over any other user.
 
