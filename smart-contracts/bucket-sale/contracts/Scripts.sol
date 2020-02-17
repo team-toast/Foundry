@@ -7,7 +7,7 @@
 
 pragma solidity ^0.5.11;
 
-import "./Bucket.sol";
+import "./BucketSale.sol";
 
 contract Scripts {
     using SafeMath for uint;
@@ -28,7 +28,6 @@ contract Scripts {
         //      *add to the first array element
         //      *add the bucketId to the array
 
-        
         uint[1253] memory results;
         uint pointer = 0;
         for (uint bucketId = 0; bucketId < _bucketSale.currentBucket(); bucketId = bucketId.add(1))

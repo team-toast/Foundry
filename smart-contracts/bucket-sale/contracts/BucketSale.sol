@@ -1,7 +1,8 @@
 pragma solidity ^0.5.11;
 
-import "../../common/SafeMath.sol";
-import "../../common/ERC20Interface.sol";
+import "../../common/openzeppelin/math/Math.sol";
+import "../../common/openzeppelin/math/SafeMath.sol";
+import "../../common/openzeppelin/token/ERC20/ERC20Mintable.sol";
 
 contract BucketSale
 {
@@ -39,26 +40,26 @@ contract BucketSale
     // For each address, this tallies how much value (of the tokens the sale accepts) the user has referred.
     mapping (address => uint) public referredTotal;
 
-    address public owner;
+    address public treasury;
     uint public startOfSale;
     uint public bucketPeriod;
     uint public bucketSupply;
     uint public bucketCount;
     uint public totalExitedTokens;
-    ERC20Interface public tokenOnSale;
-    ERC20Interface public tokenSoldFor;
+    ERC20Mintable public tokenOnSale;       // we assume the bucket sale contract has minting rights for this contract
+    IERC20 public tokenSoldFor;
 
     constructor (
-            address _owner,
+            address _treasury,
             uint _startOfSale,
             uint _bucketPeriod,
             uint _bucketSupply,
             uint _bucketCount,
-            ERC20Interface _tokenOnSale,      // FRY in our case
-            ERC20Interface _tokenSoldFor)     // typically DAI
+            ERC20Mintable _tokenOnSale,    // FRY in our case
+            IERC20 _tokenSoldFor)    // typically DAI
         public
     {
-        owner = _owner;
+        treasury = _treasury;
         startOfSale = _startOfSale;
         bucketPeriod = _bucketPeriod;
         bucketSupply = _bucketSupply;
@@ -67,33 +68,7 @@ contract BucketSale
         tokenSoldFor = _tokenSoldFor;
     }
 
-    modifier onlyOwner()
-    {
-        require(msg.sender == owner, "only owner");
-        _;
-    }
-
     function timestamp() public view returns (uint256 _now) { return block.timestamp; }
-
-    /*
-    Allows the owner to execute any transaction in the sale's name. This is the only 'onlyOwner' method.
-    This will be used to send away the tokens accumulated by the sale, but can be used for general transactions as well.
-    */
-    event Forwarded(
-        address _to,
-        bytes _data,
-        uint _wei,
-        bool _success,
-        bytes _resultData);
-    function forward(address _to, bytes memory _data, uint _wei)
-        public
-        onlyOwner
-        returns (bool, bytes memory)
-    {
-        (bool success, bytes memory resultData) = _to.call.value(_wei)(_data);
-        emit Forwarded(_to, _data, _wei, success, resultData);
-        return (success, resultData);
-    }
 
     function currentBucket()
         public
@@ -120,7 +95,7 @@ contract BucketSale
     {
         registerEnter(_bucketId, _buyer, _amount);
         referredTotal[_referrer] = referredTotal[_referrer].add(_amount);
-        bool transferSuccess = tokenSoldFor.transferFrom(msg.sender, address(this), _amount);
+        bool transferSuccess = tokenSoldFor.transferFrom(msg.sender, treasury, _amount);
         require(transferSuccess, "enter transfer failed");
 
         if (_referrer != address(0)) // If there is a referrer
@@ -161,11 +136,6 @@ contract BucketSale
         require(_bucketId < bucketCount, "invalid bucket id--past end of sale");
         require(_amount > 0, "can't buy nothing");
 
-        // If at any point the sale cannot support all planned buckets, prevent all entry for any bucket.
-        require(
-            tokenOnSale.balanceOf(address(this)).add(totalExitedTokens) >= bucketCount.mul(bucketSupply),
-            "insufficient tokens to sell");
-
         Buy storage buy = buys[_bucketId][_buyer];
         buy.valueEntered = buy.valueEntered.add(_amount);
 
@@ -199,7 +169,7 @@ contract BucketSale
         buyToWithdraw.buyerTokensExited = calculateExitableTokens(_bucketId, _buyer);
         totalExitedTokens = totalExitedTokens.add(buyToWithdraw.buyerTokensExited);
 
-        bool transferSuccess = tokenOnSale.transfer(_buyer, buyToWithdraw.buyerTokensExited);
+        bool transferSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
         require(transferSuccess, "exit transfer failed");
 
         emit Exited(
@@ -245,7 +215,7 @@ contract BucketSale
             */
             uint multiplier = daiContributed.add(ONE_PERC.mul(10)); // this guarentees every referrer gets at least 10% of what the buyer is buying
 
-            uint result = SafeMath.min(HUNDRED_PERC, multiplier); // Cap it at 100% bonus
+            uint result = Math.min(HUNDRED_PERC, multiplier); // Cap it at 100% bonus
             return result;
         }
     }
