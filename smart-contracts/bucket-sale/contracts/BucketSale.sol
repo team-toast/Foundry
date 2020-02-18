@@ -1,7 +1,8 @@
 pragma solidity ^0.5.11;
 
-import "../../common/SafeMath.sol";
-import "../../common/ERC20Interface.sol";
+import "../../common/openzeppelin/math/Math.sol";
+import "../../common/openzeppelin/math/SafeMath.sol";
+import "../../common/openzeppelin/token/ERC20/ERC20Mintable.sol";
 
 contract BucketSale
 {
@@ -13,8 +14,8 @@ contract BucketSale
 
     /*
     Every pair of (uint bucketId, address buyer) identifies exactly one 'buy'.
-    This buy tracks the total value entered by the user (of the tokens the sale accepts),
-    and the total value exited (of the tokens being sold).
+    This buy tracks how much tokenSoldFor the user has entered into the bucket,
+    and how much tokenOnSale the user has exited with.
     */
 
     struct Buy
@@ -23,9 +24,11 @@ contract BucketSale
         uint buyerTokensExited;
     }
 
+    mapping (uint => mapping (address => Buy)) public buys;
+
     /*
-    Each Bucket tracks the total value entered (of the tokens the sale accepts);
-    this is used to determine what proportion of the tokens on sale the user can later exit with.
+    Each Bucket tracks how much tokenSoldFor has been entered in total;
+    this is used to determine how much tokenOnSale the user can later exit with.
     */
 
     struct Bucket
@@ -34,31 +37,30 @@ contract BucketSale
     }
 
     mapping (uint => Bucket) public buckets;
-    mapping (uint => mapping (address => Buy)) public buys;
 
-    // For each address, this tallies how much value (of the tokens the sale accepts) the user has referred.
+    // For each address, this tallies how much tokenSoldFor the address is responsible for referring.
     mapping (address => uint) public referredTotal;
 
-    address public owner;
+    address public treasury;
     uint public startOfSale;
     uint public bucketPeriod;
     uint public bucketSupply;
     uint public bucketCount;
     uint public totalExitedTokens;
-    ERC20Interface public tokenOnSale;
-    ERC20Interface public tokenSoldFor;
+    ERC20Mintable public tokenOnSale;       // we assume the bucket sale contract has minting rights for this contract
+    IERC20 public tokenSoldFor;
 
     constructor (
-            address _owner,
+            address _treasury,
             uint _startOfSale,
             uint _bucketPeriod,
             uint _bucketSupply,
             uint _bucketCount,
-            ERC20Interface _tokenOnSale,      // FRY in our case
-            ERC20Interface _tokenSoldFor)     // typically DAI
+            ERC20Mintable _tokenOnSale,    // FRY in our case
+            IERC20 _tokenSoldFor)    // typically DAI
         public
     {
-        owner = _owner;
+        treasury = _treasury;
         startOfSale = _startOfSale;
         bucketPeriod = _bucketPeriod;
         bucketSupply = _bucketSupply;
@@ -67,33 +69,7 @@ contract BucketSale
         tokenSoldFor = _tokenSoldFor;
     }
 
-    modifier onlyOwner()
-    {
-        require(msg.sender == owner, "only owner");
-        _;
-    }
-
     function timestamp() public view returns (uint256 _now) { return block.timestamp; }
-
-    /*
-    Allows the owner to execute any transaction in the sale's name. This is the only 'onlyOwner' method.
-    This will be used to send away the tokens accumulated by the sale, but can be used for general transactions as well.
-    */
-    event Forwarded(
-        address _to,
-        bytes _data,
-        uint _wei,
-        bool _success,
-        bytes _resultData);
-    function forward(address _to, bytes memory _data, uint _wei)
-        public
-        onlyOwner
-        returns (bool, bytes memory)
-    {
-        (bool success, bytes memory resultData) = _to.call.value(_wei)(_data);
-        emit Forwarded(_to, _data, _wei, success, resultData);
-        return (success, resultData);
-    }
 
     function currentBucket()
         public
@@ -119,8 +95,8 @@ contract BucketSale
         public
     {
         registerEnter(_bucketId, _buyer, _amount);
-        referredTotal[_referrer] = referredTotal[_referrer].add(_amount);
-        bool transferSuccess = tokenSoldFor.transferFrom(msg.sender, address(this), _amount);
+        referredTotal[_referrer] = referredTotal[_referrer].add(_amount); // referredTotal[0x0] will track buys with no referral
+        bool transferSuccess = tokenSoldFor.transferFrom(msg.sender, treasury, _amount);
         require(transferSuccess, "enter transfer failed");
 
         if (_referrer != address(0)) // If there is a referrer
@@ -161,11 +137,6 @@ contract BucketSale
         require(_bucketId < bucketCount, "invalid bucket id--past end of sale");
         require(_amount > 0, "can't buy nothing");
 
-        // If at any point the sale cannot support all planned buckets, prevent all entry for any bucket.
-        require(
-            tokenOnSale.balanceOf(address(this)).add(totalExitedTokens) >= _bucketId.add(1).mul(bucketSupply),
-            "insufficient tokens to sell");
-
         Buy storage buy = buys[_bucketId][_buyer];
         buy.valueEntered = buy.valueEntered.add(_amount);
 
@@ -185,22 +156,22 @@ contract BucketSale
             "can only exit from concluded buckets");
 
         Buy storage buyToWithdraw = buys[_bucketId][_buyer];
-        require(buyToWithdraw.valueEntered > 0, "can't take out if you didn't put in");
-        require(buyToWithdraw.buyerTokensExited == 0, "already withdrawn");
+        require(buyToWithdraw.valueEntered > 0, "can't exit if you didn't enter");
+        require(buyToWithdraw.buyerTokensExited == 0, "already exited");
 
         /*
         Note that buyToWithdraw.buyerTokensExited serves a dual purpose:
         First, it is always set to a non-zero value when a buy has been exited from,
         and checked in the line above to guard against repeated exits.
-        Second, it's used as simple record-keeping for future analysis; hence the use of uint
-        rather than something like bool buyerTokensHaveExited.
+        Second, it's used as simple record-keeping for future analysis;
+        hence the use of uint rather than something like bool buyerTokensHaveExited.
         */
 
         buyToWithdraw.buyerTokensExited = calculateExitableTokens(_bucketId, _buyer);
         totalExitedTokens = totalExitedTokens.add(buyToWithdraw.buyerTokensExited);
 
-        bool transferSuccess = tokenOnSale.transfer(_buyer, buyToWithdraw.buyerTokensExited);
-        require(transferSuccess, "exit transfer failed");
+        bool transferSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
+        require(transferSuccess, "exit mint/transfer failed");
 
         emit Exited(
             _bucketId,
@@ -239,10 +210,13 @@ contract BucketSale
             However, because we are already using 3 digits of precision for bonus values,
             the integer amount of Dai happens to exactly equal the bonusPercent value we want
             (i.e. 10,000 Dai == 10000 == 10*ONE_PERC)
+
+            So, if multiplier = daiContributed + (10*ONE_PERC), this increases the multiplier
+            by 10% for every 10k Dai, which is what we want.
             */
             uint multiplier = daiContributed.add(ONE_PERC.mul(10)); // this guarentees every referrer gets at least 10% of what the buyer is buying
 
-            uint result = SafeMath.min(HUNDRED_PERC, multiplier); // Cap it at 100% bonus
+            uint result = Math.min(HUNDRED_PERC, multiplier); // Cap it at 100% bonus
             return result;
         }
     }

@@ -32,7 +32,7 @@ let rec rndRange min max  =
 let startOfSale = DateTimeOffset(DateTime.Now.AddDays(-1.0)).ToUnixTimeSeconds() |> BigInteger
 let bucketPeriod = 7UL * hours |> BigInteger
 let bucketSupply = 50000UL |> BigInteger
-let bucketCount = 100UL |> BigInteger
+let bucketCount = 1250UL |> BigInteger
 
 let tokenOnSale = zeroAddress
 let tokenSoldFor = zeroAddress
@@ -77,7 +77,7 @@ type EthereumConnection(nodeURI: string, privKey: string) =
             this.Gas, this.GasPrice, 
             hexBigInt 0UL, 
             null, 
-            arguments)
+            arguments)  
     
     member this.TimeTravel seconds = 
         this.Web3.Client.SendRequestAsync(method = "evm_increaseTime", paramList = [| seconds |]) 
@@ -87,14 +87,13 @@ type EthereumConnection(nodeURI: string, privKey: string) =
         |> Async.AwaitTask 
         |> Async.RunSynchronously
 
-
 type Profile = { FunctionName: string; Duration: string }
 
 let profileMe f =
     let start = DateTime.Now
     let result = f()
     let duration = DateTime.Now - start
-    (f.GetType(), duration) |> printf "(Functio, Duration) = %A\n"
+    (f.GetType(), duration) |> printf "(Function, Duration) = %A\n"
     result
 
 
@@ -145,7 +144,7 @@ type Forwarder(ethConn: EthereumConnection) =
         ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
     interface IAsyncTxSender with
-        member this.SendTxAsync(toAddress: string) (value: BigInteger) (data: string): Threading.Tasks.Task<TransactionReceipt> = 
+        member this.SendTxAsync(toAddress:string) (value:BigInteger) (data: string):Threading.Tasks.Task<TransactionReceipt> = 
             let data =
                 this.ContractPlug.FunctionData "forward"
                     [| toAddress
@@ -197,6 +196,9 @@ let shouldRevertWithMessage expectedMessage (forwardedEvent: ForwardedEventDTO) 
     match forwardedEvent.ResultAsRevertMessage with
     | None -> failwith "not a revert message"
     | Some actualMessage -> actualMessage |> should haveSubstring expectedMessage
+
+let shouldRevertWithUnknownMessage (forwardedEvent: ForwardedEventDTO) =
+    shouldRevertWithMessage "" forwardedEvent
 
 let decodeEvents<'a when 'a: (new: unit -> 'a)> (receipt: TransactionReceipt) =
     receipt.DecodeAllEvents<'a>() |> Seq.map (fun e -> e.Event)
