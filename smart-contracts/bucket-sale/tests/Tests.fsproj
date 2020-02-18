@@ -9,7 +9,6 @@
     <Compile Include="DTOs/ForwarderDefinition.fs" />
     <Compile Include="DTOs/TestTokenDefinition.fs" />
     <Compile Include="DTOs/BucketSaleDefinition.fs" />
-    <Compile Include="DTOs/QueryDefinition.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="TestBase.fs" />
     <Compile Include="BucketSaleTestBase.fs" />

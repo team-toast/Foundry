@@ -222,7 +222,7 @@ let ``EX001 - Cannot exit a bucket that is not yet concluded``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; EthAddress.Zero |] forwarder
 
-    let firstForwardEvent = decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
+    let firstForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
     firstForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     firstForwardEvent.Success |> should equal false
     firstForwardEvent.To |> should equal bucketSale.Address
@@ -232,7 +232,7 @@ let ``EX001 - Cannot exit a bucket that is not yet concluded``() =
     let laterBucket = rnd.Next((currentBucket + BigInteger.One) |> int32, (bucketCount - BigInteger 1UL) |> int32)
     let secondReceipt = bucketSale.ExecuteFunctionFrom "exit" [| laterBucket; EthAddress.Zero |] forwarder
 
-    let secondForwardEvent = decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> secondReceipt
+    let secondForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> secondReceipt
     secondForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     secondForwardEvent.Success |> should equal false
     secondForwardEvent.To |> should equal bucketSale.Address
@@ -247,7 +247,7 @@ let ``EX002 - Cannot exit a bucket you did not enter``() =
     let randomAddress = makeAccount().Address
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket - BigInteger.One; randomAddress |] forwarder
 
-    let firstForwardEvent = decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
+    let firstForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
     firstForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     firstForwardEvent.Success |> should equal false
     firstForwardEvent.To |> should equal bucketSale.Address
@@ -276,14 +276,14 @@ let ``EX003 - Cannot exit a buy you have already exited``() =
     bucketPeriod |> ethConn.TimeTravel 
 
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] forwarder
-    let firstForwardEvent = decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
+    let firstForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
     firstForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     firstForwardEvent.Success |> should equal true
     firstForwardEvent.To |> should equal bucketSale.Address
     firstForwardEvent.Wei |> should equal BigInteger.Zero
 
     let secondReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] forwarder
-    let secondForwardEvent = decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> secondReceipt
+    let secondForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> secondReceipt
     secondForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     secondForwardEvent.Success |> should equal false
     secondForwardEvent.To |> should equal bucketSale.Address
@@ -330,7 +330,7 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
     FRY.Query "balanceOf" [| bucketSale.Address |] |> should lessThan (bucketCount * bucketSupply)
 
     let exitReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] forwarder
-    let exitForwardEvent = decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> exitReceipt
+    let exitForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> exitReceipt
     exitForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     exitForwardEvent.Success |> should equal false
     exitForwardEvent.To |> should equal bucketSale.Address
@@ -404,7 +404,7 @@ let ``F001 - Cannot be called by a non-owner``() =
             forwarder
     forwardReceipt |> shouldSucceed
     
-    let forwarderForwardedEvent = forwardReceipt |> decodeFirstEvent<DAIHard.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
+    let forwarderForwardedEvent = forwardReceipt |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
     forwarderForwardedEvent |> shouldRevertWithMessage "only owner"
 
 [<Specification("BucketSale", "foward", 2)>]

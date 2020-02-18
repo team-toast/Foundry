@@ -15,7 +15,7 @@ open Nethereum.Contracts
 open Nethereum.Hex.HexConvertors.Extensions
 open System.Text
 open Constants
-open DAIHard.Contracts.Forwarder.ContractDefinition
+open Foundry.Contracts.Forwarder.ContractDefinition
 open System.Threading.Tasks
 open Nethereum.Web3.Accounts
 
