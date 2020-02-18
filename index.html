@@ -20543,90 +20543,17 @@ var mdgriffith$elm_ui$Element$htmlAttribute = mdgriffith$elm_ui$Internal$Model$A
 var author$project$Helpers$Element$noSelectText = mdgriffith$elm_ui$Element$htmlAttribute(
 	A2(elm$html$Html$Attributes$style, 'user-select', 'none'));
 var author$project$Helpers$Element$white = A3(mdgriffith$elm_ui$Element$rgb, 1, 1, 1);
-var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
-	return {$: 'AlignY', a: a};
+var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
+	return {$: 'AlignX', a: a};
 };
-var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
-var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
-var mdgriffith$elm_ui$Element$link = F2(
-	function (attrs, _n0) {
-		var url = _n0.url;
-		var label = _n0.label;
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asEl,
-			mdgriffith$elm_ui$Internal$Model$NodeName('a'),
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$Attr(
-					elm$html$Html$Attributes$href(url)),
-				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Internal$Model$Attr(
-						elm$html$Html$Attributes$rel('noopener noreferrer')),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-						A2(
-							elm$core$List$cons,
-							mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-							A2(
-								elm$core$List$cons,
-								mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + mdgriffith$elm_ui$Internal$Style$classes.link)))),
-								attrs))))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[label])));
-	});
+var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
 var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
 var mdgriffith$elm_ui$Internal$Model$Class = F2(
 	function (a, b) {
 		return {$: 'Class', a: a, b: b};
 	});
 var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
-var mdgriffith$elm_ui$Internal$Flag$fontWeight = mdgriffith$elm_ui$Internal$Flag$flag(13);
-var mdgriffith$elm_ui$Element$Font$semiBold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.textSemiBold);
-var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
-var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
-	return {$: 'FontSize', a: a};
-};
-var mdgriffith$elm_ui$Element$Font$size = function (i) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontSize,
-		mdgriffith$elm_ui$Internal$Model$FontSize(i));
-};
-var author$project$View$headerExternalLink = F3(
-	function (dProfile, title, url) {
-		return A2(
-			mdgriffith$elm_ui$Element$link,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$Font$size(16),
-					mdgriffith$elm_ui$Element$Font$semiBold,
-					mdgriffith$elm_ui$Element$Font$color(author$project$Helpers$Element$white),
-					mdgriffith$elm_ui$Element$pointer,
-					author$project$Helpers$Element$noSelectText
-				]),
-			{
-				label: A2(
-					mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$centerY,
-							mdgriffith$elm_ui$Element$height(
-							mdgriffith$elm_ui$Element$px(
-								A3(author$project$CommonTypes$changeForMobile, 14, dProfile, 26)))
-						]),
-					mdgriffith$elm_ui$Element$text(title)),
-				url: url
-			});
-	});
-var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
-	return {$: 'AlignX', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
-var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -20645,7 +20572,18 @@ var elm$html$Html$Events$onClick = function (msg) {
 		elm$json$Json$Decode$succeed(msg));
 };
 var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
+var mdgriffith$elm_ui$Internal$Flag$fontWeight = mdgriffith$elm_ui$Internal$Flag$flag(13);
 var mdgriffith$elm_ui$Element$Font$bold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.bold);
+var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
+var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
+	return {$: 'FontSize', a: a};
+};
+var mdgriffith$elm_ui$Element$Font$size = function (i) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontSize,
+		mdgriffith$elm_ui$Internal$Model$FontSize(i));
+};
 var author$project$View$logoElement = function (dProfile) {
 	return A2(
 		mdgriffith$elm_ui$Element$el,
@@ -20671,6 +20609,9 @@ var author$project$View$logoElement = function (dProfile) {
 };
 var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
 var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
+var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
+	return {$: 'AlignY', a: a};
+};
 var mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
 var mdgriffith$elm_ui$Element$alignTop = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$Top);
 var mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
@@ -20789,24 +20730,6 @@ var author$project$View$headerContent = F2(
 			_List_fromArray(
 				[
 					function () {
-					var smLinks = _List_fromArray(
-						[
-							A2(
-							mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[mdgriffith$elm_ui$Element$centerY, mdgriffith$elm_ui$Element$alignRight]),
-							A3(author$project$View$headerExternalLink, dProfile, 'Blog', 'https://medium.com/daihard-buidlers')),
-							A2(
-							mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[mdgriffith$elm_ui$Element$centerY, mdgriffith$elm_ui$Element$alignRight]),
-							A3(author$project$View$headerExternalLink, dProfile, 'Reddit', 'https://reddit.com/r/DAIHard')),
-							A2(
-							mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[mdgriffith$elm_ui$Element$centerY, mdgriffith$elm_ui$Element$alignRight]),
-							A3(author$project$View$headerExternalLink, dProfile, 'Telegram', 'https://t.me/daihardexchange_group'))
-						]);
 					if (dProfile.$ === 'Desktop') {
 						return A2(
 							mdgriffith$elm_ui$Element$column,
@@ -20829,7 +20752,7 @@ var author$project$View$headerContent = F2(
 										[
 											mdgriffith$elm_ui$Element$spacing(10)
 										]),
-									smLinks)
+									_List_Nil)
 								]));
 					} else {
 						return A2(
@@ -20840,16 +20763,16 @@ var author$project$View$headerContent = F2(
 									mdgriffith$elm_ui$Element$alignTop,
 									mdgriffith$elm_ui$Element$alignRight
 								]),
-							_Utils_ap(
-								_List_fromArray(
-									[
-										author$project$View$logoElement(dProfile)
-									]),
-								smLinks));
+							_List_fromArray(
+								[
+									author$project$View$logoElement(dProfile)
+								]));
 					}
 				}()
 				]));
 	});
+var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
 var mdgriffith$elm_ui$Element$rgba = mdgriffith$elm_ui$Internal$Model$Rgba;
 var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
 var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
@@ -21100,6 +21023,7 @@ var mdgriffith$elm_ui$Element$mouseOver = function (decs) {
 			mdgriffith$elm_ui$Internal$Model$Hover,
 			mdgriffith$elm_ui$Internal$Model$unwrapDecorations(decs)));
 };
+var mdgriffith$elm_ui$Element$Font$semiBold = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontWeight, mdgriffith$elm_ui$Internal$Style$classes.textSemiBold);
 var author$project$Helpers$Element$button = F6(
 	function (dProfile, attributes, _n0, textColor, lines, msg) {
 		var bgColor = _n0.a;
@@ -24263,7 +24187,6 @@ var author$project$Helpers$Element$simpleSubmodelContainer = F2(
 					]),
 				el));
 	});
-var author$project$Home$View$markdownSrc = '\n### Team Toast\n\nTeam Toast is a small team centered around the development of DAIHard and Foundry. More info on us coming soon! In the mean time feel free to fllow our Medium publication (LINK https://medium.com/daihard-buidlers).\n\n### Foundry\n\nTeam Toast is building a DAO called **Foundry**. Foundry\'s initial purpose is to safely house  contain DAIHard, such that DAIHard\'s already unkillable nature extends to its very development and maintenance. Foundry will likely evolve to fund similar ventures in the future: for-profit, unkillable tools that increase global financial freedom.\n\nWe will be publishing articles with more details soon, both on Foundry\'s structure and on the sale\'s mechanics. We are also excited to share the "piecewise" strategy of DAO development, analagous to the lean methodology for start-ups.\n\nTo follow these upcoming updates, subscribe to our Medium.com publication (LINK https://medium.com/daihard-buidlers).\n\n### DAIHard\n\nDAIHard is Team Toast\'s flagship product. It is an unkillable, global gateway to and from crypto, which can be used pseudonymously and without KYC. It is built entirely on Ethereum smart contracts, and involves no third parties (not even escrow agents). This is achieved chiefly through "Burnable Payments", which we\'ve written about [here](https://medium.com/@coinop.logan/daihard-game-theory-21a456ef224e). See also our launch post [here](https://www.reddit.com/r/ethereum/comments/chl924/relaunching_the_borderless_unkillable_cryptofiat/) for more on the product and the problems it solves.\n\nDAIHard is currently [live on mainnet](https://daihard.exchange), but lacks liquidity. The funding from the Foundry sale will partially be spent to address this marketing funding.\n\nQuestions or comments? [Join the DAIHard Telegram](https://t.me/daihardexchange_group)!\n\n### ZimDai\n\nZimDai is a thorough investigation into the viability of boostrapping Dai adoption in Zimbabwe, given several significant challenges. It is the result of two months of on-the-ground research in Zimbabwe.\n\nThis research has been distilled into [The ZimDai Paper: A Blueprint for an Economic Jailbreak](https://github.com/coinop-logan/ZimDai/raw/master/whitepaper.pdf). As this paper was publicized and passed around, the feedback was generally quite positive and no major flaws were uncovered. The main missing piece is a marketing drive. This is another thing we may be able to address with the funds from the Foundry sale.\n';
 var mdgriffith$elm_ui$Element$html = mdgriffith$elm_ui$Internal$Model$unstyled;
 var elm$core$String$lines = _String_lines;
 var elm$regex$Regex$findAtMost = _Regex_findAtMost;
@@ -28105,21 +28028,53 @@ var pablohirafuji$elm_markdown$Markdown$toHtml = F2(
 				pablohirafuji$elm_markdown$Markdown$Block$toHtml,
 				A2(pablohirafuji$elm_markdown$Markdown$Block$parse, maybeOptions, rawText)));
 	});
+var author$project$Home$View$markdownToEl = A2(
+	elm$core$Basics$composeR,
+	pablohirafuji$elm_markdown$Markdown$toHtml(elm$core$Maybe$Nothing),
+	A2(
+		elm$core$Basics$composeR,
+		elm$core$List$map(mdgriffith$elm_ui$Element$html),
+		A2(
+			elm$core$Basics$composeR,
+			elm$core$List$map(
+				A2(
+					elm$core$Basics$composeL,
+					mdgriffith$elm_ui$Element$paragraph(
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+							])),
+					elm$core$List$singleton)),
+			mdgriffith$elm_ui$Element$column(
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+					])))));
+var author$project$Images$foundrySchematic = author$project$Images$JustImage(
+	{description: 'foundry schematic', src: 'foundry-schematic.png'});
 var author$project$Home$View$root = function (dProfile) {
 	return A2(
 		author$project$Helpers$Element$simpleSubmodelContainer,
-		800,
+		1000,
 		A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$spacing(10)
+					mdgriffith$elm_ui$Element$padding(20)
 				]),
-			A2(
-				elm$core$List$map,
-				mdgriffith$elm_ui$Element$html,
-				A2(pablohirafuji$elm_markdown$Markdown$toHtml, elm$core$Maybe$Nothing, author$project$Home$View$markdownSrc))));
+			_List_fromArray(
+				[
+					author$project$Home$View$markdownToEl('# Team Toast\n\nTeam Toast is a small team centered around the development of DAIHard and Foundry. More info on us coming soon! In the mean time feel free to follow our [Medium publication](https://medium.com/daihard-buidlers).\n\n# Foundry\n\nTeam Toast is building a DAO called **Foundry**. Foundry\'s initial purpose is to take over DAIHard stewardship, as this would extend DAIHard\'s unkillable nature to its very development and maintenance. Foundry will likely build similar products in the future: for-profit, unkillable tools that increase global financial freedom, which fragile meatbags are unwilling to own and manage directly.'),
+					A2(
+					author$project$Images$toElement,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+						]),
+					author$project$Images$foundrySchematic),
+					author$project$Home$View$markdownToEl('We will be publishing more details soon, both on Foundry\'s structure and on the sale\'s mechanics. We are also excited to share the "piecewise" strategy of DAO development, analagous to the lean methodology for start-ups.\n\nTo hear about these updates, subscribe to our [Medium publication](https://medium.com/daihard-buidlers).\n\n# DAIHard\n\nDAIHard is Team Toast\'s flagship product. It is an unkillable, global gateway from any currency (fiat or crypto) to and from Dai. It can can be used pseudonymously and without KYC, and is built specifically to survive unfriendly jurisdictions (i.e. Zimbabwe). It is built entirely on Ethereum smart contracts, and involves no third parties to operate (not even escrow agents). This is achieved chiefly via the game theory of Burnable Payments, which we\'ve written about [here](https://medium.com/@coinop.logan/daihard-game-theory-21a456ef224e). See also our launch post [here](https://www.reddit.com/r/ethereum/comments/chl924/relaunching_the_borderless_unkillable_cryptofiat/) for more on DAIHard and the problems it solves.\n\nDAIHard is currently [live on mainnet](https://daihard.exchange), but lacks liquidity. Marketing and liquidity will be a major use of the funding from the Foundry sale.\n\nQuestions or comments? [Join the DAIHard Telegram](https://t.me/daihardexchange_group)!\n\n# ZimDai\n\nZimDai is a thorough investigation into the viability of boostrapping Dai adoption in Zimbabwe, given the significant challenges any such endeavor faces today. It is the result of two months of on-the-ground research by Logan, funded by Team Toast, to analyze the market fit between DAIHard and the Zimbabwean market.\n\nThis research has been decoupled from reliance on DAIHard and distilled into [The ZimDai Paper: A Blueprint for an Economic Jailbreak](https://github.com/coinop-logan/ZimDai/raw/master/whitepaper.pdf). As this paper was publicized and passed around, no major flaws were uncovered. Please take a look with a critical eye, and join the Telegram (link in paper) with any thoughts or questions. At this point, the only missing piece seems to be a marketing drive--both leadership and funding.\n\nGiven a marketing drive, we may have on our hands a strikingly realistic, immediately applicable plan to liberate the Zimbabwean citizenry from systemic financial abuse. This has been a dream within crypto for years. Perhaps today crypto can begin making these kinds of significant moves on the global stage.\n\nIf the Foundry sale accumulates significant funding, it could decide to step into this gap, funding and leading the ZimDai movement. We will share more thoughts on this soon, again via our [Medium publication](https://medium.com/daihard-buidlers).')
+				])));
 };
 var elm$core$Tuple$mapBoth = F3(
 	function (funcA, funcB, _n0) {
