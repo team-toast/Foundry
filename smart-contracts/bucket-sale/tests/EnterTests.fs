@@ -446,5 +446,3 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
     exitForwardEvent.To |> should equal bucketSale.Address
     exitForwardEvent.Wei |> should equal BigInteger.Zero
     exitForwardEvent |> shouldRevertWithMessage "" //unknown internal revert of the ERC20, error is not necessarily known
-
-// blah
