@@ -1,5 +1,6 @@
 module Home.View exposing (root)
 
+import Images
 import CommonTypes exposing (..)
 import Element exposing (Element)
 import Element.Font
@@ -11,23 +12,14 @@ import Types exposing (..)
 root : DisplayProfile -> Element Msg
 root dProfile =
     EH.simpleSubmodelContainer
-        800
+        1000
     <|
         Element.column
             [ Element.width Element.fill
             , Element.padding 20
-            
             ]
-        <|
-            (markdownSrc
-                |> Markdown.toHtml Nothing
-                |> List.map Element.html
-                |> List.map (Element.paragraph [ Element.width Element.fill ] << List.singleton)
-            )
-
-
-markdownSrc =
-    """# Team Toast
+            [ markdownToEl
+                """# Team Toast
 
 Team Toast is a small team centered around the development of DAIHard and Foundry. More info on us coming soon! In the mean time feel free to follow our [Medium publication](https://medium.com/daihard-buidlers).
 
@@ -35,7 +27,13 @@ Team Toast is a small team centered around the development of DAIHard and Foundr
 
 Team Toast is building a DAO called **Foundry**. Foundry's initial purpose is to take over DAIHard stewardship, as this would extend DAIHard's unkillable nature to its very development and maintenance. Foundry will likely build similar products in the future: for-profit, unkillable tools that increase global financial freedom, which fragile meatbags are unwilling to own and manage directly.
 
-We will be publishing more details soon, both on Foundry's structure and on the sale's mechanics. We are also excited to share the "piecewise" strategy of DAO development, analagous to the lean methodology for start-ups.
+Here's a **speculative, non-final** schematic of how Foundry might be put together."""
+            , Images.foundrySchematic
+                |> Images.toElement
+                [ Element.width Element.fill]
+                
+            , markdownToEl
+                """We will be publishing more details soon, both on Foundry's structure and on the sale's mechanics. We are also excited to share the "piecewise" strategy of DAO development, analagous to the lean methodology for start-ups.
 
 To hear about these updates, subscribe to our [Medium publication](https://medium.com/daihard-buidlers).
 
@@ -56,6 +54,22 @@ This research has been decoupled from reliance on DAIHard and distilled into [Th
 Given a marketing drive, we may have on our hands a strikingly realistic, immediately applicable plan to liberate the Zimbabwean citizenry from systemic financial abuse. This has been a dream within crypto for years. Perhaps today crypto can begin making these kinds of significant moves on the global stage.
 
 If the Foundry sale accumulates significant funding, it could decide to step into this gap, funding and leading the ZimDai movement. We will share more thoughts on this soon, again via our [Medium publication](https://medium.com/daihard-buidlers)."""
+            ]
+
+
+markdownToEl : String -> Element Msg
+markdownToEl =
+    Markdown.toHtml Nothing
+        >> List.map Element.html
+        >> List.map
+            (Element.paragraph
+                [ Element.width Element.fill ]
+                << List.singleton
+            )
+        >> Element.column [ Element.width Element.fill ]
+
+
+
 
 
 

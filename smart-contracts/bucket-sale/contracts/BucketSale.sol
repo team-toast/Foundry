@@ -14,8 +14,8 @@ contract BucketSale
 
     /*
     Every pair of (uint bucketId, address buyer) identifies exactly one 'buy'.
-    This buy tracks the total value entered by the user (of the tokens the sale accepts),
-    and the total value exited (of the tokens being sold).
+    This buy tracks how much tokenSoldFor the user has entered into the bucket,
+    and how much tokenOnSale the user has exited with.
     */
 
     struct Buy
@@ -24,9 +24,11 @@ contract BucketSale
         uint buyerTokensExited;
     }
 
+    mapping (uint => mapping (address => Buy)) public buys;
+
     /*
-    Each Bucket tracks the total value entered (of the tokens the sale accepts);
-    this is used to determine what proportion of the tokens on sale the user can later exit with.
+    Each Bucket tracks how much tokenSoldFor has been entered in total;
+    this is used to determine how much tokenOnSale the user can later exit with.
     */
 
     struct Bucket
@@ -35,9 +37,8 @@ contract BucketSale
     }
 
     mapping (uint => Bucket) public buckets;
-    mapping (uint => mapping (address => Buy)) public buys;
 
-    // For each address, this tallies how much value (of the tokens the sale accepts) the user has referred.
+    // For each address, this tallies how much tokenSoldFor the address is responsible for referring.
     mapping (address => uint) public referredTotal;
 
     address public treasury;
@@ -94,7 +95,7 @@ contract BucketSale
         public
     {
         registerEnter(_bucketId, _buyer, _amount);
-        referredTotal[_referrer] = referredTotal[_referrer].add(_amount);
+        referredTotal[_referrer] = referredTotal[_referrer].add(_amount); // referredTotal[0x0] will track buys with no referral
         bool transferSuccess = tokenSoldFor.transferFrom(msg.sender, treasury, _amount);
         require(transferSuccess, "enter transfer failed");
 
@@ -154,8 +155,8 @@ contract BucketSale
             "can only exit from concluded buckets");
 
         Buy storage buyToWithdraw = buys[_bucketId][_buyer];
-        require(buyToWithdraw.valueEntered > 0, "can't take out if you didn't put in");
-        require(buyToWithdraw.buyerTokensExited == 0, "already withdrawn");
+        require(buyToWithdraw.valueEntered > 0, "can't exit if you didn't enter");
+        require(buyToWithdraw.buyerTokensExited == 0, "already exited");
 
         /*
         Note that buyToWithdraw.buyerTokensExited serves a dual purpose:
@@ -169,7 +170,7 @@ contract BucketSale
         totalExitedTokens = totalExitedTokens.add(buyToWithdraw.buyerTokensExited);
 
         bool transferSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
-        require(transferSuccess, "exit transfer failed");
+        require(transferSuccess, "exit mint/transfer failed");
 
         emit Exited(
             _bucketId,

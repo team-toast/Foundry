@@ -44,16 +44,20 @@ init flags url key =
                 )
 
         providerNotice =
-            if wallet == Wallet.NoneDetected then
-                Just UN.noWeb3Provider
+            case fullRoute.pageRoute of
+                Routing.Home ->
+                    Nothing
+                _ ->
+                    if wallet == Wallet.NoneDetected then
+                        Just UN.noWeb3Provider
 
-            else
-                case Wallet.httpProvider wallet of
-                    Nothing ->
-                        Just UN.wrongWeb3Network
+                    else
+                        case Wallet.httpProvider wallet of
+                            Nothing ->
+                                Just UN.wrongWeb3Network
 
-                    Just _ ->
-                        Nothing
+                            Just _ ->
+                                Nothing
 
         userNotices =
             Maybe.Extra.values
