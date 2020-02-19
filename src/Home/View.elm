@@ -25,7 +25,9 @@ Team Toast is a small team centered around the development of DAIHard and Foundr
 
 # Foundry
 
-Team Toast is building a DAO called **Foundry**. Foundry's initial purpose is to take over DAIHard stewardship, as this would extend DAIHard's unkillable nature to its very development and maintenance. Foundry will likely build similar products in the future: for-profit, unkillable tools that increase global financial freedom, which fragile meatbags are unwilling to own and manage directly."""
+Team Toast is building a DAO called **Foundry**. Foundry's initial purpose is to take over DAIHard stewardship, as this would extend DAIHard's unkillable nature to its very development and maintenance. Foundry will likely build similar products in the future: for-profit, unkillable tools that increase global financial freedom, which fragile meatbags are unwilling to own and manage directly.
+
+Here's a **speculative, non-final** schematic of how Foundry might be put together."""
             , Images.foundrySchematic
                 |> Images.toElement
                 [ Element.width Element.fill]
