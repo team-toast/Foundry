@@ -15,7 +15,7 @@ open Constants
 
 open Nethereum.Contracts
 
-open DAIHard.Contracts.BucketSale.ContractDefinition
+open Foundry.Contracts.BucketSale.ContractDefinition
 
 [<EntryPoint>]
 let main _ =

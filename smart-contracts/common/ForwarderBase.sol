@@ -18,4 +18,12 @@ contract ForwarderBase
         emit Forwarded(msg.sender, _to, _data, msg.value, success, resultData);
         return (success, resultData);
     }
+
+    function blockTimestamp()
+        public
+        view
+        returns (uint256)
+    {
+        return block.timestamp;
+    }
 }

@@ -7,7 +7,7 @@ open System.Numerics
 open Nethereum.Hex.HexConvertors.Extensions
 open Constants
 open System
-open DAIHard.Contracts.BucketSale.ContractDefinition
+open Foundry.Contracts.BucketSale.ContractDefinition
 open BucketSaleTestBase
 open Nethereum.Web3.Accounts
 open Nethereum.RPC.Eth.DTOs
@@ -40,7 +40,7 @@ let ``C000 - Can construct the contract``() =
     let abi = Abi("../../../../build/contracts/BucketSale.json")
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| ethConn.Account.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; zeroAddress; zeroAddress |]
+            [| treasury.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; zeroAddress; zeroAddress |]
         |> runNow
 
     deployTxReceipt |> shouldSucceed
@@ -48,7 +48,7 @@ let ``C000 - Can construct the contract``() =
     // Assert
     let contract = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
-    contract.Query "owner" [||] |> shouldEqualIgnoringCase ethConn.Account.Address
+    contract.Query "treasury" [||] |> shouldEqualIgnoringCase treasury.Address
     contract.Query "startOfSale" [||] |> should equal startOfSale
     contract.Query "bucketPeriod" [||] |> should equal bucketPeriod
     contract.Query "bucketSupply" [||] |> should equal bucketSupply
@@ -56,45 +56,11 @@ let ``C000 - Can construct the contract``() =
     contract.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase tokenOnSale
     contract.Query "tokenSoldFor" [||] |> shouldEqualIgnoringCase tokenSoldFor
 
+
 [<Specification("BucketSale", "enter", 1)>]
+[<Specification("BucketSale", "enter", 5)>]
 [<Fact>]
-let ``E001 - Cannot enter bucket sale without putting some money down``() =
-    let currentBucket = bucketSale.Query "currentBucket" [||]
-    let receipt = bucketSale.ExecuteFunctionFrom "enter"  [| ethConn.Account.Address; currentBucket; 0UL; zeroAddress |] forwarder
-    let forwardEvent = forwarder.DecodeForwardedEvents receipt |> Seq.head
-    forwardEvent |> shouldRevertWithMessage "can't buy nothing"
-
-
-[<Specification("BucketSale", "enter", 2)>]
-[<Fact>]
-let ``E002 - Cannot enter bucket sale if there are not enough tokens to payout``() =
-    let currentBucket = bucketSale.Query "currentBucket" [||]
-
-    let balanceBeforeReduction = FRY.Query "balanceOf" [| bucketSale.Address |]
-    let moveFryData = FRY.FunctionData "transfer" [| zeroAddress; balanceBeforeReduction |]
-    let moveFryForwardData =
-        bucketSale.FunctionData "forward"
-            [| FRY.Address
-               moveFryData.HexToByteArray()
-               BigInteger.Zero |]
-    let moveFryTxReceipt =
-        moveFryForwardData
-        |> (ethConn :> IAsyncTxSender).SendTxAsync bucketSale.Address (BigInteger(0))
-        |> runNow
-    moveFryTxReceipt |> shouldSucceed
-
-    let bucketSaleBalanceBeforeEntry = FRY.Query "balanceOf" [| bucketSale.Address |]
-    bucketSaleBalanceBeforeEntry |> should equal BigInteger.Zero
-    bucketSaleBalanceBeforeEntry |> should lessThan (bucketCount * bucketSupply)
-    let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; currentBucket; 1UL; zeroAddress |] forwarder
-    let forwardEvent = forwarder.DecodeForwardedEvents receipt |> Seq.head
-    forwardEvent |> shouldRevertWithMessage "insufficient tokens to sell"
-
-
-[<Specification("BucketSale", "enter", 3)>]
-[<Specification("BucketSale", "enter", 7)>]
-[<Fact>]
-let ``E003|E007 - Cannot enter a past bucket``() =
+let ``E001|E005 - Cannot enter a past bucket``() =
     let currentBucket = bucketSale.Query "currentBucket" [||] |> uint64
     let incorrectBucket = currentBucket - 1UL
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; incorrectBucket; 1UL; zeroAddress |] forwarder
@@ -102,20 +68,20 @@ let ``E003|E007 - Cannot enter a past bucket``() =
     forwardEvent |> shouldRevertWithMessage "cannot enter past buckets"
 
 
-[<Specification("BucketSale", "enter", 4)>]
+[<Specification("BucketSale", "enter", 2)>]
 [<Fact>]
-let ``E004 - Cannot enter a bucket beyond the designated bucket count (no referrer)``() =
-    seedBucketWithFries()
+let ``E002 - Cannot enter a bucket beyond the designated bucket count (no referrer)``() =
+    addFryMinter bucketSale.Address
     let bucketCount = bucketSale.Query "bucketCount" [||] // will be one greater than what can be correctly entered
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; bucketCount; 1UL; zeroAddress |] forwarder
     let forwardEvent = forwarder.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage "invalid bucket id--past end of sale"
 
 
-[<Specification("BucketSale", "enter", 5)>]
+[<Specification("BucketSale", "enter", 3)>]
 [<Fact>]
-let ``E005 - Cannot enter a bucket if payment reverts (with no referrer)``() =
-    seedBucketWithFries()
+let ``E003 - Cannot enter a bucket if payment reverts (with no referrer)``() =
+    addFryMinter bucketSale.Address
     seedWithDAI forwarder.ContractPlug.Address (BigInteger(10UL))
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; currentBucket; 1UL; zeroAddress |] forwarder
@@ -123,11 +89,11 @@ let ``E005 - Cannot enter a bucket if payment reverts (with no referrer)``() =
     forwardEvent |> shouldRevertWithUnknownMessage
 
 
-[<Specification("BucketSale", "enter", 6)>]
+[<Specification("BucketSale", "enter", 4)>]
 [<Fact>]
-let ``E006 - Can enter a bucket with no referrer``() =
+let ``E004 - Can enter a bucket with no referrer``() =
     // arrange
-    seedBucketWithFries()
+    addFryMinter bucketSale.Address
 
     let currentBucket = bucketSale.Query "currentBucket" [||]
 
@@ -153,12 +119,12 @@ let ``E006 - Can enter a bucket with no referrer``() =
                 referrer)
 
 
-[<Specification("BucketSale", "enter", 8)>]
+[<Specification("BucketSale", "enter", 6)>]
 [<Fact>]
-let ``E008 - Cannot enter a bucket beyond the designated bucket count - 1 (because of referrer)``() =
+let ``E006 - Cannot enter a bucket beyond the designated bucket count - 1 (because of referrer)``() =
     let valueToEnter = BigInteger(10L)
 
-    seedBucketWithFries()
+    addFryMinter bucketSale.Address
     seedWithDAI forwarder.ContractPlug.Address valueToEnter
 
     let approveDaiReceipt =  DAI.ExecuteFunctionFrom "approve" [| bucketSale.Address; valueToEnter |] forwarder
@@ -175,10 +141,10 @@ let ``E008 - Cannot enter a bucket beyond the designated bucket count - 1 (becau
     forwardEvent |> shouldRevertWithMessage "invalid bucket id--past end of sale"
 
 
-[<Specification("BucketSale", "enter", 9)>]
+[<Specification("BucketSale", "enter", 7)>]
 [<Fact>]
-let ``E009 - Cannot enter a bucket if payment reverts (with referrer)``() =
-    seedBucketWithFries()
+let ``E007 - Cannot enter a bucket if payment reverts (with referrer)``() =
+    addFryMinter bucketSale.Address
     seedWithDAI forwarder.ContractPlug.Address (BigInteger(10UL)) // seed but do not approve, which will make the enter revert
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; currentBucket; 1UL; forwarder.ContractPlug.Address |] forwarder
@@ -186,11 +152,11 @@ let ``E009 - Cannot enter a bucket if payment reverts (with referrer)``() =
     forwardEvent |> shouldRevertWithUnknownMessage
 
 
-[<Specification("BucketSale", "enter", 10)>]
+[<Specification("BucketSale", "enter", 8)>]
 [<Fact>]
-let ``E010 - Can enter a bucket with a referrer``() =
+let ``E008 - Can enter a bucket with a referrer``() =
     // arrange
-    seedBucketWithFries()
+    addFryMinter bucketSale.Address
 
     let currentBucket = bucketSale.Query "currentBucket" [||]
 
@@ -258,7 +224,7 @@ let ``EX002 - Cannot exit a bucket you did not enter``() =
 [<Specification("BucketSale", "exit", 3)>]
 [<Fact>]
 let ``EX003 - Cannot exit a buy you have already exited``() =
-    seedBucketWithFries()
+    addFryMinter bucketSale.Address
 
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let valueToEnter = BigInteger 10UL
@@ -293,9 +259,7 @@ let ``EX003 - Cannot exit a buy you have already exited``() =
 
 [<Specification("BucketSale", "exit", 4)>]
 [<Fact>]
-let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
-    seedBucketWithFries()
-
+let ``EX004 - Cannot exit a bucket if the token minting fails``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let valueToEnter = BigInteger 10UL
     let buyer = ethConn.Account.Address
@@ -311,24 +275,6 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
 
     bucketPeriod |> ethConn.TimeTravel 
     
-    let bucketSaleFryBalance = FRY.Query<BigInteger> "balanceOf" [| bucketSale.Address |] 
-    let randomAddress = makeAccount().Address
-    
-    // move tokens away from bucketSale
-    let moveTokensData = FRY.FunctionData "transfer" [| randomAddress; bucketSaleFryBalance |]
-    let moveTokensForwardReciept = 
-        bucketSale.ExecuteFunction 
-            "forward" 
-            [|
-                FRY.Address
-                moveTokensData.HexToByteArray()
-                BigInteger.Zero 
-            |]
-    moveTokensForwardReciept |> shouldSucceed
-    let forwardEvent = moveTokensForwardReciept.DecodeAllEvents<ForwardedEventDTO>() |> Seq.head
-    forwardEvent.Event.Success |> should equal true
-    FRY.Query "balanceOf" [| bucketSale.Address |] |> should lessThan (bucketCount * bucketSupply)
-
     let exitReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] forwarder
     let exitForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> exitReceipt
     exitForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
@@ -341,7 +287,7 @@ let ``EX004 - Cannot exit a bucket if the token transfer fails``() =
 [<Specification("BucketSale", "exit", 5)>]
 [<Fact>]
 let ``EX005 - Can exit a valid past bucket that was entered``() =
-    seedBucketWithFries()
+    addFryMinter bucketSale.Address
 
     let initialTimeJump = rnd.Next(0, (bucketCount * bucketPeriod / (BigInteger 2)) |> int32) |> uint64
     initialTimeJump |> ethConn.TimeTravel 
@@ -389,58 +335,3 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
             buyer 
             bucketEntered 
             valueEntered
-
-
-[<Specification("BucketSale", "foward", 1)>]
-[<Fact>]
-let ``F001 - Cannot be called by a non-owner``() =
-    seedWithDAI bucketSale.Address (BigInteger 100UL)
-    let randomReceiver = makeAccount().Address
-    let daiTransferData = DAI.FunctionData "transfer" [| randomReceiver; 100UL |]
-    let forwardReceipt = 
-        bucketSale.ExecuteFunctionFrom 
-            "forward" 
-            [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]
-            forwarder
-    forwardReceipt |> shouldSucceed
-    
-    let forwarderForwardedEvent = forwardReceipt |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
-    forwarderForwardedEvent |> shouldRevertWithMessage "only owner"
-
-[<Specification("BucketSale", "foward", 2)>]
-[<Fact>]
-let ``F002 - Should return event indicating revert if the forward fails``() =
-    seedWithDAI bucketSale.Address (BigInteger 100UL)
-    let randomReceiver = makeAccount().Address
-    let daiTransferData = DAI.FunctionData "transfer" [| randomReceiver; 101UL |] // will revert the inner most call
-    let forwardReceipt = bucketSale.ExecuteFunction "forward"  [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]
-    forwardReceipt |> shouldSucceed
-    
-    let forwardedEvent = forwardReceipt |> decodeFirstEvent<DAIHard.Contracts.BucketSale.ContractDefinition.ForwardedEventDTO>
-    forwardedEvent.Data |> should equal (daiTransferData.HexToByteArray())
-    forwardedEvent.Success |> should equal false
-    forwardedEvent.To |> should equal DAI.Address
-
-    
-[<Specification("BucketSale", "foward", 3)>]
-[<Fact>]
-let ``F003 - Should be able to forward if sent from owner and call is valid``() =
-    // arrange
-    seedWithDAI bucketSale.Address (BigInteger 100UL)
-    let randomReceiver = makeAccount().Address
-    let daiReceiverBalanceBefore = DAI.Query "balanceOf" [| randomReceiver |]
-    let bucketSaleBalanceBefore = DAI.Query "balanceOf" [| bucketSale.Address |]
-    let daiTransferData = DAI.FunctionData "transfer" [| randomReceiver; 100UL |]
-    
-    // act
-    let forwardReceipt = bucketSale.ExecuteFunction "forward"  [| DAI.Address; daiTransferData.HexToByteArray(); BigInteger.Zero |]
-    forwardReceipt |> shouldSucceed
-    
-    // assert
-    let forwardedEvent = forwardReceipt |> decodeFirstEvent<DAIHard.Contracts.BucketSale.ContractDefinition.ForwardedEventDTO>
-    forwardedEvent.Data |> should equal (daiTransferData.HexToByteArray())
-    forwardedEvent.Success |> should equal true
-    forwardedEvent.To |> should equal DAI.Address
-
-    DAI.Query "balanceOf" [| randomReceiver |] |> should equal (daiReceiverBalanceBefore + (BigInteger 100UL))
-    DAI.Query "balanceOf" [| bucketSale.Address |] |> should equal (bucketSaleBalanceBefore - (BigInteger 100UL))

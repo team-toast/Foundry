@@ -134,7 +134,6 @@ contract BucketSale
     {
         require(_bucketId >= currentBucket(), "cannot enter past buckets");
         require(_bucketId < bucketCount, "invalid bucket id--past end of sale");
-        require(_amount > 0, "can't buy nothing");
 
         Buy storage buy = buys[_bucketId][_buyer];
         buy.valueEntered = buy.valueEntered.add(_amount);

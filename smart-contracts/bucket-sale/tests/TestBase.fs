@@ -29,13 +29,6 @@ let rec rndRange min max  =
         yield! rndRange min max
         }
 
-let startOfSale = DateTimeOffset(DateTime.Now.AddDays(-1.0)).ToUnixTimeSeconds() |> BigInteger
-let bucketPeriod = 7UL * hours |> BigInteger
-let bucketSupply = 50000UL |> BigInteger
-let bucketCount = 1250UL |> BigInteger
-
-let tokenOnSale = zeroAddress
-let tokenSoldFor = zeroAddress
 let bigInt (value: uint64) = BigInteger(value)
 let hexBigInt (value: uint64) = HexBigInteger(bigInt value)
 
@@ -154,6 +147,9 @@ type Forwarder(ethConn: EthereumConnection) =
     member this.DecodeForwardedEvents(receipt: TransactionReceipt) =
         receipt.DecodeAllEvents<ForwardedEventDTO>() |> Seq.map (fun i -> i.Event)
 
+    member this.BlockTimestamp:BigInteger = 
+        this.ContractPlug.Query "blockTimestamp" [||]
+
 type ForwardedEventDTO with
     member this.ResultAsRevertMessage =
         match this.Success with
@@ -210,3 +206,11 @@ let makeAccount() =
     let ecKey = Nethereum.Signer.EthECKey.GenerateKey();
     let privateKey = ecKey.GetPrivateKeyAsBytes().ToHex();
     Account(privateKey);
+
+
+let startOfSale = forwarder.BlockTimestamp - BigInteger (1UL * days)
+let bucketPeriod = 7UL * hours |> BigInteger
+let bucketSupply = 50000UL |> BigInteger
+let bucketCount = 1250UL |> BigInteger
+let tokenOnSale = zeroAddress
+let tokenSoldFor = zeroAddress
