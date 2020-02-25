@@ -2,18 +2,18 @@ pragma solidity ^0.5.0;
 
 contract Forwarder
 {
-    public address owner;
+    address public owner;
 
     constructor(address _owner)
         public
     {
         owner = _owner;
     }
-    
+
     modifier onlyOwner()
     {
         require(msg.sender == owner, "only owner");
-        _
+        _;
     }
 
     event OwnerChanged(address _newOwner);
@@ -22,7 +22,7 @@ contract Forwarder
         onlyOwner
     {
         owner = _newOwner;
-        emit OwnerChanged(_newOwner); 
+        emit OwnerChanged(_newOwner);
     }
 
     event Forwarded(
