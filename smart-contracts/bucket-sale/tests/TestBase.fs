@@ -127,12 +127,12 @@ type ContractPlug(ethConn: EthereumConnection, abi: Abi, address) =
         this.ExecuteFunctionAsync functionName arguments |> runNow
             
 
-type Forwarder(ethConn: EthereumConnection) =
+type Debug(ethConn: EthereumConnection) =
     member val public EthConn = ethConn
     member val public AsyncTxSender = ethConn :> IAsyncTxSender
 
     member val public  ContractPlug =
-        let abi = Abi("../../../../build/contracts/Forwarder.json")
+        let abi = Abi("../../../../build/contracts/Debug.json")
         let deployTxReceipt = ethConn.DeployContractAsync abi [||] |> runNow
         ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
@@ -178,7 +178,7 @@ let isRinkeby rinkeby notRinkeby =
 let ethConn =
     isRinkeby (EthereumConnection(rinkebyURI, rinkebyPrivKey)) (EthereumConnection(ganacheURI, ganachePrivKey))
 
-let forwarder = Forwarder(ethConn)
+let debug = Debug(ethConn)
 
 let shouldEqualIgnoringCase (a: string) (b: string) =
     let aString = a |> string
@@ -208,7 +208,7 @@ let makeAccount() =
     Account(privateKey);
 
 
-let startOfSale = forwarder.BlockTimestamp - BigInteger (1UL * days)
+let startOfSale = debug.BlockTimestamp - BigInteger (1UL * days)
 let bucketPeriod = 7UL * hours |> BigInteger
 let bucketSupply = 50000UL |> BigInteger
 let bucketCount = 1250UL |> BigInteger
