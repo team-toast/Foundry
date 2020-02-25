@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-contract ForwarderBase
+contract DebugBase
 {
     event Forwarded(
         address indexed _msgSender,

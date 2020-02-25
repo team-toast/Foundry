@@ -23,4 +23,4 @@ contract TestToken is Context, ERC20Detailed, ERC20Mintable, ERC20Burnable
     }
 }
 
-contract Forwarder is ForwarderBase { }
+contract Debug is DebugBase { }
