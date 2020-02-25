@@ -218,7 +218,7 @@ let ``EX002 - Cannot exit a bucket you did not enter``() =
     firstForwardEvent.Success |> should equal false
     firstForwardEvent.To |> should equal bucketSale.Address
     firstForwardEvent.Wei |> should equal BigInteger.Zero
-    firstForwardEvent |> shouldRevertWithMessage "can't take out if you didn't put in"
+    firstForwardEvent |> shouldRevertWithMessage "can't exit if you didn't enter"
 
 
 [<Specification("BucketSale", "exit", 3)>]
@@ -254,7 +254,7 @@ let ``EX003 - Cannot exit a buy you have already exited``() =
     secondForwardEvent.Success |> should equal false
     secondForwardEvent.To |> should equal bucketSale.Address
     secondForwardEvent.Wei |> should equal BigInteger.Zero
-    secondForwardEvent |> shouldRevertWithMessage "already withdrawn"
+    secondForwardEvent |> shouldRevertWithMessage "already exited"
 
 
 [<Specification("BucketSale", "exit", 4)>]

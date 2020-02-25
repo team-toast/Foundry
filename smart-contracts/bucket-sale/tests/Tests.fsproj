@@ -13,7 +13,7 @@
     <Compile Include="TestBase.fs" />
     <Compile Include="BucketSaleTestBase.fs" />
     <Compile Include="Tests.fs" />
-    <Compile Include="Program.fs" />
+    <!-- <Compile Include="Program.fs" /> -->
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="3.3.3" />
