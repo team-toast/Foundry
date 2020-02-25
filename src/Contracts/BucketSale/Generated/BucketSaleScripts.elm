@@ -52,5 +52,5 @@ getExitInfo contractAddress bucketSale buyer =
     , value = Nothing
     , data = Just <| AbiEncode.functionCall "getExitInfo(address,address)" [ AbiEncode.address bucketSale, AbiEncode.address buyer ]
     , nonce = Nothing
-    , decoder = toElmDecoder (AbiDecode.staticArray 125 AbiDecode.uint)
+    , decoder = toElmDecoder (AbiDecode.staticArray 1201 AbiDecode.uint)
     }

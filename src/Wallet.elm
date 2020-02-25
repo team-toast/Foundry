@@ -9,6 +9,7 @@ import Config
 type State
     = NoneDetected
     | OnlyNetwork Eth.Net.NetworkId
+    | WrongNetwork
     | Active UserInfo
 
 
@@ -42,6 +43,9 @@ network walletState =
 
         OnlyNetwork network_ ->
             Just network_
+        
+        WrongNetwork ->
+            Nothing
 
         Active uInfo ->
             Just uInfo.network
