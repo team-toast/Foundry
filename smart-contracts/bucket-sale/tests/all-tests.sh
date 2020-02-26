@@ -1,7 +1,7 @@
 dotnet test --filter DisplayName~M000
 
 dotnet test --filter DisplayName~B_C000
-dotnet test --filter DisplayName~B_E001
+dotnet test --filter DisplayName~B_EN001
 dotnet test --filter DisplayName~B_EN002
 dotnet test --filter DisplayName~B_EN003
 dotnet test --filter DisplayName~B_EN004

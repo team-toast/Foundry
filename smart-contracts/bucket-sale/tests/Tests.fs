@@ -388,7 +388,7 @@ let ``F_CO001 - Should change the owner if called by the current owner``() =
     let ownerChangedEvent = changeOwnerTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.OwnerChangedEventDTO> 
     ownerChangedEvent.NewOwner |> shouldEqualIgnoringCase newOwner.Address
 
-    testTreasury.Query "owner" [||] |> should equal newOwner.Address
+    testTreasury.Query "owner" [||] |> shouldEqualIgnoringCase newOwner.Address
 
 
 [<Specification("Forwarder", "foward", 1)>]
@@ -420,7 +420,7 @@ let ``F_F002 - Should succeed when called by a owner and handle a reverting call
 
 [<Specification("Forwarder", "foward", 3)>]
 [<Fact>]
-let ``F_F003 - Should succeed when called by a owner when making a successful call``() =
+let ``F_F003A - Should succeed when called by a owner when making a successful call``() =
     seedWithDAI treasury.Address (BigInteger 100UL)
     let recipient = makeAccount()
     let treasuryBalanceBefore = DAI.Query "balanceOf" [| treasury.Address |]
