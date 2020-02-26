@@ -33,7 +33,7 @@ let ``M000 - Can send eth``() =
 
 [<Specification("BucketSale", "constructor", 1)>]
 [<Fact>]
-let ``C000 - Can construct the contract``() =
+let ``B_C000 - Can construct the contract``() =
     let abi = Abi("../../../../build/contracts/BucketSale.json")
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
@@ -57,7 +57,7 @@ let ``C000 - Can construct the contract``() =
 [<Specification("BucketSale", "enter", 1)>]
 [<Specification("BucketSale", "enter", 5)>]
 [<Fact>]
-let ``E001|E005 - Cannot enter a past bucket``() =
+let ``B_EN001|B_EN005 - Cannot enter a past bucket``() =
     let currentBucket = bucketSale.Query "currentBucket" [||] |> uint64
     let incorrectBucket = currentBucket - 1UL
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; incorrectBucket; 1UL; zeroAddress |] debug
@@ -67,7 +67,7 @@ let ``E001|E005 - Cannot enter a past bucket``() =
 
 [<Specification("BucketSale", "enter", 2)>]
 [<Fact>]
-let ``E002 - Cannot enter a bucket beyond the designated bucket count (no referrer)``() =
+let ``B_EN002 - Cannot enter a bucket beyond the designated bucket count (no referrer)``() =
     addFryMinter bucketSale.Address
     let bucketCount = bucketSale.Query "bucketCount" [||] // will be one greater than what can be correctly entered
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; bucketCount; 1UL; zeroAddress |] debug
@@ -77,7 +77,7 @@ let ``E002 - Cannot enter a bucket beyond the designated bucket count (no referr
 
 [<Specification("BucketSale", "enter", 3)>]
 [<Fact>]
-let ``E003 - Cannot enter a bucket if payment reverts (with no referrer)``() =
+let ``B_EN003 - Cannot enter a bucket if payment reverts (with no referrer)``() =
     addFryMinter bucketSale.Address
     seedWithDAI debug.ContractPlug.Address (BigInteger(10UL))
     let currentBucket = bucketSale.Query "currentBucket" [||]
@@ -88,7 +88,7 @@ let ``E003 - Cannot enter a bucket if payment reverts (with no referrer)``() =
 
 [<Specification("BucketSale", "enter", 4)>]
 [<Fact>]
-let ``E004 - Can enter a bucket with no referrer``() =
+let ``B_EN004 - Can enter a bucket with no referrer``() =
     // arrange
     addFryMinter bucketSale.Address
 
@@ -118,7 +118,7 @@ let ``E004 - Can enter a bucket with no referrer``() =
 
 [<Specification("BucketSale", "enter", 6)>]
 [<Fact>]
-let ``E006 - Cannot enter a bucket beyond the designated bucket count - 1 (because of referrer)``() =
+let ``B_EN006 - Cannot enter a bucket beyond the designated bucket count - 1 (because of referrer)``() =
     let valueToEnter = BigInteger(10L)
 
     addFryMinter bucketSale.Address
@@ -140,7 +140,7 @@ let ``E006 - Cannot enter a bucket beyond the designated bucket count - 1 (becau
 
 [<Specification("BucketSale", "enter", 7)>]
 [<Fact>]
-let ``E007 - Cannot enter a bucket if payment reverts (with referrer)``() =
+let ``B_EN007 - Cannot enter a bucket if payment reverts (with referrer)``() =
     addFryMinter bucketSale.Address
     seedWithDAI debug.ContractPlug.Address (BigInteger(10UL)) // seed but do not approve, which will make the enter revert
     let currentBucket = bucketSale.Query "currentBucket" [||]
@@ -151,7 +151,7 @@ let ``E007 - Cannot enter a bucket if payment reverts (with referrer)``() =
 
 [<Specification("BucketSale", "enter", 8)>]
 [<Fact>]
-let ``E008 - Can enter a bucket with a referrer``() =
+let ``B_EN008 - Can enter a bucket with a referrer``() =
     // arrange
     addFryMinter bucketSale.Address
 
@@ -181,7 +181,7 @@ let ``E008 - Can enter a bucket with a referrer``() =
 
 [<Specification("BucketSale", "exit", 1)>]
 [<Fact>]
-let ``EX001 - Cannot exit a bucket that is not yet concluded``() =
+let ``B_EX001 - Cannot exit a bucket that is not yet concluded``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; EthAddress.Zero |] debug
 
@@ -205,7 +205,7 @@ let ``EX001 - Cannot exit a bucket that is not yet concluded``() =
 
 [<Specification("BucketSale", "exit", 2)>]
 [<Fact>]
-let ``EX002 - Cannot exit a bucket you did not enter``() =
+let ``B_EX002 - Cannot exit a bucket you did not enter``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let randomAddress = makeAccount().Address
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket - BigInteger.One; randomAddress |] debug
@@ -220,7 +220,7 @@ let ``EX002 - Cannot exit a bucket you did not enter``() =
 
 [<Specification("BucketSale", "exit", 3)>]
 [<Fact>]
-let ``EX003 - Cannot exit a buy you have already exited``() =
+let ``B_EX003 - Cannot exit a buy you have already exited``() =
     addFryMinter bucketSale.Address
 
     let currentBucket = bucketSale.Query "currentBucket" [||]
@@ -256,7 +256,7 @@ let ``EX003 - Cannot exit a buy you have already exited``() =
 
 [<Specification("BucketSale", "exit", 4)>]
 [<Fact>]
-let ``EX004 - Cannot exit a bucket if the token minting fails``() =
+let ``B_EX004 - Cannot exit a bucket if the token minting fails``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let valueToEnter = BigInteger 10UL
     let buyer = ethConn.Account.Address
@@ -283,7 +283,7 @@ let ``EX004 - Cannot exit a bucket if the token minting fails``() =
 
 [<Specification("BucketSale", "exit", 5)>]
 [<Fact>]
-let ``EX005 - Can exit a valid past bucket that was entered``() =
+let ``B_EX005 - Can exit a valid past bucket that was entered``() =
     addFryMinter bucketSale.Address
 
     let initialTimeJump = rnd.Next(0, (bucketCount * bucketPeriod / (BigInteger 2)) |> int32) |> uint64
@@ -335,7 +335,7 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
 
 [<Specification("Forwarder", "foward", 1)>]
 [<Fact>]
-let ``F001 - Cannot be called by a non-owner``() =
+let ``B_F001 - Cannot be called by a non-owner``() =
     let forwardTx = treasury.ExecuteFunctionFrom "forward" [| EthAddress.Zero; "".HexToByteArray(); BigInteger 0UL |] debug
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should equal 1
@@ -348,7 +348,7 @@ let ``F001 - Cannot be called by a non-owner``() =
 
 [<Specification("Forwarder", "foward", 2)>]
 [<Fact>]
-let ``F002 - Can be called by a owner and handle a reverting call``() =
+let ``B_F002 - Can be called by a owner and handle a reverting call``() =
     let forwardTx = treasury.ExecuteFunction "forward" [| bucketSale.Address; "".HexToByteArray(); BigInteger 0UL |]
     
     forwardTx |> shouldSucceed
@@ -360,7 +360,7 @@ let ``F002 - Can be called by a owner and handle a reverting call``() =
 
 [<Specification("Forwarder", "foward", 3)>]
 [<Fact>]
-let ``F003 - Can be called by a owner and make a successful call``() =
+let ``B_F003 - Can be called by a owner and make a successful call``() =
     seedWithDAI treasury.Address (BigInteger 100UL)
     let recipient = makeAccount()
     let treasuryBalanceBefore = DAI.Query "balanceOf" [| treasury.Address |]
