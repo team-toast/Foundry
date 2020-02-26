@@ -362,6 +362,20 @@ let ``F_CO002 - Cannot change the owner if not called by the current owner``() =
     forwardedEvent |> shouldRevertWithMessage "only owner"
 
 
+[<Specification("Forwarder", "fallback", 2)>]
+[<Fact>]
+let ``F_FB001 - Should receive eth``() =
+    let testTreasury = makeTreasury ethConn.Account.Address
+    let balanceBefore = ethConn.GetEtherBalance testTreasury.Address
+    let amount = rnd.Next(0,100) |> BigInteger
+    
+    let sendEtherTx = ethConn.SendEther testTreasury.Address amount
+
+    sendEtherTx |> shouldSucceed 
+    sendEtherTx.Logs.Count |> should equal 0
+    ethConn.GetEtherBalance testTreasury.Address |> should equal (balanceBefore + amount)
+
+
 [<Specification("Forwarder", "changeOwner", 1)>]
 [<Fact>]
 let ``F_CO001 - Should change the owner if called by the current owner``() =

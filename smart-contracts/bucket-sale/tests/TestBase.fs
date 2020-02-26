@@ -80,6 +80,20 @@ type EthereumConnection(nodeURI: string, privKey: string) =
         |> Async.AwaitTask 
         |> Async.RunSynchronously
 
+    member this.GetEtherBalance address = 
+        let hexBigIntResult = this.Web3.Eth.GetBalance.SendRequestAsync(address) |> runNow
+        hexBigIntResult.Value
+
+    member this.SendEtherAsync address (amount:BigInteger) =
+        let transactionInput =
+            TransactionInput
+                ("", address, this.Account.Address, hexBigInt 4000000UL, hexBigInt 1000000000UL, HexBigInteger(amount))
+        this.Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(transactionInput, null)
+
+    member this.SendEther address amount =
+        this.SendEtherAsync address amount |> runNow
+
+
 type Profile = { FunctionName: string; Duration: string }
 
 let profileMe f =
