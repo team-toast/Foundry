@@ -7,6 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DTOs/ForwarderDefinition.fs" />
+    <Compile Include="DTOs/DebugDefinition.fs" />
     <Compile Include="DTOs/TestTokenDefinition.fs" />
     <Compile Include="DTOs/BucketSaleDefinition.fs" />
     <Compile Include="Constants.fs" />

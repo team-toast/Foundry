@@ -5,7 +5,7 @@ open System.Numerics
 open FsUnit.Xunit
 open Foundry.Contracts.BucketSale.ContractDefinition
 open Constants
-open Foundry.Contracts.Forwarder.ContractDefinition
+open Foundry.Contracts.Debug.ContractDefinition
 
 let DAI =
     let abi = Abi("../../../../build/contracts/TestToken.json")
@@ -45,8 +45,15 @@ let referrerReward referrerAddress amount =
         ((amount / BigInteger 1000000000000000000UL) + BigInteger 10000UL)
         
 
-let treasury = makeAccount()
+let treasury = 
+    let abi = Abi("../../../../build/contracts/Forwarder.json")
+    
+    let deployTxReceipt =
+        ethConn.DeployContractAsync abi
+            [| ethConn.Account.Address |]
+        |> runNow
 
+    ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
 let bucketSale =
     let abi = Abi("../../../../build/contracts/BucketSale.json")

@@ -8,6 +8,8 @@ open Constants
 open System
 open BucketSaleTestBase
 open Nethereum.RPC.Eth.DTOs
+open Foundry.Contracts.Debug.ContractDefinition
+open Nethereum.Hex.HexConvertors.Extensions
 
 
 [<Specification("BucketSale", "misc", 0)>]
@@ -183,7 +185,7 @@ let ``EX001 - Cannot exit a bucket that is not yet concluded``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; EthAddress.Zero |] debug
 
-    let firstForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
+    let firstForwardEvent = decodeFirstEvent<ForwardedEventDTO> firstReceipt
     firstForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     firstForwardEvent.Success |> should equal false
     firstForwardEvent.To |> should equal bucketSale.Address
@@ -193,7 +195,7 @@ let ``EX001 - Cannot exit a bucket that is not yet concluded``() =
     let laterBucket = rnd.Next((currentBucket + BigInteger.One) |> int32, (bucketCount - BigInteger 1UL) |> int32)
     let secondReceipt = bucketSale.ExecuteFunctionFrom "exit" [| laterBucket; EthAddress.Zero |] debug
 
-    let secondForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> secondReceipt
+    let secondForwardEvent = decodeFirstEvent<ForwardedEventDTO> secondReceipt
     secondForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     secondForwardEvent.Success |> should equal false
     secondForwardEvent.To |> should equal bucketSale.Address
@@ -208,7 +210,7 @@ let ``EX002 - Cannot exit a bucket you did not enter``() =
     let randomAddress = makeAccount().Address
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket - BigInteger.One; randomAddress |] debug
 
-    let firstForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
+    let firstForwardEvent = decodeFirstEvent<ForwardedEventDTO> firstReceipt
     firstForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     firstForwardEvent.Success |> should equal false
     firstForwardEvent.To |> should equal bucketSale.Address
@@ -237,14 +239,14 @@ let ``EX003 - Cannot exit a buy you have already exited``() =
     bucketPeriod |> ethConn.TimeTravel 
 
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] debug
-    let firstForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> firstReceipt
+    let firstForwardEvent = decodeFirstEvent<ForwardedEventDTO> firstReceipt
     firstForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     firstForwardEvent.Success |> should equal true
     firstForwardEvent.To |> should equal bucketSale.Address
     firstForwardEvent.Wei |> should equal BigInteger.Zero
 
     let secondReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] debug
-    let secondForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> secondReceipt
+    let secondForwardEvent = decodeFirstEvent<ForwardedEventDTO> secondReceipt
     secondForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     secondForwardEvent.Success |> should equal false
     secondForwardEvent.To |> should equal bucketSale.Address
@@ -271,7 +273,7 @@ let ``EX004 - Cannot exit a bucket if the token minting fails``() =
     bucketPeriod |> ethConn.TimeTravel 
     
     let exitReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] debug
-    let exitForwardEvent = decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO> exitReceipt
+    let exitForwardEvent = decodeFirstEvent<Foundry.Contracts.Debug.ContractDefinition.ForwardedEventDTO> exitReceipt
     exitForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     exitForwardEvent.Success |> should equal false
     exitForwardEvent.To |> should equal bucketSale.Address
@@ -330,3 +332,50 @@ let ``EX005 - Can exit a valid past bucket that was entered``() =
             buyer 
             bucketEntered 
             valueEntered
+
+[<Specification("Forwarder", "foward", 1)>]
+[<Fact>]
+let ``F001 - Cannot be called by a non-owner``() =
+    let forwardTx = treasury.ExecuteFunctionFrom "forward" [| EthAddress.Zero; "".HexToByteArray(); BigInteger 0UL |] debug
+    forwardTx |> shouldSucceed
+    forwardTx.Logs.Count |> should equal 1
+    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Debug.ContractDefinition.ForwardedEventDTO>
+    forwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
+    forwardEvent.Success |> should equal false
+    forwardEvent.To |> should equal treasury.Address
+    forwardEvent.Wei |> should equal BigInteger.Zero
+    forwardEvent |> shouldRevertWithMessage "only owner"
+
+[<Specification("Forwarder", "foward", 2)>]
+[<Fact>]
+let ``F002 - Can be called by a owner and handle a reverting call``() =
+    let forwardTx = treasury.ExecuteFunction "forward" [| bucketSale.Address; "".HexToByteArray(); BigInteger 0UL |]
+    
+    forwardTx |> shouldSucceed
+    forwardTx.Logs.Count |> should equal 1
+    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
+    forwardEvent.Success |> should equal false
+    forwardEvent.To |> should equal bucketSale.Address
+    forwardEvent.Wei |> should equal BigInteger.Zero
+
+[<Specification("Forwarder", "foward", 3)>]
+[<Fact>]
+let ``F003 - Can be called by a owner and make a successful call``() =
+    seedWithDAI treasury.Address (BigInteger 100UL)
+    let recipient = makeAccount()
+    let treasuryBalanceBefore = DAI.Query "balanceOf" [| treasury.Address |]
+    let recipientBalanceBefore = DAI.Query "balanceOf" [| recipient.Address |]
+    let amount = rnd.Next(0,100) |> BigInteger
+    let sendDaiData = DAI.FunctionData "transfer" [| recipient.Address; amount |]
+    
+    let forwardTx = treasury.ExecuteFunction "forward" [| DAI.Address; sendDaiData.HexToByteArray(); BigInteger 0UL |]
+    
+    forwardTx |> shouldSucceed
+    forwardTx.Logs.Count |> should greaterThan 1
+    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
+    forwardEvent.Success |> should equal true
+    forwardEvent.To |> should equal DAI.Address
+    forwardEvent.Wei |> should equal BigInteger.Zero
+
+    DAI.Query "balanceOf" [| treasury.Address |] |> should equal (treasuryBalanceBefore - amount)
+    DAI.Query "balanceOf" [| recipient.Address |] |> should equal (recipientBalanceBefore + amount)
