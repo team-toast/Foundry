@@ -364,7 +364,7 @@ let ``F_CO002 - Cannot change the owner if not called by the current owner``() =
 
 [<Specification("Forwarder", "fallback", 2)>]
 [<Fact>]
-let ``F_FB001 - Should receive eth``() =
+let ``F_FB001 - Should be able to receive eth``() =
     let testTreasury = makeTreasury ethConn.Account.Address
     let balanceBefore = ethConn.GetEtherBalance testTreasury.Address
     let amount = rnd.Next(0,100) |> BigInteger
@@ -372,7 +372,7 @@ let ``F_FB001 - Should receive eth``() =
     let sendEtherTx = ethConn.SendEther testTreasury.Address amount
 
     sendEtherTx |> shouldSucceed 
-    sendEtherTx.Logs.Count |> should equal 0
+    sendEtherTx.Logs |> should be Empty
     ethConn.GetEtherBalance testTreasury.Address |> should equal (balanceBefore + amount)
 
 
@@ -407,7 +407,7 @@ let ``F_F001 - Cannot be called by a non-owner``() =
 
 [<Specification("Forwarder", "foward", 2)>]
 [<Fact>]
-let ``F_F002 - Can be called by a owner and handle a reverting call``() =
+let ``F_F002 - Should succeed when called by a owner and handle a reverting call``() =
     let forwardTx = treasury.ExecuteFunction "forward" [| bucketSale.Address; "".HexToByteArray(); BigInteger 0UL |]
     
     forwardTx |> shouldSucceed
@@ -420,7 +420,7 @@ let ``F_F002 - Can be called by a owner and handle a reverting call``() =
 
 [<Specification("Forwarder", "foward", 3)>]
 [<Fact>]
-let ``F_F003 - Can be called by a owner and make a successful call``() =
+let ``F_F003 - Should succeed when called by a owner when making a successful call``() =
     seedWithDAI treasury.Address (BigInteger 100UL)
     let recipient = makeAccount()
     let treasuryBalanceBefore = DAI.Query "balanceOf" [| treasury.Address |]
@@ -439,4 +439,26 @@ let ``F_F003 - Can be called by a owner and make a successful call``() =
 
     DAI.Query "balanceOf" [| treasury.Address |] |> should equal (treasuryBalanceBefore - amount)
     DAI.Query "balanceOf" [| recipient.Address |] |> should equal (recipientBalanceBefore + amount)
+
+[<Specification("Forwarder", "foward", 3)>]
+[<Fact>]
+let ``F_F003B - Should succeed when called by a owner and sending eth``() =
+    let recipient = makeAccount()
+    let amount = rnd.Next(0,100) |> BigInteger
+    let seedEthReciept = ethConn.SendEther treasury.Address amount
+    seedEthReciept |> shouldSucceed
+    let treasuryBalanceBefore = ethConn.GetEtherBalance treasury.Address
+    let recipientBalanceBefore = ethConn.GetEtherBalance recipient.Address 
+    
+    let forwardTx = treasury.ExecuteFunction "forward" [| recipient.Address; "".HexToByteArray(); amount |]
+    
+    forwardTx |> shouldSucceed
+    forwardTx.Logs.Count |> should greaterThan 0
+    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
+    forwardEvent.Success |> should equal true
+    forwardEvent.To |> shouldEqualIgnoringCase recipient.Address
+    forwardEvent.Wei |> should equal amount
+
+    ethConn.GetEtherBalance treasury.Address |> should equal (treasuryBalanceBefore - amount)
+    ethConn.GetEtherBalance recipient.Address |> should equal (recipientBalanceBefore + amount)
 
