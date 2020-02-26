@@ -333,9 +333,38 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
             bucketEntered 
             valueEntered
 
+
+[<Specification("Forwarder", "constructor", 1)>]
+[<Fact>]
+let ``F_C001 - Can construct a forwarder with an owner``() =
+    let abi = Abi("../../../../build/contracts/Forwarder.json")
+    let owner = makeAccount()
+    
+    let deployTxReceipt = ethConn.DeployContractAsync abi [| owner.Address |] |> runNow
+    
+    deployTxReceipt |> shouldSucceed
+    deployTxReceipt.Logs.Count |> should equal 0 
+    let forwarder = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress) 
+    forwarder.Query "owner" [| |] |> shouldEqualIgnoringCase owner.Address
+
+
+[<Specification("Forwarder", "changeOwner", 1)>]
+[<Fact>]
+let ``F_CO001 - Cannot change the owner if not called by the current owner``() =
+    let testTreasury = makeTreasury ethConn.Account.Address
+
+    let newOwner = makeAccount()
+    let changeOwnerTx = testTreasury.ExecuteFunctionFrom "changeOwner" [| newOwner.Address |] debug
+
+    changeOwnerTx |> shouldSucceed
+    let forwardedEvent = changeOwnerTx |> decodeFirstEvent<ForwardedEventDTO> 
+    forwardedEvent.To |> shouldEqualIgnoringCase testTreasury.Address
+    forwardedEvent |> shouldRevertWithMessage "only owner"
+
+
 [<Specification("Forwarder", "foward", 1)>]
 [<Fact>]
-let ``B_F001 - Cannot be called by a non-owner``() =
+let ``F_F001 - Cannot be called by a non-owner``() =
     let forwardTx = treasury.ExecuteFunctionFrom "forward" [| EthAddress.Zero; "".HexToByteArray(); BigInteger 0UL |] debug
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should equal 1
@@ -346,9 +375,10 @@ let ``B_F001 - Cannot be called by a non-owner``() =
     forwardEvent.Wei |> should equal BigInteger.Zero
     forwardEvent |> shouldRevertWithMessage "only owner"
 
+
 [<Specification("Forwarder", "foward", 2)>]
 [<Fact>]
-let ``B_F002 - Can be called by a owner and handle a reverting call``() =
+let ``F_F002 - Can be called by a owner and handle a reverting call``() =
     let forwardTx = treasury.ExecuteFunction "forward" [| bucketSale.Address; "".HexToByteArray(); BigInteger 0UL |]
     
     forwardTx |> shouldSucceed
@@ -358,9 +388,10 @@ let ``B_F002 - Can be called by a owner and handle a reverting call``() =
     forwardEvent.To |> should equal bucketSale.Address
     forwardEvent.Wei |> should equal BigInteger.Zero
 
+
 [<Specification("Forwarder", "foward", 3)>]
 [<Fact>]
-let ``B_F003 - Can be called by a owner and make a successful call``() =
+let ``F_F003 - Can be called by a owner and make a successful call``() =
     seedWithDAI treasury.Address (BigInteger 100UL)
     let recipient = makeAccount()
     let treasuryBalanceBefore = DAI.Query "balanceOf" [| treasury.Address |]
@@ -379,3 +410,4 @@ let ``B_F003 - Can be called by a owner and make a successful call``() =
 
     DAI.Query "balanceOf" [| treasury.Address |] |> should equal (treasuryBalanceBefore - amount)
     DAI.Query "balanceOf" [| recipient.Address |] |> should equal (recipientBalanceBefore + amount)
+

@@ -7,35 +7,26 @@ open Foundry.Contracts.BucketSale.ContractDefinition
 open Constants
 open Foundry.Contracts.Debug.ContractDefinition
 
-let DAI =
+let makeToken name code receiver supply =
     let abi = Abi("../../../../build/contracts/TestToken.json")
 
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| "MCD DAI stable coin"
-               "DAI"
-               ethConn.Account.Address
-               bucketSupply * bucketCount * BigInteger(100UL) |]
+            [| name
+               code
+               receiver
+               supply |]
         |> runNow
 
     let result = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
-    result.Query "balanceOf" [| ethConn.Account.Address |] |> should equal (bucketSupply * bucketCount * BigInteger(100UL) * BigInteger(1000000000000000000UL))
+    result.Query "balanceOf" [| receiver |] |> should equal (supply * BigInteger(1000000000000000000UL))
     result
 
 
-let FRY =
-    let abi = Abi("../../../../build/contracts/TestToken.json")
+let DAI = makeToken "MCD DAI stable coin" "DAI" ethConn.Account.Address (bucketSupply * bucketCount * (BigInteger 100UL))
 
-    let deployTxReceipt =
-        ethConn.DeployContractAsync abi
-            [| "Foundry logistics token"
-               "FRY"
-               ethConn.Account.Address
-               BigInteger(1000000UL) |]
-        |> runNow
 
-    let result = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
-    result
+let FRY = makeToken "Foundry logistics token" "FRY" ethConn.Account.Address (BigInteger 1000000UL)
 
 
 let referrerReward referrerAddress amount =
@@ -45,26 +36,33 @@ let referrerReward referrerAddress amount =
         ((amount / BigInteger 1000000000000000000UL) + BigInteger 10000UL)
         
 
-let treasury = 
+let makeTreasury owner = 
     let abi = Abi("../../../../build/contracts/Forwarder.json")
     
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| ethConn.Account.Address |]
+            [| owner |]
         |> runNow
 
     ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
-let bucketSale =
-    let abi = Abi("../../../../build/contracts/BucketSale.json")
 
+let treasury = makeTreasury ethConn.Account.Address
+
+
+let makeBucketSale treasury startOfSale bucketPeriod bucketSupply bucketCount tokenOnSale tokenSoldFor =
+    let abi = Abi("../../../../build/contracts/BucketSale.json")
+    
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| treasury.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; FRY.Address; DAI.Address |]
+            [| treasury; startOfSale; bucketPeriod; bucketSupply; bucketCount; tokenOnSale; tokenSoldFor |]
         |> runNow
-
+    
     ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
+
+let bucketSale = makeBucketSale treasury.Address startOfSale bucketPeriod bucketSupply bucketCount FRY.Address DAI.Address
+    
 
 let addFryMinter newMinter =
     let isMinter = FRY.Query "isMinter" [| newMinter |]
