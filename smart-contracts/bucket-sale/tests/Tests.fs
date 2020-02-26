@@ -348,9 +348,9 @@ let ``F_C001 - Can construct a forwarder with an owner``() =
     forwarder.Query "owner" [| |] |> shouldEqualIgnoringCase owner.Address
 
 
-[<Specification("Forwarder", "changeOwner", 1)>]
+[<Specification("Forwarder", "changeOwner", 2)>]
 [<Fact>]
-let ``F_CO001 - Cannot change the owner if not called by the current owner``() =
+let ``F_CO002 - Cannot change the owner if not called by the current owner``() =
     let testTreasury = makeTreasury ethConn.Account.Address
 
     let newOwner = makeAccount()
@@ -360,6 +360,21 @@ let ``F_CO001 - Cannot change the owner if not called by the current owner``() =
     let forwardedEvent = changeOwnerTx |> decodeFirstEvent<ForwardedEventDTO> 
     forwardedEvent.To |> shouldEqualIgnoringCase testTreasury.Address
     forwardedEvent |> shouldRevertWithMessage "only owner"
+
+
+[<Specification("Forwarder", "changeOwner", 1)>]
+[<Fact>]
+let ``F_CO001 - Should change the owner if called by the current owner``() =
+    let testTreasury = makeTreasury ethConn.Account.Address
+
+    let newOwner = makeAccount()
+    let changeOwnerTx = testTreasury.ExecuteFunctionFrom "changeOwner" [| newOwner.Address |] ethConn
+
+    changeOwnerTx |> shouldSucceed
+    let ownerChangedEvent = changeOwnerTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.OwnerChangedEventDTO> 
+    ownerChangedEvent.NewOwner |> shouldEqualIgnoringCase newOwner.Address
+
+    testTreasury.Query "owner" [||] |> should equal newOwner.Address
 
 
 [<Specification("Forwarder", "foward", 1)>]
