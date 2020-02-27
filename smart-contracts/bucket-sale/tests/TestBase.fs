@@ -226,5 +226,3 @@ let startOfSale = debug.BlockTimestamp - BigInteger (1UL * days)
 let bucketPeriod = 7UL * hours |> BigInteger
 let bucketSupply = 50000UL |> BigInteger
 let bucketCount = 1250UL |> BigInteger
-let tokenOnSale = zeroAddress
-let tokenSoldFor = zeroAddress

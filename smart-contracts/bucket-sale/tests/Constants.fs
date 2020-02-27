@@ -7,4 +7,3 @@ type EthAddress(rawString: string) =
 let minutes = 60UL
 let hours = 60UL * minutes
 let days = 24UL * hours
-let zeroAddress = EthAddress.Zero
