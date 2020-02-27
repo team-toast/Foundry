@@ -167,8 +167,8 @@ contract BucketSale
         buyToWithdraw.buyerTokensExited = calculateExitableTokens(_bucketId, _buyer);
         totalExitedTokens = totalExitedTokens.add(buyToWithdraw.buyerTokensExited);
 
-        bool mintAndTransferSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
-        require(mintAndTransferSuccess, "exit mint/transfer failed");
+        bool mintSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
+        require(mintSuccess, "exit mint/transfer failed");
 
         emit Exited(
             _bucketId,
