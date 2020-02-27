@@ -167,8 +167,8 @@ contract BucketSale
         buyToWithdraw.buyerTokensExited = calculateExitableTokens(_bucketId, _buyer);
         totalExitedTokens = totalExitedTokens.add(buyToWithdraw.buyerTokensExited);
 
-        bool transferSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
-        require(transferSuccess, "exit mint/transfer failed");
+        bool mintAndTransferSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
+        require(mintAndTransferSuccess, "exit mint/transfer failed");
 
         emit Exited(
             _bucketId,
@@ -208,8 +208,8 @@ contract BucketSale
             the integer amount of Dai happens to exactly equal the bonusPercent value we want
             (i.e. 10,000 Dai == 10000 == 10*ONE_PERC)
 
-            So, if multiplier = daiContributed + (10*ONE_PERC), this increases the multiplier
-            by 10% for every 10k Dai, which is what we want.
+            So below, `multiplier = daiContributed + (10*ONE_PERC)`
+            increases the multiplier by 1% for every 1k Dai, which is what we want.
             */
             uint multiplier = daiContributed.add(ONE_PERC.mul(10)); // this guarentees every referrer gets at least 10% of what the buyer is buying
 

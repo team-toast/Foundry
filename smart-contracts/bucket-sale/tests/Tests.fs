@@ -37,7 +37,7 @@ let ``B_C000 - Can construct the contract``() =
     let abi = Abi("../../../../build/contracts/BucketSale.json")
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| treasury.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; zeroAddress; zeroAddress |]
+            [| treasury.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; zeroAddress; zeroAddress |] // zero addr here but
         |> runNow
 
     deployTxReceipt |> shouldSucceed
@@ -50,7 +50,7 @@ let ``B_C000 - Can construct the contract``() =
     contract.Query "bucketPeriod" [||] |> should equal bucketPeriod
     contract.Query "bucketSupply" [||] |> should equal bucketSupply
     contract.Query "bucketCount" [||] |> should equal bucketCount
-    contract.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase tokenOnSale
+    contract.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase tokenOnSale // tokenOnSale here??
     contract.Query "tokenSoldFor" [||] |> shouldEqualIgnoringCase tokenSoldFor
 
 
@@ -59,8 +59,8 @@ let ``B_C000 - Can construct the contract``() =
 [<Fact>]
 let ``B_EN001|B_EN005 - Cannot enter a past bucket``() =
     let currentBucket = bucketSale.Query "currentBucket" [||] |> uint64
-    let incorrectBucket = currentBucket - 1UL
-    let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; incorrectBucket; 1UL; zeroAddress |] debug
+    let bucketInPast = currentBucket - 1UL
+    let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; bucketInPast; 1UL; zeroAddress |] debug
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage "cannot enter past buckets"
 
@@ -81,6 +81,7 @@ let ``B_EN003 - Cannot enter a bucket if payment reverts (with no referrer)``() 
     addFryMinter bucketSale.Address
     seedWithDAI debug.ContractPlug.Address (BigInteger(10UL))
     let currentBucket = bucketSale.Query "currentBucket" [||]
+    // We should add a check to ensure ethConn.Account.Address has no DAI (and thus is failing for right reasons)
     let receipt = bucketSale.ExecuteFunctionFrom "enter" [| ethConn.Account.Address; currentBucket; 1UL; zeroAddress |] debug
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithUnknownMessage
@@ -114,6 +115,7 @@ let ``B_EN004 - Can enter a bucket with no referrer``() =
                 bucketToEnter
                 valueToEnter
                 referrer)
+    // Unclear where the assertion is. I guess it's in enterBucket? Maybe not a problem. Maybe should rename enterBucket -> enterBucketShouldSucceed??        
 
 
 [<Specification("BucketSale", "enter", 6)>]
@@ -125,7 +127,7 @@ let ``B_EN006 - Cannot enter a bucket beyond the designated bucket count - 1 (be
     seedWithDAI debug.ContractPlug.Address valueToEnter
 
     let approveDaiReceipt =  DAI.ExecuteFunctionFrom "approve" [| bucketSale.Address; valueToEnter |] debug
-    approveDaiReceipt |> shouldSucceed
+    approveDaiReceipt |> shouldSucceed // Wait, why didn't we do this in B_EN001-3?
 
     let bucketCount = bucketSale.Query "bucketCount" [||] // will be one greater than what can be correctly entered
     let receipt =
@@ -178,6 +180,7 @@ let ``B_EN008 - Can enter a bucket with a referrer``() =
                 valueToEnter
                 randomReferrer)
 
+    // Does this test the balance of the treasury? Or state change listed in spec, in general?
 
 [<Specification("BucketSale", "exit", 1)>]
 [<Fact>]
@@ -187,7 +190,7 @@ let ``B_EX001 - Cannot exit a bucket that is not yet concluded``() =
 
     let firstForwardEvent = decodeFirstEvent<ForwardedEventDTO> firstReceipt
     firstForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
-    firstForwardEvent.Success |> should equal false
+    firstForwardEvent.Success |> should equal false // Do we need all these extra lines? We don't test for them elsewhere
     firstForwardEvent.To |> should equal bucketSale.Address
     firstForwardEvent.Wei |> should equal BigInteger.Zero
     firstForwardEvent |> shouldRevertWithMessage "can only exit from concluded buckets"
@@ -236,7 +239,7 @@ let ``B_EX003 - Cannot exit a buy you have already exited``() =
         valueToEnter
         randomReferrer
 
-    bucketPeriod |> ethConn.TimeTravel 
+    ethConn.TimeTravel bucketPeriod
 
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] debug
     let firstForwardEvent = decodeFirstEvent<ForwardedEventDTO> firstReceipt
@@ -270,8 +273,12 @@ let ``B_EX004 - Cannot exit a bucket if the token minting fails``() =
         valueToEnter
         randomReferrer
 
+    // test if above succeeds    
+
     bucketPeriod |> ethConn.TimeTravel 
     
+    // Note that we have not added the minter to bucketSale, so this should cause the minting to fail
+
     let exitReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; buyer |] debug
     let exitForwardEvent = decodeFirstEvent<Foundry.Contracts.Debug.ContractDefinition.ForwardedEventDTO> exitReceipt
     exitForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
@@ -287,9 +294,9 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
     addFryMinter bucketSale.Address
 
     let initialTimeJump = rnd.Next(0, (bucketCount * bucketPeriod / (BigInteger 2)) |> int32) |> uint64
-    initialTimeJump |> ethConn.TimeTravel 
+    ethConn.TimeTravel initialTimeJump
 
-    let bucketBeforeEntering = bucketSale.Query "currentBucket" [||]
+    let bucketBeforeEntering = bucketSale.Query "currentBucket" [||] // `bucketBeforeEntering` is a confusing name to me
     bucketBeforeEntering |> should lessThan bucketCount
     let sender = ethConn.Account.Address
     let randomBuyer = makeAccount().Address
@@ -325,13 +332,14 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
             referrer 
 
     let jumpAfterBuys = (bucketCount - bucketBeforeEntering - BigInteger.One) * bucketPeriod |> int64
-    jumpAfterBuys |> ethConn.TimeTravel
+    ethConn.TimeTravel jumpAfterBuys
 
     for (buyer, bucketEntered, valueEntered, _) in buysToPerform do
         exitBucket 
             buyer 
             bucketEntered 
             valueEntered
+    // Does this check all the relevant state?    
 
 
 [<Specification("Forwarder", "constructor", 1)>]
@@ -348,9 +356,10 @@ let ``F_C001 - Can construct a forwarder with an owner``() =
     forwarder.Query "owner" [| |] |> shouldEqualIgnoringCase owner.Address
 
 
-[<Specification("Forwarder", "changeOwner", 2)>]
+
+[<Specification("Forwarder", "changeOwner", 1)>]
 [<Fact>]
-let ``F_CO002 - Cannot change the owner if not called by the current owner``() =
+let ``F_CO001 - Cannot change the owner if not called by the current owner``() =
     let testTreasury = makeTreasury ethConn.Account.Address
 
     let newOwner = makeAccount()
@@ -362,23 +371,9 @@ let ``F_CO002 - Cannot change the owner if not called by the current owner``() =
     forwardedEvent |> shouldRevertWithMessage "only owner"
 
 
-[<Specification("Forwarder", "fallback", 2)>]
+[<Specification("Forwarder", "changeOwner", 2)>]
 [<Fact>]
-let ``F_FB001 - Should be able to receive eth``() =
-    let testTreasury = makeTreasury ethConn.Account.Address
-    let balanceBefore = ethConn.GetEtherBalance testTreasury.Address
-    let amount = rnd.Next(0,100) |> BigInteger
-    
-    let sendEtherTx = ethConn.SendEther testTreasury.Address amount
-
-    sendEtherTx |> shouldSucceed 
-    sendEtherTx.Logs |> should be Empty
-    ethConn.GetEtherBalance testTreasury.Address |> should equal (balanceBefore + amount)
-
-
-[<Specification("Forwarder", "changeOwner", 1)>]
-[<Fact>]
-let ``F_CO001 - Should change the owner if called by the current owner``() =
+let ``F_CO002 - Should change the owner if called by the current owner``() =
     let testTreasury = makeTreasury ethConn.Account.Address
 
     let newOwner = makeAccount()
@@ -461,4 +456,18 @@ let ``F_F003B - Should succeed when called by a owner and sending eth``() =
 
     ethConn.GetEtherBalance treasury.Address |> should equal (treasuryBalanceBefore - amount)
     ethConn.GetEtherBalance recipient.Address |> should equal (recipientBalanceBefore + amount)
+
+[<Specification("Forwarder", "fallback", 1)>]
+[<Fact>]
+let ``F_FB001 - Should be able to receive eth``() =
+    let testTreasury = makeTreasury ethConn.Account.Address
+    let balanceBefore = ethConn.GetEtherBalance testTreasury.Address
+    let amount = rnd.Next(0,100) |> BigInteger
+    
+    let sendEtherTx = ethConn.SendEther testTreasury.Address amount
+
+    sendEtherTx |> shouldSucceed 
+    sendEtherTx.Logs |> should be Empty
+    ethConn.GetEtherBalance testTreasury.Address |> should equal (balanceBefore + amount)
+
 
