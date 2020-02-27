@@ -15,7 +15,7 @@ open Nethereum.Contracts
 open Nethereum.Hex.HexConvertors.Extensions
 open System.Text
 open Constants
-open Foundry.Contracts.Forwarder.ContractDefinition
+open Foundry.Contracts.Debug.ContractDefinition
 open System.Threading.Tasks
 open Nethereum.Web3.Accounts
 
@@ -80,6 +80,20 @@ type EthereumConnection(nodeURI: string, privKey: string) =
         |> Async.AwaitTask 
         |> Async.RunSynchronously
 
+    member this.GetEtherBalance address = 
+        let hexBigIntResult = this.Web3.Eth.GetBalance.SendRequestAsync(address) |> runNow
+        hexBigIntResult.Value
+
+    member this.SendEtherAsync address (amount:BigInteger) =
+        let transactionInput =
+            TransactionInput
+                ("", address, this.Account.Address, hexBigInt 4000000UL, hexBigInt 1000000000UL, HexBigInteger(amount))
+        this.Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(transactionInput, null)
+
+    member this.SendEther address amount =
+        this.SendEtherAsync address amount |> runNow
+
+
 type Profile = { FunctionName: string; Duration: string }
 
 let profileMe f =
@@ -127,12 +141,12 @@ type ContractPlug(ethConn: EthereumConnection, abi: Abi, address) =
         this.ExecuteFunctionAsync functionName arguments |> runNow
             
 
-type Forwarder(ethConn: EthereumConnection) =
+type Debug(ethConn: EthereumConnection) =
     member val public EthConn = ethConn
     member val public AsyncTxSender = ethConn :> IAsyncTxSender
 
     member val public  ContractPlug =
-        let abi = Abi("../../../../build/contracts/Forwarder.json")
+        let abi = Abi("../../../../build/contracts/Debug.json")
         let deployTxReceipt = ethConn.DeployContractAsync abi [||] |> runNow
         ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
@@ -178,7 +192,7 @@ let isRinkeby rinkeby notRinkeby =
 let ethConn =
     isRinkeby (EthereumConnection(rinkebyURI, rinkebyPrivKey)) (EthereumConnection(ganacheURI, ganachePrivKey))
 
-let forwarder = Forwarder(ethConn)
+let debug = Debug(ethConn)
 
 let shouldEqualIgnoringCase (a: string) (b: string) =
     let aString = a |> string
@@ -208,7 +222,7 @@ let makeAccount() =
     Account(privateKey);
 
 
-let startOfSale = forwarder.BlockTimestamp - BigInteger (1UL * days)
+let startOfSale = debug.BlockTimestamp - BigInteger (1UL * days)
 let bucketPeriod = 7UL * hours |> BigInteger
 let bucketSupply = 50000UL |> BigInteger
 let bucketCount = 1250UL |> BigInteger

@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../../common/ForwarderBase.sol";
+import "../../common/DebugBase.sol";
 
 import "../../common/openzeppelin/token/ERC20/ERC20Detailed.sol";
 import "../../common/openzeppelin/token/ERC20/ERC20Mintable.sol";
@@ -23,4 +23,4 @@ contract TestToken is Context, ERC20Detailed, ERC20Mintable, ERC20Burnable
     }
 }
 
-contract Forwarder is ForwarderBase { }
+contract Debug is DebugBase { }

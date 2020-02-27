@@ -69,14 +69,12 @@ contract BucketSale
         tokenSoldFor = _tokenSoldFor;
     }
 
-    function timestamp() public view returns (uint256 _now) { return block.timestamp; }
-
     function currentBucket()
         public
         view
         returns (uint)
     {
-        return timestamp().sub(startOfSale).div(bucketPeriod);
+        return block.timestamp.sub(startOfSale).div(bucketPeriod);
     }
 
     event Entered(
