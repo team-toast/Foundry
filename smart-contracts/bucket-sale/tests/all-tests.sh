@@ -1,3 +1,7 @@
+cd ..
+truffle compile
+cd tests
+
 dotnet test --filter DisplayName~M000
 
 dotnet test --filter DisplayName~B_C000
