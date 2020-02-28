@@ -8,6 +8,9 @@ contract BucketSale
 {
     using SafeMath for uint256;
 
+    string public termsAndConditions = "By interacting with this contract, I confirm I am not a US citizen or a citizen of the People's Republic of China. I agree to be bound by the terms found at https://foundrydao.com/sale/terms";
+
+
     // When passing around bonuses, we use 3 decimals of precision.
     uint constant HUNDRED_PERC = 100000;
     uint constant ONE_PERC = 1000;
@@ -85,7 +88,7 @@ contract BucketSale
         uint _buyerReferralReward,
         address indexed _referrer,
         uint _referrerReferralReward);
-    function enter(
+    function agreeToTermsAndConditionsListedInThisContractAndEnterSale(
             address _buyer,
             uint _bucketId,
             uint _amount,

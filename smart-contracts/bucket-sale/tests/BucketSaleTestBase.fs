@@ -103,7 +103,7 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     let referralBucketBefore = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
 
     // act
-    let receipt = bucketSale.ExecuteFunctionFrom "enter" [| buyer; bucketToEnter; valueToEnter; referrer |] debug
+    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| buyer; bucketToEnter; valueToEnter; referrer |] debug
 
     // assert
     let forwardedEvent = decodeFirstEvent<ForwardedEventDTO> receipt
