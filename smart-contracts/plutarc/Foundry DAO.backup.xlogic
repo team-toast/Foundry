@@ -1,21 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <flyingLogic majorVersion="4" minorVersion="0" uuid="166f238b-5608-45f8-bfca-3bab24c6b92a">
+    <domains>
+        <domain>
+            <attributes>
+                <attribute class="java.lang.String" key="name">Effects extensions</attribute>
+                <attribute class="java.lang.Boolean" key="builtIn">false</attribute>
+                <attribute class="java.lang.Boolean" key="hidden">false</attribute>
+            </attributes>
+            <entityClass>
+                <attributes>
+                    <attribute class="java.util.UUID" key="uuid">23c7e34f-05cd-4532-b8c0-a828f070016c</attribute>
+                    <attribute class="java.lang.String" key="name">Sub-goal</attribute>
+                    <attribute class="com.arciem.graphics.ColorRGB" key="color">
+                        <colorRGB blue="0.20000000298023224" green="1.0" red="0.20000000298023224"/>
+                    </attribute>
+                    <attribute class="java.lang.Double" key="edgeWeight">1.0</attribute>
+                    <attribute class="java.lang.Boolean" key="milestone">false</attribute>
+                    <attribute class="java.lang.Boolean" key="builtIn">false</attribute>
+                    <attribute class="java.lang.String" key="assignment">ResourceAssignment.fixedeffort</attribute>
+                </attributes>
+            </entityClass>
+        </domain>
+    </domains>
     <displaySettings addEntityAsSuccessor="false" annotationToBrowse="false" bias="Bias.end" confidenceVisible="false" edgeNotesVisible="false" edgeWeightsVisible="false" entityIdVisible="false"
-        noteNumbersVisible="false" orientation="Orientation.leftToRight" projectManagementVisible="false"/>
+        noteNumbersVisible="false" orientation="Orientation.rightToLeft" projectManagementVisible="false"/>
     <documentInfo author="" comments="" keywords="" title=""/>
-    <canvasSettings canvasMode="graph" horizScroll="1281.0" vertScroll="1600.0" zoom="1.0"/>
+    <canvasSettings canvasMode="graph" horizScroll="1196.0" vertScroll="0.0" zoom="0.798"/>
     <chartSettings classVisible="true" classWidth="90" completionVisible="true" effortVisible="true" finishDateVisible="true" resourceVisible="true" resourceWidth="60" startDateVisible="true" titleWidth="104"/>
     <inspectorSettings visibility="true" width="284">
-        <inspector title="document" visibility="minimized"/>
-        <inspector height="180" title="text" visibility="open"/>
         <inspector title="navigation" visibility="minimized"/>
-        <inspector height="150" title="userattrs" visibility="minimized"/>
-        <inspector height="150" title="domain" visibility="open"/>
-        <inspector title="layout" visibility="open"/>
-        <inspector title="operators" visibility="open"/>
         <inspector title="element" visibility="minimized"/>
+        <inspector title="document" visibility="minimized"/>
+        <inspector height="150" title="domain" visibility="open"/>
+        <inspector title="operators" visibility="open"/>
+        <inspector height="180" title="text" visibility="open"/>
+        <inspector title="layout" visibility="open"/>
+        <inspector height="150" title="userattrs" visibility="minimized"/>
     </inspectorSettings>
-    <printSettings footerLeft="" footerMiddle="" footerRight="" headerLeft="" headerMiddle="" headerRight=""/>
+    <printSettings footerLeft="" footerMiddle="" footerRight="" headerLeft="" headerMiddle="" headerRight="" paperMargins="54.0 54.0 54.0 54.0" paperName="Letter" paperOrientation="portrait"
+        paperSize="612.0 792.0 in" saveInk="false" showselhalo="true"/>
     <decisionGraph>
         <entityOperator class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator">
             <fuzzyOr/>
@@ -27,21 +50,6 @@
             <operatorFamily class="com.flyinglogic.decisiongraph.DecisionGraphOperatorFamily"/>
             <graph majorVersion="1" minorVersion="0" supportsGroups="true">
                 <vertices>
-                    <vertex eid="1">
-                        <attributes>
-                            <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">Attacks must cost the attacker more than they stand to gain</attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
-                                <fuzzyOr/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
-                            </attribute>
-                        </attributes>
-                    </vertex>
                     <vertex eid="2" inEdgeOrder="26 38">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
@@ -105,7 +113,7 @@
                     <vertex eid="7">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">Governance should be upgradable somehow</attribute>
+                            <attribute class="java.lang.String" key="title">Governance can be changed if needed</attribute>
                             <attribute class="com.arciem.FuzzyBoolean" key="confidence">
                                 <fuzzyBoolean true="0.5"/>
                             </attribute>
@@ -132,7 +140,7 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="9" inEdgeOrder="157 124 187 203">
+                    <vertex eid="9">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
                             <attribute class="java.lang.String" key="title">Foundry DAO must make money both now and in the future</attribute>
@@ -192,10 +200,10 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="13" inEdgeOrder="87 120">
+                    <vertex eid="13" outEdgeOrder="188 290">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">Poisonous injections must be reliably and expediently neutralized by the governance system</attribute>
+                            <attribute class="java.lang.String" key="title">Poisonous injections and spam must be reliably and expediently neutralized by the governance system</attribute>
                             <attribute class="com.arciem.FuzzyBoolean" key="confidence">
                                 <fuzzyBoolean true="0.5"/>
                             </attribute>
@@ -237,7 +245,7 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="16" inEdgeOrder="93 95 97 99">
+                    <vertex eid="16" inEdgeOrder="93 95 97 99 211">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
                             <attribute class="java.lang.String" key="title">Foundry DAO should be free of software vulnerabilities</attribute>
@@ -372,7 +380,7 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="35" inEdgeOrder="36 41">
+                    <vertex eid="35">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
                             <attribute class="java.lang.String" key="title">It should be economically impractical to loan FRY and enact a predatory vote without suffering a large loss in FRY value</attribute>
@@ -405,7 +413,7 @@
                     <vertex eid="39" inEdgeOrder="40 43">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">A large portion of tokens are locked into the governance contract</attribute>
+                            <attribute class="java.lang.String" key="title">A large portion of tokens are locked into the governance contract to earn rewards as opposed to facing indirect dilution</attribute>
                             <attribute class="com.arciem.FuzzyBoolean" key="confidence">
                                 <fuzzyBoolean true="0.5"/>
                             </attribute>
@@ -462,7 +470,7 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="49" outEdgeOrder="55 69">
+                    <vertex eid="49" outEdgeOrder="55 69 253">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
                             <attribute class="java.lang.String" key="title">A continuous sale, selling at the market price will annually dilute FRY by 10%</attribute>
@@ -504,21 +512,6 @@
                             </attribute>
                             <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
                                 <entityClass name="Intermediate Effect" uuid="37700c38-6dfd-3458-a9f9-fb6eed52460f"/>
-                            </attribute>
-                        </attributes>
-                    </vertex>
-                    <vertex eid="59">
-                        <attributes>
-                            <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">Governance will not be spammed to a halt by nonsense / poisonous proposals</attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
-                                <fuzzyOr/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
                             </attribute>
                         </attributes>
                     </vertex>
@@ -567,25 +560,10 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="64" outEdgeOrder="86 87">
+                    <vertex eid="64">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
                             <attribute class="java.lang.String" key="title">Attackers know they will get their bonds burned if they anger voters</attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
-                                <fuzzyOr/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Intermediate Effect" uuid="37700c38-6dfd-3458-a9f9-fb6eed52460f"/>
-                            </attribute>
-                        </attributes>
-                    </vertex>
-                    <vertex eid="66" inEdgeOrder="67 65">
-                        <attributes>
-                            <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">Spam attacks require risking money money</attribute>
                             <attribute class="com.arciem.FuzzyBoolean" key="confidence">
                                 <fuzzyBoolean true="0.5"/>
                             </attribute>
@@ -630,7 +608,7 @@
                     <vertex eid="78">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">Injecting many poison proposals increases the risk of burn exponentially</attribute>
+                            <attribute class="java.lang.String" key="title">Every consecutive proposal risks exponentially more.</attribute>
                             <attribute class="com.arciem.FuzzyBoolean" key="confidence">
                                 <fuzzyBoolean true="0.5"/>
                             </attribute>
@@ -642,7 +620,7 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="80" inEdgeOrder="68 82">
+                    <vertex eid="80" inEdgeOrder="67 65">
                         <attributes>
                             <attribute class="java.lang.String" key="type">junctor</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
@@ -653,7 +631,7 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="83">
+                    <vertex eid="83" outEdgeOrder="214 266">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
                             <attribute class="java.lang.String" key="title">Honest proposers should not be punished for submitting proposals, even if the proposals get rejected.</attribute>
@@ -668,22 +646,7 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="88">
-                        <attributes>
-                            <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">Honest proposals know they aren't at risk of losing their bonds</attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
-                                <fuzzyOr/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
-                            </attribute>
-                        </attributes>
-                    </vertex>
-                    <vertex eid="90" inEdgeOrder="84 85">
+                    <vertex eid="90" inEdgeOrder="84 85 275">
                         <attributes>
                             <attribute class="java.lang.String" key="type">junctor</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
@@ -814,51 +777,6 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="109" outEdgeOrder="113 115">
-                        <attributes>
-                            <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">The Solidity smart contract code should preferably be as simple as possible.</attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
-                                <fuzzyOr/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
-                            </attribute>
-                        </attributes>
-                    </vertex>
-                    <vertex eid="112">
-                        <attributes>
-                            <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">The solidity code contains no assembly</attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
-                                <fuzzyOr/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
-                            </attribute>
-                        </attributes>
-                    </vertex>
-                    <vertex eid="114">
-                        <attributes>
-                            <attribute class="java.lang.String" key="type">entity</attribute>
-                            <attribute class="java.lang.String" key="title">The solidity code does not require abstracted storage</attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
-                                <fuzzyOr/>
-                            </attribute>
-                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
-                            </attribute>
-                        </attributes>
-                    </vertex>
                     <vertex eid="116">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
@@ -886,17 +804,6 @@
                             </attribute>
                             <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
                                 <entityClass name="Intermediate Effect" uuid="37700c38-6dfd-3458-a9f9-fb6eed52460f"/>
-                            </attribute>
-                        </attributes>
-                    </vertex>
-                    <vertex eid="123" inEdgeOrder="121 125">
-                        <attributes>
-                            <attribute class="java.lang.String" key="type">junctor</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
-                                <fuzzyAnd/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
                             </attribute>
                         </attributes>
                     </vertex>
@@ -1023,12 +930,12 @@
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex collapsed="true" eid="151" grouped="96 16 98 92 94">
+                    <vertex collapsed="true" eid="151" grouped="96 16 98 92 94 204 205 206">
                         <attributes>
                             <attribute class="java.lang.String" key="title">Foundry DAO should be free of software vulnerabilities</attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="152" inEdgeOrder="153 154 155 156 188 201">
+                    <vertex eid="152">
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
                             <attribute class="java.lang.String" key="title">Foundry DAO does not lose money due to an attack</attribute>
@@ -1039,7 +946,7 @@
                                 <fuzzyOr/>
                             </attribute>
                             <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Intermediate Effect" uuid="37700c38-6dfd-3458-a9f9-fb6eed52460f"/>
+                                <entityClass name="Sub-goal" uuid="23c7e34f-05cd-4532-b8c0-a828f070016c"/>
                             </attribute>
                         </attributes>
                     </vertex>
@@ -1136,11 +1043,11 @@
                                 <fuzzyOr/>
                             </attribute>
                             <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
-                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
+                                <entityClass name="Sub-goal" uuid="23c7e34f-05cd-4532-b8c0-a828f070016c"/>
                             </attribute>
                         </attributes>
                     </vertex>
-                    <vertex eid="191" inEdgeOrder="190 193 194 195 196 199 200 202">
+                    <vertex eid="191" inEdgeOrder="190 193 194 195 199 200 202 249 291">
                         <attributes>
                             <attribute class="java.lang.String" key="type">junctor</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
@@ -1155,6 +1062,304 @@
                         <attributes>
                             <attribute class="java.lang.String" key="type">entity</attribute>
                             <attribute class="java.lang.String" key="title">Foundry DAO does not require Quorum management to make decisions</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Intermediate Effect" uuid="37700c38-6dfd-3458-a9f9-fb6eed52460f"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="204">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">The solidity code contains no assembly</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="205">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">The solidity code does not require abstracted storage</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="206" inEdgeOrder="209 210">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">The Solidity smart contract code should preferably be as simple as possible.</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="212">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">Foundry DAO can  fund lucrative projects</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Sub-goal" uuid="23c7e34f-05cd-4532-b8c0-a828f070016c"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="217" inEdgeOrder="203 213 157">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">junctor</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
+                                <fuzzyAnd/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="237">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">There's a rage quit mechanism which allows token holders to retrieve their portion of liquid ERC20 assets in the Foundry treasury</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Action" uuid="848bf04e-8fc5-3f36-941d-7098c6629e1c"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="239">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">Foundry DAO learns from mistakes</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="240">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">Foundry DAO discovers better ways to make decisions or act</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Desirable Effect" uuid="0771e1fe-d6bc-3252-b9d4-6804c3c190ff"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="241">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">New information becomes available</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Precondition" uuid="61ddaec5-3461-313a-9f99-d8f1326c7c19"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="242">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">It is possible to upgrade the Foundry DAO governance contract</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Action" uuid="848bf04e-8fc5-3f36-941d-7098c6629e1c"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="244" inEdgeOrder="243 246 247 248">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">junctor</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
+                                <fuzzyAnd/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="251" inEdgeOrder="253 255 216">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">The Foundry DAO treasury has money</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Intermediate Effect" uuid="37700c38-6dfd-3458-a9f9-fb6eed52460f"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="254">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">Foundry DAO has an intial sale of FRY</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Action" uuid="848bf04e-8fc5-3f36-941d-7098c6629e1c"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="256" inEdgeOrder="265 259">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">Foundry has opportunities to fund</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Intermediate Effect" uuid="37700c38-6dfd-3458-a9f9-fb6eed52460f"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="258" inEdgeOrder="214 125 121">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">junctor</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
+                                <fuzzyAnd/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="262" inEdgeOrder="252 257">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">junctor</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
+                                <fuzzyAnd/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="264" inEdgeOrder="187 266">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">junctor</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
+                                <fuzzyAnd/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="274">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">Voters will not burn the money of honest proposals</attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyOrVertexOperator" key="forwardOperator">
+                                <fuzzyOr/>
+                            </attribute>
+                            <attribute class="com.flyinglogic.logicgraph.entityclass.EntityClass" key="entityClass">
+                                <entityClass name="Precondition" uuid="61ddaec5-3461-313a-9f99-d8f1326c7c19"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="276" inEdgeOrder="87 120 201 82">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">junctor</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
+                                <fuzzyAnd/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="278" inEdgeOrder="36 41">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">junctor</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
+                                <fuzzyAnd/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="280" inEdgeOrder="154 215 235 188 153 156 155">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">junctor</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.FuzzyAndVertexOperator" key="forwardOperator">
+                                <fuzzyAnd/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </vertex>
+                    <vertex eid="289">
+                        <attributes>
+                            <attribute class="java.lang.String" key="type">entity</attribute>
+                            <attribute class="java.lang.String" key="title">Governance will not be inundated with spam</attribute>
                             <attribute class="com.arciem.FuzzyBoolean" key="confidence">
                                 <fuzzyBoolean true="0.5"/>
                             </attribute>
@@ -1234,7 +1439,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="36" source="6" target="35">
+                    <edge eid="36" source="6" target="278">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1267,7 +1472,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="41" source="39" target="35">
+                    <edge eid="41" source="39" target="278">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1377,7 +1582,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="65" source="62" target="66">
+                    <edge eid="65" source="62" target="80">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1388,18 +1593,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="67" source="60" target="66">
-                        <attributes>
-                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
-                                <multiply/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                        </attributes>
-                    </edge>
-                    <edge eid="68" source="66" target="80">
+                    <edge eid="67" source="60" target="80">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1465,7 +1659,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="82" source="78" target="80">
+                    <edge eid="82" source="78" target="276">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1498,40 +1692,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="86" source="64" target="59">
-                        <attributes>
-                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
-                                <multiply/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                        </attributes>
-                    </edge>
-                    <edge eid="87" source="64" target="13">
-                        <attributes>
-                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
-                                <multiply/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                        </attributes>
-                    </edge>
-                    <edge eid="89" source="88" target="83">
-                        <attributes>
-                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
-                                <multiply/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                        </attributes>
-                    </edge>
-                    <edge eid="91" source="90" target="88">
+                    <edge eid="87" source="64" target="276">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1619,7 +1780,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="113" source="109" target="112">
+                    <edge eid="120" source="116" target="276">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1630,7 +1791,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="115" source="109" target="114">
+                    <edge eid="121" source="19" target="258">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1641,40 +1802,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="120" source="116" target="13">
-                        <attributes>
-                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
-                                <multiply/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                        </attributes>
-                    </edge>
-                    <edge eid="121" source="19" target="123">
-                        <attributes>
-                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
-                                <multiply/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                        </attributes>
-                    </edge>
-                    <edge eid="124" source="123" target="9">
-                        <attributes>
-                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
-                                <multiply/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                        </attributes>
-                    </edge>
-                    <edge eid="125" source="122" target="123">
+                    <edge eid="125" source="122" target="258">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1817,7 +1945,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="153" source="16" target="152">
+                    <edge eid="153" source="16" target="280">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1828,7 +1956,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="154" source="15" target="152">
+                    <edge eid="154" source="15" target="280">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1839,7 +1967,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="155" source="17" target="152">
+                    <edge eid="155" source="17" target="280">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1850,7 +1978,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="156" source="18" target="152">
+                    <edge eid="156" source="18" target="280">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1861,7 +1989,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="157" source="152" target="9">
+                    <edge eid="157" source="152" target="217">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1938,7 +2066,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="187" source="186" target="9">
+                    <edge eid="187" source="186" target="264">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -1949,7 +2077,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="188" source="13" target="152">
+                    <edge eid="188" source="13" target="280">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -2015,17 +2143,6 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="196" source="59" target="191">
-                        <attributes>
-                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
-                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
-                                <multiply/>
-                            </attribute>
-                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
-                                <fuzzyBoolean true="0.5"/>
-                            </attribute>
-                        </attributes>
-                    </edge>
                     <edge eid="198" source="47" target="197">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
@@ -2059,7 +2176,7 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="201" source="22" target="152">
+                    <edge eid="201" source="22" target="276">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
@@ -2081,7 +2198,359 @@
                             </attribute>
                         </attributes>
                     </edge>
-                    <edge eid="203" source="189" target="9">
+                    <edge eid="203" source="189" target="217">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="209" source="205" target="206">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="210" source="204" target="206">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="211" source="206" target="16">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="213" source="212" target="217">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="214" source="83" target="258">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="215" source="35" target="280">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="216" source="11" target="251">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="218" source="217" target="9">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="235" source="8" target="280">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="236" source="14" target="15">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="238" source="237" target="14">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="243" source="242" target="244">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="245" source="244" target="7">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="246" source="241" target="244">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="247" source="240" target="244">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="248" source="239" target="244">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="249" source="7" target="191">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="250" source="90" target="83">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="252" source="251" target="262">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="253" source="49" target="251">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="255" source="254" target="251">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="257" source="256" target="262">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="259" source="258" target="256">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="263" source="262" target="212">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="265" source="264" target="256">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="266" source="83" target="264">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="275" source="274" target="90">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="277" source="276" target="13">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="279" source="278" target="35">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="281" source="280" target="152">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="290" source="13" target="289">
+                        <attributes>
+                            <attribute class="java.lang.Double" key="weight">1.0</attribute>
+                            <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
+                                <multiply/>
+                            </attribute>
+                            <attribute class="com.arciem.FuzzyBoolean" key="confidence">
+                                <fuzzyBoolean true="0.5"/>
+                            </attribute>
+                        </attributes>
+                    </edge>
+                    <edge eid="291" source="289" target="191">
                         <attributes>
                             <attribute class="java.lang.Double" key="weight">1.0</attribute>
                             <attribute class="com.flyinglogic.logicgraph.operator.MultiplyEdgeOperator" key="forwardOperator">
