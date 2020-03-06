@@ -29,13 +29,13 @@
     <chartSettings classVisible="true" classWidth="90" completionVisible="true" effortVisible="true" finishDateVisible="true" resourceVisible="true" resourceWidth="60" startDateVisible="true" titleWidth="104"/>
     <inspectorSettings visibility="true" width="284">
         <inspector title="navigation" visibility="minimized"/>
-        <inspector title="element" visibility="minimized"/>
         <inspector title="document" visibility="minimized"/>
-        <inspector height="150" title="domain" visibility="open"/>
-        <inspector title="operators" visibility="open"/>
-        <inspector height="180" title="text" visibility="open"/>
-        <inspector title="layout" visibility="open"/>
         <inspector height="150" title="userattrs" visibility="minimized"/>
+        <inspector title="layout" visibility="open"/>
+        <inspector title="operators" visibility="open"/>
+        <inspector title="element" visibility="minimized"/>
+        <inspector height="150" title="domain" visibility="open"/>
+        <inspector height="180" title="text" visibility="open"/>
     </inspectorSettings>
     <printSettings footerLeft="" footerMiddle="" footerRight="" headerLeft="" headerMiddle="" headerRight="" paperMargins="54.0 54.0 54.0 54.0" paperName="Letter" paperOrientation="portrait"
         paperSize="612.0 792.0 in" saveInk="false" showselhalo="true"/>
