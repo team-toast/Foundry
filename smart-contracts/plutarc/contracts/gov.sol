@@ -17,8 +17,8 @@ pragma solidiy ^0.5.11;
 
 interface ILiquidDemocracy // ironic name
 {
-    // deposits and delegates
-    function Deposit(uint _tokens, address _representative) external;
+    // deposits and delegates, _treeDepth indicates the treedepth any representative must be less than to delegate to
+    function Deposit(uint _tokens, uint _treeDepth, address _representative) external;
 
     // delegates tokens already deposited to a new represetative
     function Delegate(address _representative) external;
