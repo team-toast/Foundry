@@ -161,7 +161,7 @@ focusedBucketPane bucketSale bucketId wallet enterUXModel referralModalActive no
                         , focusedBucketTimeLeftEl
                             (getRelevantTimingInfo bucketInfo now testMode)
                             testMode
-                        , enterBidUX (Wallet.userInfo wallet) enterUXModel bucketInfo testMode
+                        , enterBidUX wallet enterUXModel bucketInfo testMode
                         ]
                )
         )
@@ -456,8 +456,8 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Maybe UserInfo -> EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
-enterBidUX maybeUserInfo enterUXModel bucketInfo testMode =
+enterBidUX : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
+enterBidUX wallet enterUXModel bucketInfo testMode =
     Element.column
         [ Element.width Element.fill
         , Element.spacing 20
@@ -465,7 +465,7 @@ enterBidUX maybeUserInfo enterUXModel bucketInfo testMode =
         [ bidInputBlock enterUXModel bucketInfo testMode
         , bidImpactBlock enterUXModel bucketInfo testMode
         , otherBidsImpactMsg
-        , actionButton maybeUserInfo enterUXModel bucketInfo testMode
+        , actionButton wallet enterUXModel bucketInfo testMode
         ]
 
 
@@ -716,11 +716,11 @@ otherBidsImpactMsg =
         ]
 
 
-actionButton : Maybe UserInfo -> EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
-actionButton maybeUserInfo enterUXModel bucketInfo testMode =
-    case maybeUserInfo of
+actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
+actionButton wallet enterUXModel bucketInfo testMode =
+    case Wallet.userInfo wallet of
         Nothing ->
-            connectToWeb3Button
+            connectToWeb3Button wallet
 
         Just userInfo ->
             let
@@ -1426,18 +1426,54 @@ green =
     Element.rgb255 0 162 149
 
 
-connectToWeb3Button : Element Msg
-connectToWeb3Button =
-    Element.el
-        [ Element.width Element.fill
-        , Element.padding 17
-        , Element.Border.rounded 4
-        , Element.Font.size 20
-        , Element.Font.semiBold
-        , Element.Font.center
-        , Element.Background.color EH.softRed
-        , Element.Font.color EH.white
-        , Element.pointer
-        , Element.Events.onClick <| CmdUp CmdUp.Web3Connect
-        ]
-        (Element.text "Connect to Wallet")
+connectToWeb3Button : Wallet.State -> Element Msg
+connectToWeb3Button wallet =
+    let
+        commonButtonStyles =
+            [ Element.width Element.fill
+            , Element.padding 17
+            , Element.Border.rounded 4
+            , Element.Font.size 20
+            , Element.Font.semiBold
+            , Element.Font.center
+            , Element.Background.color EH.softRed
+            , Element.Font.color EH.white
+            , Element.pointer
+            ]
+
+        commonTextStyles =
+            [ Element.Font.bold
+            , Element.Font.italic
+            , Element.Font.size 20
+            , Element.Font.center
+            , Element.padding 17
+            ]
+    in
+    case wallet of
+        Wallet.NoneDetected ->
+            Element.el
+                (commonTextStyles
+                    ++ [ Element.Font.color EH.softRed ]
+                )
+                (Element.text "No web3 wallet found")
+
+        Wallet.OnlyNetwork _ ->
+            Element.el
+                (commonButtonStyles
+                    ++ [ Element.Events.onClick <| CmdUp CmdUp.Web3Connect ]
+                )
+                (Element.text "Connect to Wallet")
+
+        Wallet.WrongNetwork ->
+            Element.el
+                (commonTextStyles
+                    ++ [ Element.Font.color EH.softRed ]
+                )
+                (Element.text "Wrong network. Switch to ETH Mainnet.")
+
+        Wallet.Active _ ->
+            Element.el
+                (commonTextStyles
+                    ++ [ Element.Font.color EH.green ]
+                )
+                (Element.text "Wallet connected!")
