@@ -2,7 +2,7 @@ var elm_ethereum_ports = require('elm-ethereum-ports');
 var networkChangeNotifier = require('./networkChangeNotifier');
 var clipboardLib = require('clipboard');
 
-import { Elm } from '../../src/App'
+import { Elm } from '../../elm/App'
 
 //window.testStuff = secureComms.testStuff;
 window.web3Connected = false;

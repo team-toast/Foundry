@@ -32,7 +32,7 @@ image =
 daiSymbol : Image
 daiSymbol =
     JustImage
-        { src = "static/img/dai-symbol.png"
+        { src = "img/dai-symbol.png"
         , description = "DAI"
         }
 
@@ -40,7 +40,7 @@ daiSymbol =
 downArrow : Image
 downArrow =
     JustImage
-        { src = "static/img/arrow-down.svg"
+        { src = "img/arrow-down.svg"
         , description = "down"
         }
 
@@ -48,7 +48,7 @@ downArrow =
 upArrow : Image
 upArrow =
     JustImage
-        { src = "static/img/arrow-up.svg"
+        { src = "img/arrow-up.svg"
         , description = "up"
         }
 
@@ -56,7 +56,7 @@ upArrow =
 qmarkCircle : Image
 qmarkCircle =
     JustImage
-        { src = "static/img/qmark-circle.svg"
+        { src = "img/qmark-circle.svg"
         , description = ""
         }
 
@@ -67,7 +67,7 @@ qmarkCircle =
 loadingArrows : Image
 loadingArrows =
     JustImage
-        { src = "static/img/loading-arrows.svg"
+        { src = "img/loading-arrows.svg"
         , description = "waiting"
         }
 
@@ -75,7 +75,7 @@ loadingArrows =
 closeIconBlack : Image
 closeIconBlack =
     JustImage
-        { src = "static/img/remove-circle-black.svg"
+        { src = "img/remove-circle-black.svg"
         , description = "close"
         }
 
@@ -83,7 +83,7 @@ closeIconBlack =
 closeIconWhite : Image
 closeIconWhite =
     JustImage
-        { src = "static/img/remove-circle-white.svg"
+        { src = "img/remove-circle-white.svg"
         , description = "close"
         }
 
@@ -91,7 +91,7 @@ closeIconWhite =
 flame : Image
 flame =
     JustImage
-        { src = "static/img/flame.png"
+        { src = "img/flame.png"
         , description = "flame"
         }
 
@@ -100,7 +100,7 @@ flame =
 navigateLeft : Image
 navigateLeft =
     JustImage
-        { src = "static/img/keyboard-arrow-left.svg"
+        { src = "img/keyboard-arrow-left.svg"
         , description = "left"
         }
 
@@ -108,7 +108,7 @@ navigateLeft =
 navigateRight : Image
 navigateRight =
     JustImage
-        { src = "static/img/keyboard-arrow-right.svg"
+        { src = "img/keyboard-arrow-right.svg"
         , description = "right"
         }
 
@@ -116,13 +116,13 @@ navigateRight =
 searchIcon : Image
 searchIcon =
     JustImage
-        { src = "static/img/search.svg"
+        { src = "img/search.svg"
         , description = "search"
         }
 
 foundrySchematic : Image
 foundrySchematic =
     JustImage
-        {src = "static/img/foundry-schematic.png"
+        {src = "img/foundry-schematic.png"
         , description = "foundry schematic"
         }
