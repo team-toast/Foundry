@@ -45,8 +45,6 @@ init flags url key =
 
         providerNotice =
             case fullRoute.pageRoute of
-                Routing.Home ->
-                    Nothing
                 _ ->
                     if wallet == Wallet.NoneDetected then
                         Just UN.noWeb3Provider
@@ -124,8 +122,8 @@ init flags url key =
             , userAddress = Nothing
             , now = Time.millisToPosix flags.nowInMillis
             , txSentry = txSentry
-            , submodel = Home
-            , pageRoute = Routing.Home
+            , submodel = NullSubmodel
+            , pageRoute = Routing.NotFound
             , userNotices = []
             , dProfile = dProfile
             , maybeReferrer = maybeReferrer
@@ -412,11 +410,6 @@ updateFromPageRoute pageRoute prevModel =
 gotoPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )
 gotoPageRoute route prevModel =
     (case route of
-        Routing.Home ->
-            ( { prevModel | submodel = Home }
-            , Cmd.none
-            )
-
         Routing.Sale ->
             let
                 ( bucketSaleModel, bucketSaleCmd ) =
@@ -442,7 +435,7 @@ gotoPageRoute route prevModel =
 runCmdDown : CmdDown.CmdDown -> Model -> ( Model, Cmd Msg )
 runCmdDown cmdDown prevModel =
     case prevModel.submodel of
-        Home ->
+        NullSubmodel ->
             ( prevModel, Cmd.none )
 
         BucketSaleModel bucketSaleModel ->
@@ -495,7 +488,7 @@ subscriptions model =
 submodelSubscriptions : Model -> Sub Msg
 submodelSubscriptions model =
     case model.submodel of
-        Home ->
+        NullSubmodel ->
             Sub.none
 
         BucketSaleModel bucketSaleModel ->

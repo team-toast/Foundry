@@ -9,7 +9,6 @@ import Element.Border
 import Element.Events
 import Element.Font
 import Helpers.Element as EH
-import Home.View
 import Images exposing (Image)
 import Routing
 import Types exposing (..)
@@ -119,29 +118,28 @@ headerContent dProfile model =
         , Element.spacing (30 |> changeForMobile 10 dProfile)
         , Element.paddingXY 30 17 |> changeForMobile (Element.padding 10) dProfile
         ]
-        [ 
-        --     let
-        --     smLinks =
-        --         [ Element.el
-        --             [ Element.centerY
-        --             , Element.alignRight
-        --             ]
-        --           <|
-        --             headerExternalLink dProfile "Blog" "https://medium.com/daihard-buidlers"
-        --         , Element.el
-        --             [ Element.centerY
-        --             , Element.alignRight
-        --             ]
-        --           <|
-        --             headerExternalLink dProfile "Reddit" "https://reddit.com/r/DAIHard"
-        --         , Element.el
-        --             [ Element.centerY
-        --             , Element.alignRight
-        --             ]
-        --           <|
-        --             headerExternalLink dProfile "Telegram" "https://t.me/daihardexchange_group"
-        --         ]
-        --   in
+        [ --     let
+          --     smLinks =
+          --         [ Element.el
+          --             [ Element.centerY
+          --             , Element.alignRight
+          --             ]
+          --           <|
+          --             headerExternalLink dProfile "Blog" "https://medium.com/daihard-buidlers"
+          --         , Element.el
+          --             [ Element.centerY
+          --             , Element.alignRight
+          --             ]
+          --           <|
+          --             headerExternalLink dProfile "Reddit" "https://reddit.com/r/DAIHard"
+          --         , Element.el
+          --             [ Element.centerY
+          --             , Element.alignRight
+          --             ]
+          --           <|
+          --             headerExternalLink dProfile "Telegram" "https://t.me/daihardexchange_group"
+          --         ]
+          --   in
           case dProfile of
             Desktop ->
                 Element.column
@@ -154,7 +152,8 @@ headerContent dProfile model =
                         [ Element.spacing 10
                         ]
                         []
-                        -- smLinks
+
+                    -- smLinks
                     ]
 
             Mobile ->
@@ -164,7 +163,7 @@ headerContent dProfile model =
                     , Element.alignRight
                     ]
                     -- ([ logoElement dProfile ] ++ smLinks)
-                    [ logoElement dProfile]
+                    [ logoElement dProfile ]
         ]
 
 
@@ -286,8 +285,8 @@ submodelElementAndModal dProfile model =
     let
         ( submodelEl, modalEls ) =
             case model.submodel of
-                Home ->
-                    ( Home.View.root dProfile
+                NullSubmodel ->
+                    ( Element.none
                     , []
                     )
 

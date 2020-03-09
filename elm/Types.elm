@@ -1,6 +1,5 @@
 module Types exposing (..)
 
-import UserNotice as UN exposing (UserNotice)
 import Browser
 import Browser.Navigation
 import BucketSale.Types
@@ -12,6 +11,7 @@ import Eth.Types exposing (Address)
 import Routing
 import Time
 import Url
+import UserNotice as UN exposing (UserNotice)
 import Wallet
 
 
@@ -57,5 +57,5 @@ type Msg
 
 
 type Submodel
-    = Home
+    = NullSubmodel
     | BucketSaleModel BucketSale.Types.Model

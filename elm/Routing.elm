@@ -16,8 +16,7 @@ type alias FullRoute =
 
 
 type PageRoute
-    = Home
-    | Sale
+    = Sale
     | NotFound
 
 
@@ -32,8 +31,7 @@ fullRouteParser =
 pageRouteParser : Parser (PageRoute -> a) a
 pageRouteParser =
     Url.Parser.oneOf
-        [ Url.Parser.map Home Url.Parser.top
-        , Url.Parser.map Sale (Url.Parser.s "sale")
+        [ Url.Parser.map Sale Url.Parser.top
         ]
 
 
@@ -47,9 +45,6 @@ routeToString fullRoute =
             [ "#" ]
          )
             ++ (case fullRoute.pageRoute of
-                    Home ->
-                        []
-
                     Sale ->
                         [ "sale" ]
 
