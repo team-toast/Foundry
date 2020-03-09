@@ -32,7 +32,7 @@ contract Scripts {
 
         uint[1201] memory results;
         uint pointer = 0;
-        for (uint bucketId = 0; bucketId < math.min(_bucketSale.currentBucket(), _bucketSale.bucketCount()); bucketId = bucketId.add(1))
+        for (uint bucketId = 0; bucketId < Math.min(_bucketSale.currentBucket(), _bucketSale.bucketCount()); bucketId = bucketId.add(1))
         {
             (uint valueEntered, uint buyerTokensExited) = _bucketSale.buys(bucketId, _buyer);
 
