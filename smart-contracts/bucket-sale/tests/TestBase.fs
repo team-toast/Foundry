@@ -15,7 +15,7 @@ open Nethereum.Contracts
 open Nethereum.Hex.HexConvertors.Extensions
 open System.Text
 open Constants
-open DAIHard.Contracts.Forwarder.ContractDefinition
+open Foundry.Contracts.Debug.ContractDefinition
 open System.Threading.Tasks
 open Nethereum.Web3.Accounts
 
@@ -29,13 +29,6 @@ let rec rndRange min max  =
         yield! rndRange min max
         }
 
-let startOfSale = DateTimeOffset(DateTime.Now.AddDays(-1.0)).ToUnixTimeSeconds() |> BigInteger
-let bucketPeriod = 7UL * hours |> BigInteger
-let bucketSupply = 50000UL |> BigInteger
-let bucketCount = 1250UL |> BigInteger
-
-let tokenOnSale = zeroAddress
-let tokenSoldFor = zeroAddress
 let bigInt (value: uint64) = BigInteger(value)
 let hexBigInt (value: uint64) = HexBigInteger(bigInt value)
 
@@ -87,6 +80,20 @@ type EthereumConnection(nodeURI: string, privKey: string) =
         |> Async.AwaitTask 
         |> Async.RunSynchronously
 
+    member this.GetEtherBalance address = 
+        let hexBigIntResult = this.Web3.Eth.GetBalance.SendRequestAsync(address) |> runNow
+        hexBigIntResult.Value
+
+    member this.SendEtherAsync address (amount:BigInteger) =
+        let transactionInput =
+            TransactionInput
+                ("", address, this.Account.Address, hexBigInt 4000000UL, hexBigInt 1000000000UL, HexBigInteger(amount))
+        this.Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(transactionInput, null)
+
+    member this.SendEther address amount =
+        this.SendEtherAsync address amount |> runNow
+
+
 type Profile = { FunctionName: string; Duration: string }
 
 let profileMe f =
@@ -134,12 +141,12 @@ type ContractPlug(ethConn: EthereumConnection, abi: Abi, address) =
         this.ExecuteFunctionAsync functionName arguments |> runNow
             
 
-type Forwarder(ethConn: EthereumConnection) =
+type Debug(ethConn: EthereumConnection) =
     member val public EthConn = ethConn
     member val public AsyncTxSender = ethConn :> IAsyncTxSender
 
     member val public  ContractPlug =
-        let abi = Abi("../../../../build/contracts/Forwarder.json")
+        let abi = Abi("../../../../build/contracts/Debug.json")
         let deployTxReceipt = ethConn.DeployContractAsync abi [||] |> runNow
         ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
@@ -153,6 +160,9 @@ type Forwarder(ethConn: EthereumConnection) =
 
     member this.DecodeForwardedEvents(receipt: TransactionReceipt) =
         receipt.DecodeAllEvents<ForwardedEventDTO>() |> Seq.map (fun i -> i.Event)
+
+    member this.BlockTimestamp:BigInteger = 
+        this.ContractPlug.Query "blockTimestamp" [||]
 
 type ForwardedEventDTO with
     member this.ResultAsRevertMessage =
@@ -182,7 +192,7 @@ let isRinkeby rinkeby notRinkeby =
 let ethConn =
     isRinkeby (EthereumConnection(rinkebyURI, rinkebyPrivKey)) (EthereumConnection(ganacheURI, ganachePrivKey))
 
-let forwarder = Forwarder(ethConn)
+let debug = Debug(ethConn)
 
 let shouldEqualIgnoringCase (a: string) (b: string) =
     let aString = a |> string
@@ -210,3 +220,11 @@ let makeAccount() =
     let ecKey = Nethereum.Signer.EthECKey.GenerateKey();
     let privateKey = ecKey.GetPrivateKeyAsBytes().ToHex();
     Account(privateKey);
+
+
+let startOfSale = debug.BlockTimestamp - BigInteger (1UL * days)
+let bucketPeriod = 7UL * hours |> BigInteger
+let bucketSupply = 50000UL |> BigInteger
+let bucketCount = 1250UL |> BigInteger
+let tokenOnSale = zeroAddress
+let tokenSoldFor = zeroAddress

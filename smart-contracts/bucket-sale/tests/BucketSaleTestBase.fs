@@ -3,64 +3,80 @@
 open TestBase
 open System.Numerics
 open FsUnit.Xunit
-open DAIHard.Contracts.BucketSale.ContractDefinition
+open Foundry.Contracts.BucketSale.ContractDefinition
 open Constants
+open Foundry.Contracts.Debug.ContractDefinition
 
-let DAI =
+let makeToken name code receiver supply =
     let abi = Abi("../../../../build/contracts/TestToken.json")
 
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| "MCD DAI stable coin"
-               "DAI"
-               ethConn.Account.Address
-               bucketSupply * bucketCount * BigInteger(100UL) |]
+            [| name
+               code
+               receiver
+               supply |]
         |> runNow
 
     let result = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
-    result.Query "balanceOf" [| ethConn.Account.Address |] |> should equal (bucketSupply * bucketCount * BigInteger(100UL) * BigInteger(1000000000000000000UL))
+    result.Query "balanceOf" [| receiver |] |> should equal (supply * BigInteger(1000000000000000000UL))
     result
 
 
-let FRY =
-    let abi = Abi("../../../../build/contracts/TestToken.json")
-
-    let deployTxReceipt =
-        ethConn.DeployContractAsync abi
-            [| "Foundry logistics token"
-               "FRY"
-               ethConn.Account.Address
-               BigInteger(1000000UL) |]
-        |> runNow
-
-    let result = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
-    result
+let DAI = makeToken "MCD DAI stable coin" "DAI" ethConn.Account.Address (bucketSupply * bucketCount * (BigInteger 100UL))
 
 
-let referrerReward amount =
-    ((amount / BigInteger 1000000000000000000UL) + BigInteger 10000UL)
+let FRY = makeToken "Foundry logistics token" "FRY" ethConn.Account.Address (BigInteger 1000000UL)
+
+
+let referrerReward referrerAddress amount =
+    if referrerAddress = EthAddress.Zero then
+        BigInteger.Zero
+    else
+        ((amount / BigInteger 1000000000000000000UL) + BigInteger 10000UL)
         
 
-let bucketSale =
-    let abi = Abi("../../../../build/contracts/BucketSale.json")
-
+let makeTreasury owner = 
+    let abi = Abi("../../../../build/contracts/Forwarder.json")
+    
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| ethConn.Account.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; FRY.Address; DAI.Address |]
+            [| owner |]
         |> runNow
 
     ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
 
-let seedBucketWithFries() =
-    let frySupplyBefore = FRY.Query "balanceOf" [| bucketSale.Address |]
-    let transferFryTxReceipt =
-        FRY.ExecuteFunction "transfer"
-            [| bucketSale.Address
-               bucketSupply * bucketCount |]
-    transferFryTxReceipt |> shouldSucceed
-    FRY.Query "balanceOf" [| bucketSale.Address |] |> should equal (frySupplyBefore + bucketSupply * bucketCount)
+let treasury = makeTreasury ethConn.Account.Address
 
+
+let makeBucketSale treasury startOfSale bucketPeriod bucketSupply bucketCount tokenOnSale tokenSoldFor =
+    let abi = Abi("../../../../build/contracts/BucketSale.json")
+    
+    let deployTxReceipt =
+        ethConn.DeployContractAsync abi
+            [| treasury; startOfSale; bucketPeriod; bucketSupply; bucketCount; tokenOnSale; tokenSoldFor |]
+        |> runNow
+    
+    ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
+
+
+let bucketSale = makeBucketSale treasury.Address startOfSale bucketPeriod bucketSupply bucketCount FRY.Address DAI.Address
+    
+
+let addFryMinter newMinter =
+    let isMinter = FRY.Query "isMinter" [| newMinter |]
+    if not isMinter then
+        let addFryMinterTxReceipt =  FRY.ExecuteFunction "addMinter" [| newMinter |]
+        addFryMinterTxReceipt |> shouldSucceed
+    else
+        ()
+
+    FRY.Query "isMinter" [| newMinter |] |> should equal true
+
+let renounceFryMinter minter =
+    let renounceFryMinterTxReceipt =  FRY.ExecuteFunction "renounceMinter" [| minter |]
+    renounceFryMinterTxReceipt |> shouldSucceed
 
 let seedWithDAI (recipient:string) (amount:BigInteger) =
     let balanceBefore = DAI.Query "balanceOf" [| recipient |] 
@@ -69,15 +85,17 @@ let seedWithDAI (recipient:string) (amount:BigInteger) =
     DAI.Query "balanceOf" [| recipient |] |> should equal (balanceBefore + amount)
 
 let enterBucket sender buyer bucketToEnter valueToEnter referrer =
-    let approveDaiTxReceipt = DAI.ExecuteFunction "approve" [| bucketSale.Address; valueToEnter |]
+    valueToEnter |> should greaterThan BigInteger.Zero
+    seedWithDAI debug.ContractPlug.Address valueToEnter
+    let approveDaiTxReceipt = DAI.ExecuteFunctionFrom "approve" [| bucketSale.Address; valueToEnter |] debug
     approveDaiTxReceipt |> shouldSucceed
 
     let referrerReferredTotalBefore = bucketSale.Query "referredTotal" [| referrer |]
     let referrerRewardPercBefore = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
-    let calculatedReferrerRewardPercBefore = referrerReward referrerReferredTotalBefore
+    let calculatedReferrerRewardPercBefore = referrerReward referrer referrerReferredTotalBefore
     referrerRewardPercBefore |> should equal calculatedReferrerRewardPercBefore
-    let senderDaiBalanceBefore = DAI.Query "balanceOf" [| sender |]
-    let bucketDaiBalanceBefore = DAI.Query "balanceOf" [| bucketSale.Address |]
+    let senderDaiBalanceBefore = DAI.Query "balanceOf" [| debug.ContractPlug.Address |]
+    let treasuryDaiBalanceBefore = DAI.Query "balanceOf" [| treasury.Address |]
     let buyForBucketBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter; buyer |]
     let buyerRewardBuyBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
     let referrerRewardBuyBefore = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
@@ -85,15 +103,18 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     let referralBucketBefore = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
 
     // act
-    let receipt = bucketSale.ExecuteFunction "enter" [| buyer; bucketToEnter; valueToEnter; referrer |]
+    let receipt = bucketSale.ExecuteFunctionFrom "enter" [| buyer; bucketToEnter; valueToEnter; referrer |] debug
 
     // assert
+    let forwardedEvent = decodeFirstEvent<ForwardedEventDTO> receipt
+    let revertMessage = forwardedEvent.ResultAsRevertMessage
+    forwardedEvent.Success |> should equal true
     receipt |> shouldSucceed
 
     // event validation
     let referredTotalAfter = bucketSale.Query "referredTotal" [| referrer |]
     referredTotalAfter |> should equal (referrerReferredTotalBefore + valueToEnter)
-    let calculatedReferrerRewardPercAfter = referrerReward referredTotalAfter
+    let calculatedReferrerRewardPercAfter = referrerReward referrer referredTotalAfter
     let referrerRewardPercAfter = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
     referrerRewardPercAfter |> should equal calculatedReferrerRewardPercAfter
     let buyerReward = valueToEnter / BigInteger 10UL
@@ -104,7 +125,7 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
         enteredEvent.BucketId |> should equal bucketToEnter
         enteredEvent.Buyer |> shouldEqualIgnoringCase buyer
         enteredEvent.BuyerReferralReward |> should equal buyerReward
-        enteredEvent.Sender |> shouldEqualIgnoringCase sender
+        enteredEvent.Sender |> shouldEqualIgnoringCase debug.ContractPlug.Address
         enteredEvent.Referrer |> shouldEqualIgnoringCase referrer
         enteredEvent.ReferrerReferralReward |> should equal referrerReward
         enteredEvent.ValueEntered |> should equal valueToEnter
@@ -112,13 +133,13 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
         enteredEvent.BucketId |> should equal bucketToEnter
         enteredEvent.Buyer |> shouldEqualIgnoringCase buyer
         enteredEvent.BuyerReferralReward |> should equal BigInteger.Zero
-        enteredEvent.Sender |> shouldEqualIgnoringCase sender
+        enteredEvent.Sender |> shouldEqualIgnoringCase debug.ContractPlug.Address
         enteredEvent.Referrer |> shouldEqualIgnoringCase EthAddress.Zero
         enteredEvent.ReferrerReferralReward |> should equal BigInteger.Zero
         enteredEvent.ValueEntered |> should equal valueToEnter
 
     // state validation
-    bucketSale.Query "owner" [||] |> shouldEqualIgnoringCase ethConn.Account.Address
+    bucketSale.Query "treasury" [||] |> shouldEqualIgnoringCase treasury.Address
     bucketSale.Query "startOfSale" [||] |> should equal startOfSale
     bucketSale.Query "bucketPeriod" [||] |> should equal bucketPeriod
     bucketSale.Query "bucketSupply" [||] |> should equal bucketSupply
@@ -126,10 +147,10 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     bucketSale.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase FRY.Address
     bucketSale.Query "tokenSoldFor" [||] |> shouldEqualIgnoringCase DAI.Address
 
-    let senderDaiBalanceAfter = DAI.Query "balanceOf" [| sender |]
+    let senderDaiBalanceAfter = DAI.Query "balanceOf" [| debug.ContractPlug.Address |]
     senderDaiBalanceAfter |> should equal (senderDaiBalanceBefore - valueToEnter)
-    let bucketSaleDaiBalanceAfter = DAI.Query "balanceOf" [| bucketSale.Address |]
-    bucketSaleDaiBalanceAfter |> should equal (bucketDaiBalanceBefore + valueToEnter)
+    let treasuryDaiBalanceAfter = DAI.Query "balanceOf" [| treasury.Address |]
+    treasuryDaiBalanceAfter |> should equal (treasuryDaiBalanceBefore + valueToEnter)
 
     let buyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter; buyer |]
     buyForBucketAfter.ValueEntered |> should equal (buyForBucketBefore.ValueEntered + valueToEnter)
@@ -139,9 +160,9 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     bucketAfter.TotalValueEntered |> should equal (bucketBefore.TotalValueEntered + valueToEnter)
 
     if referrer <> EthAddress.Zero then
-        let buyerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
-        buyerRewardBuyForBucketAfter.ValueEntered |> should equal (buyerRewardBuyBefore.ValueEntered + buyerReward)
-        buyerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
+        let buyerRewardBuyAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
+        buyerRewardBuyAfter.ValueEntered |> should equal (buyerRewardBuyBefore.ValueEntered + buyerReward)
+        buyerRewardBuyAfter.BuyerTokensExited |> should equal BigInteger.Zero
 
         let referrerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
         referrerRewardBuyForBucketAfter.ValueEntered |> should equal (referrerRewardBuyBefore.ValueEntered + referrerReward)
@@ -150,12 +171,12 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
         let referralBucketAfter = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
         referralBucketAfter.TotalValueEntered |> should equal (referralBucketBefore.TotalValueEntered + referrerReward + buyerReward)
     else
-        let buyerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
-        buyerRewardBuyForBucketAfter.ValueEntered |> should equal BigInteger.Zero
-        buyerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
+        let buyerRewardBuyAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; buyer |]
+        buyerRewardBuyAfter.ValueEntered |> should equal buyerRewardBuyBefore.ValueEntered
+        buyerRewardBuyAfter.BuyerTokensExited |> should equal BigInteger.Zero
 
         let referrerRewardBuyForBucketAfter = bucketSale.QueryObj<BuysOutputDTO> "buys" [| bucketToEnter + BigInteger.One; referrer |]
-        buyerRewardBuyForBucketAfter.ValueEntered |> should equal BigInteger.Zero
+        referrerRewardBuyForBucketAfter.ValueEntered |> should equal referrerRewardBuyBefore.ValueEntered
         referrerRewardBuyForBucketAfter.BuyerTokensExited |> should equal BigInteger.Zero
 
         let referralBucketAfter = bucketSale.QueryObj<BucketsOutputDTO> "buckets" [| bucketToEnter + BigInteger.One |]
@@ -164,7 +185,7 @@ let enterBucket sender buyer bucketToEnter valueToEnter referrer =
         
 let exitBucket buyer bucketEntered valueEntered =
     let buyerBalanceBefore = FRY.Query "balanceOf" [| buyer |]
-    let bucketSaleBalanceBefore = FRY.Query "balanceOf" [| bucketSale.Address |]
+    let totalSupplyBefore = FRY.Query "totalSupply" [||]
     let totalTokensExitedBefore = bucketSale.Query "totalExitedTokens" [||]
 
     let exitBucketReceipt = bucketSale.ExecuteFunction "exit" [| bucketEntered; buyer |] 
@@ -189,5 +210,5 @@ let exitBucket buyer bucketEntered valueEntered =
     let buyerBalanceAfter = FRY.Query "balanceOf" [| buyer |]
     buyerBalanceAfter |> should equal (buyerBalanceBefore + amountToExit)
 
-    let bucketSaleBalanceAfter = FRY.Query "balanceOf" [| bucketSale.Address |]
-    bucketSaleBalanceAfter |> should equal (bucketSaleBalanceBefore - amountToExit)
+    let totalSupplyAfter = FRY.Query "totalSupply" [||]
+    totalSupplyAfter |> should equal (totalSupplyBefore + amountToExit)

@@ -69,14 +69,12 @@ contract BucketSale
         tokenSoldFor = _tokenSoldFor;
     }
 
-    function timestamp() public view returns (uint256 _now) { return block.timestamp; }
-
     function currentBucket()
         public
         view
         returns (uint)
     {
-        return timestamp().sub(startOfSale).div(bucketPeriod);
+        return block.timestamp.sub(startOfSale).div(bucketPeriod);
     }
 
     event Entered(
@@ -135,7 +133,6 @@ contract BucketSale
     {
         require(_bucketId >= currentBucket(), "cannot enter past buckets");
         require(_bucketId < bucketCount, "invalid bucket id--past end of sale");
-        require(_amount > 0, "can't buy nothing");
 
         Buy storage buy = buys[_bucketId][_buyer];
         buy.valueEntered = buy.valueEntered.add(_amount);
