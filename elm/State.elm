@@ -14,6 +14,7 @@ import Eth.Sentry.Tx as TxSentry
 import Eth.Sentry.Wallet as WalletSentry
 import Eth.Types exposing (Address)
 import Eth.Utils
+import Http
 import Json.Decode
 import Json.Encode
 import List.Extra
@@ -28,6 +29,13 @@ import Wallet
 
 init : Flags -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
+    ( JurisdictionCheck <| Checking ( flags, url, key )
+    , inspectLocationRequestCmd
+    )
+
+
+initValidModel : ( Flags, Url, Browser.Navigation.Key ) -> ( ValidModel, Cmd Msg )
+initValidModel ( flags, url, key ) =
     let
         fullRoute =
             Routing.urlToFullRoute url
@@ -150,17 +158,60 @@ type alias EncryptedMessage =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg prevModel =
+update msg maybeValidPrevModel =
+    case maybeValidPrevModel of
+        Valid vModel ->
+            Tuple.mapFirst Valid <| updateValidModel msg vModel
+
+        JurisdictionCheck jModel ->
+            updateJurisdictionCheckModel msg jModel
+
+
+updateJurisdictionCheckModel : Msg -> JurisdictionCheckModel -> ( Model, Cmd Msg )
+updateJurisdictionCheckModel msg prevModel =
+    case prevModel of
+        Checking initValidModelStuff ->
+            case msg of
+                JurisdictionFetched fetchResult ->
+                    case fetchResult of
+                        Err httpErr ->
+                            ( JurisdictionCheck <| FetchError httpErr
+                            , Cmd.none
+                            )
+
+                        Ok jurisdiction ->
+                            case jurisdiction of
+                                ChinaOrUSA ->
+                                    ( JurisdictionCheck Excluded
+                                    , Cmd.none
+                                    )
+
+                                JurisdictionsWeArentIntimidatedIntoExcluding ->
+                                    Tuple.mapFirst Valid <| initValidModel initValidModelStuff
+
+                _ ->
+                    ( JurisdictionCheck <| Checking initValidModelStuff
+                    , Cmd.none
+                    )
+
+        noLongerChecking ->
+            ( JurisdictionCheck noLongerChecking
+            , Cmd.none
+            )
+
+
+updateValidModel : Msg -> ValidModel -> ( ValidModel, Cmd Msg )
+updateValidModel msg prevModel =
     case msg of
         CmdUp cmdUp ->
             case cmdUp of
                 CmdUp.Web3Connect ->
                     prevModel
-                        |> update ConnectToWeb3
+                        |> updateValidModel ConnectToWeb3
 
                 CmdUp.GotoRoute newRoute ->
                     prevModel
-                        |> update (GotoRoute newRoute)
+                        |> updateValidModel (GotoRoute newRoute)
 
                 CmdUp.GTag gtag ->
                     ( prevModel
@@ -192,10 +243,11 @@ update msg prevModel =
                             )
 
         Resize width _ ->
-            { prevModel
+            ( { prevModel
                 | dProfile = screenWidthToDisplayProfile width
-            }
-                |> update NoOp
+              }
+            , Cmd.none
+            )
 
         LinkClicked urlRequest ->
             let
@@ -321,6 +373,10 @@ update msg prevModel =
             , Cmd.none
             )
 
+        JurisdictionFetched fetchResult ->
+            -- We've already validated the model at this point
+            ( prevModel, Cmd.none )
+
         NoOp ->
             ( prevModel, Cmd.none )
 
@@ -332,7 +388,7 @@ update msg prevModel =
             ( prevModel, Cmd.none )
 
 
-runCmdUps : List (CmdUp.CmdUp Msg) -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+runCmdUps : List (CmdUp.CmdUp Msg) -> ( ValidModel, Cmd Msg ) -> ( ValidModel, Cmd Msg )
 runCmdUps cmdUps ( prevModel, prevCmd ) =
     List.foldl
         runCmdUp
@@ -340,11 +396,11 @@ runCmdUps cmdUps ( prevModel, prevCmd ) =
         cmdUps
 
 
-runCmdUp : CmdUp.CmdUp Msg -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+runCmdUp : CmdUp.CmdUp Msg -> ( ValidModel, Cmd Msg ) -> ( ValidModel, Cmd Msg )
 runCmdUp cmdUp ( prevModel, prevCmd ) =
     let
         ( newModel, newCmd ) =
-            update
+            updateValidModel
                 (CmdUp cmdUp)
                 prevModel
     in
@@ -356,7 +412,7 @@ runCmdUp cmdUp ( prevModel, prevCmd ) =
     )
 
 
-addUserNotices : List (UserNotice Msg) -> Model -> Model
+addUserNotices : List (UserNotice Msg) -> ValidModel -> ValidModel
 addUserNotices userNotices prevModel =
     List.foldl
         addUserNotice
@@ -364,7 +420,7 @@ addUserNotices userNotices prevModel =
         userNotices
 
 
-addUserNotice : UserNotice Msg -> Model -> Model
+addUserNotice : UserNotice Msg -> ValidModel -> ValidModel
 addUserNotice userNotice prevModel =
     if List.member userNotice prevModel.userNotices then
         prevModel
@@ -396,7 +452,7 @@ encodeGenPrivkeyArgs address signMsg =
         ]
 
 
-updateFromPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )
+updateFromPageRoute : Routing.PageRoute -> ValidModel -> ( ValidModel, Cmd Msg )
 updateFromPageRoute pageRoute prevModel =
     if prevModel.pageRoute == pageRoute then
         ( prevModel
@@ -407,7 +463,7 @@ updateFromPageRoute pageRoute prevModel =
         gotoPageRoute pageRoute prevModel
 
 
-gotoPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )
+gotoPageRoute : Routing.PageRoute -> ValidModel -> ( ValidModel, Cmd Msg )
 gotoPageRoute route prevModel =
     (case route of
         Routing.Sale ->
@@ -432,7 +488,7 @@ gotoPageRoute route prevModel =
             (\model -> { model | pageRoute = route })
 
 
-runCmdDown : CmdDown.CmdDown -> Model -> ( Model, Cmd Msg )
+runCmdDown : CmdDown.CmdDown -> ValidModel -> ( ValidModel, Cmd Msg )
 runCmdDown cmdDown prevModel =
     case prevModel.submodel of
         NullSubmodel ->
@@ -467,25 +523,58 @@ storeNewReferrerCmd refAddress =
         Json.Encode.string (Eth.Utils.addressToString refAddress)
 
 
+inspectLocationRequestCmd : Cmd Msg
+inspectLocationRequestCmd =
+    Http.get
+        { url = "http://api.ipstack.com/check?access_key=6d5c6c5d22f49d6de59d939beef80cc4&fields=country_code"
+        , expect =
+            Http.expectJson
+                JurisdictionFetched
+                locationResponseJurisdictionDecoder
+        }
+
+
+locationResponseJurisdictionDecoder : Json.Decode.Decoder Jurisdiction
+locationResponseJurisdictionDecoder =
+    Json.Decode.field
+        "country_code"
+        Json.Decode.string
+        |> Json.Decode.map countryCodeToJurisdiction
+
+
+countryCodeToJurisdiction : String -> Jurisdiction
+countryCodeToJurisdiction code =
+    if code == "US" || code == "CN" then
+        ChinaOrUSA
+
+    else
+        JurisdictionsWeArentIntimidatedIntoExcluding
+
+
 subscriptions : Model -> Sub Msg
-subscriptions model =
-    let
-        failedWalletDecodeToMsg : String -> Msg
-        failedWalletDecodeToMsg =
-            UN.walletError >> CmdUp.UserNotice >> CmdUp
-    in
-    Sub.batch
-        ([ Time.every 1000 Tick
-         , walletSentryPort (WalletSentry.decodeToMsg failedWalletDecodeToMsg WalletStatus)
-         , Maybe.map TxSentry.listen model.txSentry
-            |> Maybe.withDefault Sub.none
-         , Browser.Events.onResize Resize
-         ]
-            ++ [ submodelSubscriptions model ]
-        )
+subscriptions maybeValidModel =
+    case maybeValidModel of
+        JurisdictionCheck _ ->
+            Sub.none
+
+        Valid model ->
+            let
+                failedWalletDecodeToMsg : String -> Msg
+                failedWalletDecodeToMsg =
+                    UN.walletError >> CmdUp.UserNotice >> CmdUp
+            in
+            Sub.batch
+                ([ Time.every 1000 Tick
+                 , walletSentryPort (WalletSentry.decodeToMsg failedWalletDecodeToMsg WalletStatus)
+                 , Maybe.map TxSentry.listen model.txSentry
+                    |> Maybe.withDefault Sub.none
+                 , Browser.Events.onResize Resize
+                 ]
+                    ++ [ submodelSubscriptions model ]
+                )
 
 
-submodelSubscriptions : Model -> Sub Msg
+submodelSubscriptions : ValidModel -> Sub Msg
 submodelSubscriptions model =
     case model.submodel of
         NullSubmodel ->

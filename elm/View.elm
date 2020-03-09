@@ -21,7 +21,7 @@ root model =
     , body =
         [ let
             ( pageEl, modalEls ) =
-                pageElementAndModal model.dProfile model
+                pageElementAndModal model
 
             mainElementAttributes =
                 [ Element.width Element.fill
@@ -49,42 +49,49 @@ root model =
     }
 
 
-pageElementAndModal : DisplayProfile -> Model -> ( Element Msg, List (Element Msg) )
-pageElementAndModal dProfile model =
-    let
-        ( submodelEl, modalEls ) =
-            submodelElementAndModal dProfile model
+pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
+pageElementAndModal maybeValidModel =
+    case maybeValidModel of
+        JurisdictionCheck jModel ->
+            ( checkJurisdictionElement jModel
+            , []
+            )
 
-        maybeTestnetIndicator =
-            if model.testMode then
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size (24 |> changeForMobile 16 dProfile)
-                    , Element.Font.bold
-                    , Element.Font.italic
-                    , Element.Font.color EH.softRed
-                    ]
-                    (Element.text "In Test (Kovan) mode")
+        Valid model ->
+            let
+                ( submodelEl, modalEls ) =
+                    submodelElementAndModal model
 
-            else
-                Element.none
-    in
-    ( Element.column
-        [ Element.behindContent <| headerBackground dProfile
-        , Element.inFront <| headerContent dProfile model
-        , Element.width Element.fill
-        , Element.height Element.fill
-        , Element.padding (30 |> changeForMobile 10 dProfile)
-        , Element.spacing (20 |> changeForMobile 10 dProfile)
-        ]
-        [ Element.el
-            [ Element.height (Element.px (60 |> changeForMobile 110 dProfile)) ]
-            Element.none
-        , maybeTestnetIndicator
-        , submodelEl
-        ]
-    , modalEls ++ userNoticeEls dProfile model.userNotices
-    )
+                maybeTestnetIndicator =
+                    if model.testMode then
+                        Element.el
+                            [ Element.centerX
+                            , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
+                            , Element.Font.bold
+                            , Element.Font.italic
+                            , Element.Font.color EH.softRed
+                            ]
+                            (Element.text "In Test (Kovan) mode")
+
+                    else
+                        Element.none
+            in
+            ( Element.column
+                [ Element.behindContent <| headerBackground model.dProfile
+                , Element.inFront <| headerContent model.dProfile model
+                , Element.width Element.fill
+                , Element.height Element.fill
+                , Element.padding (30 |> changeForMobile 10 model.dProfile)
+                , Element.spacing (20 |> changeForMobile 10 model.dProfile)
+                ]
+                [ Element.el
+                    [ Element.height (Element.px (60 |> changeForMobile 110 model.dProfile)) ]
+                    Element.none
+                , maybeTestnetIndicator
+                , submodelEl
+                ]
+            , modalEls ++ userNoticeEls model.dProfile model.userNotices
+            )
 
 
 headerBackground : DisplayProfile -> Element Msg
@@ -111,7 +118,7 @@ headerBackground dProfile =
         Element.none
 
 
-headerContent : DisplayProfile -> Model -> Element Msg
+headerContent : DisplayProfile -> ValidModel -> Element Msg
 headerContent dProfile model =
     Element.row
         [ Element.width Element.fill
@@ -280,8 +287,8 @@ headerMenuAttributes =
     ]
 
 
-submodelElementAndModal : DisplayProfile -> Model -> ( Element Msg, List (Element Msg) )
-submodelElementAndModal dProfile model =
+submodelElementAndModal : ValidModel -> ( Element Msg, List (Element Msg) )
+submodelElementAndModal model =
     let
         ( submodelEl, modalEls ) =
             case model.submodel of
@@ -407,3 +414,14 @@ userNotice dProfile ( id, notice ) =
                 , Element.width Element.fill
                 ]
         )
+
+
+checkJurisdictionElement : JurisdictionCheckModel -> Element Msg
+checkJurisdictionElement jModel =
+    case jModel of
+        Checking _ ->
+            Element.text "Checking _ ->"
+        FetchError httpError ->
+            Element.text "Error httpError ->"
+        Excluded ->
+            Element.text "Excluded ->"
