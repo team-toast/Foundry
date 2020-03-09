@@ -15,7 +15,9 @@ contract Scripts {
     function getExitInfo(BucketSale _bucketSale, address _buyer)
         public
         view
-        returns (uint[1201] memory) // Assume 1200 max buckets. Add 1 for the first element, which will be the total exitable tokens.
+        returns (uint[1201] memory)
+        // The structure here is that the first element contains the sum of exitable tokens and the rest are the indices of the
+        // buckets the buyer can exit from
     {
         // goal:
         // 1. return the total FRY the buyer can extract
@@ -30,7 +32,7 @@ contract Scripts {
 
         uint[1201] memory results;
         uint pointer = 0;
-        for (uint bucketId = 0; bucketId < _bucketSale.currentBucket(); bucketId = bucketId.add(1))
+        for (uint bucketId = 0; bucketId < math.min(_bucketSale.currentBucket(), _bucketSale.bucketCount()); bucketId = bucketId.add(1))
         {
             (uint valueEntered, uint buyerTokensExited) = _bucketSale.buys(bucketId, _buyer);
 
