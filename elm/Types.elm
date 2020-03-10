@@ -8,9 +8,10 @@ import CommonTypes exposing (..)
 import Eth.Sentry.Tx as TxSentry exposing (TxSentry)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (Address)
+import Http
 import Routing
 import Time
-import Url
+import Url exposing (Url)
 import UserNotice as UN exposing (UserNotice)
 import Wallet
 
@@ -24,7 +25,18 @@ type alias Flags =
     }
 
 
-type alias Model =
+type Model
+    = JurisdictionCheck JurisdictionCheckModel
+    | Valid ValidModel
+
+
+type JurisdictionCheckModel
+    = Checking ( Flags, Url, Browser.Navigation.Key )
+    | Excluded
+    | FetchError Http.Error
+
+
+type alias ValidModel =
     { key : Browser.Navigation.Key
     , testMode : Bool
     , pageRoute : Routing.PageRoute
@@ -41,6 +53,7 @@ type alias Model =
 
 type Msg
     = NoOp
+    | JurisdictionFetched (Result Http.Error Jurisdiction)
     | GotoRoute Routing.PageRoute
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
@@ -59,3 +72,8 @@ type Msg
 type Submodel
     = NullSubmodel
     | BucketSaleModel BucketSale.Types.Model
+
+
+type Jurisdiction
+    = ChinaOrUSA
+    | JurisdictionsWeArentIntimidatedIntoExcluding
