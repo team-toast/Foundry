@@ -450,58 +450,35 @@ update msg prevModel =
                                             )
                                     )
 
-                        maybeBucketData =
-                            getBucketInfo
-                                bucketSale
-                                (getFocusedBucketId
-                                    bucketSale
-                                    newBucketView
-                                    prevModel.now
-                                    prevModel.testMode
-                                )
-                                prevModel.now
-                                prevModel.testMode
-                                |> (\fetchedBucketInfo ->
-                                        case fetchedBucketInfo of
-                                            ValidBucket bucketInfo ->
-                                                Just bucketInfo.bucketData
+                        maybeFetchBucketDataCmd =
+                            let
+                                bucketInfo =
+                                    getBucketInfo
+                                        bucketSale
+                                        (getFocusedBucketId
+                                            bucketSale
+                                            newBucketView
+                                            prevModel.now
+                                            prevModel.testMode
+                                        )
+                                        prevModel.now
+                                        prevModel.testMode
+                            in
+                            case bucketInfo of
+                                ValidBucket bucketData ->
+                                    fetchBucketDataCmd
+                                        bucketId
+                                        (Wallet.userInfo prevModel.wallet)
+                                        prevModel.testMode
 
-                                            _ ->
-                                                Nothing
-                                   )
-
-                        cmd =
-                            maybeBucketData
-                                |> Maybe.map
-                                    (\bucketData ->
-                                        case ( bucketData.totalValueEntered, bucketData.userBuy ) of
-                                            ( Just _, Just _ ) ->
-                                                Cmd.none
-
-                                            ( Nothing, _ ) ->
-                                                fetchBucketDataCmd
-                                                    bucketId
-                                                    (Wallet.userInfo prevModel.wallet)
-                                                    prevModel.testMode
-
-                                            ( Just _, Nothing ) ->
-                                                case Wallet.userInfo prevModel.wallet of
-                                                    Just userInfo ->
-                                                        fetchBucketUserBuyCmd
-                                                            bucketId
-                                                            userInfo
-                                                            prevModel.testMode
-
-                                                    Nothing ->
-                                                        Cmd.none
-                                    )
-                                |> Maybe.withDefault Cmd.none
+                                _ ->
+                                    Cmd.none
                     in
                     UpdateResult
                         { prevModel
                             | bucketView = newBucketView
                         }
-                        cmd
+                        maybeFetchBucketDataCmd
                         ChainCmd.none
                         []
 
