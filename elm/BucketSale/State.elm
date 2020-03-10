@@ -78,7 +78,7 @@ initEnterUXModel maybeReferrer =
     { daiInput = ""
     , daiAmount = Nothing
     , referrer = maybeReferrer
-    , allowanceState = Loading
+    , allowance = Nothing
     }
 
 
@@ -395,40 +395,18 @@ update msg prevModel =
                     in
                     justModelUpdate prevModel
 
-                Ok allowance ->
-                    case prevModel.enterUXModel.allowanceState of
-                        UnlockMining ->
-                            if allowance == EthHelpers.maxUintValue then
-                                justModelUpdate
-                                    { prevModel
-                                        | enterUXModel =
-                                            let
-                                                oldEnterUXModel =
-                                                    prevModel.enterUXModel
-                                            in
-                                            { oldEnterUXModel
-                                                | allowanceState =
-                                                    Loaded <| TokenValue.tokenValue allowance
-                                            }
-                                    }
-
-                            else
-                                justModelUpdate prevModel
-
-                        _ ->
-                            justModelUpdate
-                                { prevModel
-                                    | enterUXModel =
-                                        let
-                                            oldEnterUXModel =
-                                                prevModel.enterUXModel
-                                        in
-                                        { oldEnterUXModel
-                                            | allowanceState =
-                                                Loaded <|
-                                                    TokenValue.tokenValue allowance
-                                        }
+                Ok newAllowance ->
+                    justModelUpdate
+                        { prevModel
+                            | enterUXModel =
+                                let
+                                    oldEnterUXModel =
+                                        prevModel.enterUXModel
+                                in
+                                { oldEnterUXModel
+                                    | allowance = Just <| TokenValue.tokenValue newAllowance
                                 }
+                        }
 
         FocusToBucket bucketId ->
             case prevModel.bucketSale of
@@ -539,7 +517,7 @@ update msg prevModel =
                         |> trackNewTx
                             (TrackedTx
                                 Nothing
-                                "Unlock DAI"
+                                Unlock
                                 Signing
                             )
 
@@ -579,26 +557,24 @@ update msg prevModel =
 
         ConfirmClicked enterInfo ->
             let
+                actionData =
+                    Enter enterInfo
+
                 ( trackedTxId, newTrackedTxs ) =
                     prevModel.trackedTxs
                         |> trackNewTx
                             (TrackedTx
                                 Nothing
-                                ("Bid on bucket "
-                                    ++ String.fromInt enterInfo.bucketId
-                                    ++ " with "
-                                    ++ TokenValue.toConciseString enterInfo.amount
-                                    ++ " DAI"
-                                )
+                                actionData
                                 Signing
                             )
 
                 chainCmd =
                     let
                         customSend =
-                            { onMined = Just ( TxMined trackedTxId Enter, Nothing )
-                            , onSign = Just <| TxSigned trackedTxId Enter
-                            , onBroadcast = Just <| TxBroadcast trackedTxId Enter
+                            { onMined = Just ( TxMined trackedTxId actionData, Nothing )
+                            , onSign = Just <| TxSigned trackedTxId actionData
+                            , onBroadcast = Just <| TxBroadcast trackedTxId actionData
                             }
 
                         txParams =
@@ -628,7 +604,7 @@ update msg prevModel =
                         |> trackNewTx
                             (TrackedTx
                                 Nothing
-                                "Claim FRY"
+                                Exit
                                 Signing
                             )
 
@@ -657,12 +633,12 @@ update msg prevModel =
                 chainCmd
                 []
 
-        TxSigned trackedTxId txType txHashResult ->
+        TxSigned trackedTxId actionData txHashResult ->
             case txHashResult of
                 Err errStr ->
                     let
                         _ =
-                            Debug.log "Error signing tx" ( txType, errStr )
+                            Debug.log "Error signing tx" ( actionData, errStr )
                     in
                     justModelUpdate
                         { prevModel
@@ -678,17 +654,8 @@ update msg prevModel =
                                 |> updateTrackedTxStatus trackedTxId Mining
 
                         newEnterUXModel =
-                            case txType of
-                                Unlock ->
-                                    let
-                                        oldEnterUXModel =
-                                            prevModel.enterUXModel
-                                    in
-                                    { oldEnterUXModel
-                                        | allowanceState = UnlockMining
-                                    }
-
-                                Enter ->
+                            case actionData of
+                                Enter enterInfo ->
                                     let
                                         oldEnterUXModel =
                                             prevModel.enterUXModel
@@ -707,12 +674,12 @@ update msg prevModel =
                             , enterUXModel = newEnterUXModel
                         }
 
-        TxBroadcast trackedTxId txType txResult ->
+        TxBroadcast trackedTxId actionData txResult ->
             case txResult of
                 Err errStr ->
                     let
                         _ =
-                            Debug.log "Error broadcasting tx" ( txType, errStr )
+                            Debug.log "Error broadcasting tx" ( actionData, errStr )
                     in
                     justModelUpdate
                         { prevModel
@@ -726,33 +693,18 @@ update msg prevModel =
                         newTrackedTxs =
                             prevModel.trackedTxs
                                 |> updateTrackedTxStatus trackedTxId Mining
-
-                        newEnterUXModel =
-                            case txType of
-                                Unlock ->
-                                    let
-                                        oldEnterUXModel =
-                                            prevModel.enterUXModel
-                                    in
-                                    { oldEnterUXModel
-                                        | allowanceState = Loaded (TokenValue.tokenValue EthHelpers.maxUintValue)
-                                    }
-
-                                _ ->
-                                    prevModel.enterUXModel
                     in
                     justModelUpdate
                         { prevModel
                             | trackedTxs = newTrackedTxs
-                            , enterUXModel = newEnterUXModel
                         }
 
-        TxMined trackedTxId txType txReceiptResult ->
+        TxMined trackedTxId actionData txReceiptResult ->
             case txReceiptResult of
                 Err errStr ->
                     let
                         _ =
-                            Debug.log "Error mining tx" ( txType, errStr )
+                            Debug.log "Error mining tx" ( actionData, errStr )
                     in
                     justModelUpdate
                         { prevModel
@@ -768,7 +720,7 @@ update msg prevModel =
                                 |> updateTrackedTxStatus trackedTxId Mined
 
                         cmd =
-                            case ( txType, Wallet.userInfo prevModel.wallet ) of
+                            case ( actionData, Wallet.userInfo prevModel.wallet ) of
                                 ( Exit, Just userInfo ) ->
                                     Cmd.batch
                                         [ fetchUserExitInfoCmd
@@ -779,16 +731,11 @@ update msg prevModel =
                                             prevModel.testMode
                                         ]
 
-                                ( Enter, _ ) ->
+                                ( Enter enterInfo, _ ) ->
                                     case prevModel.bucketSale of
                                         Just (Ok bucketSale) ->
                                             fetchBucketDataCmd
-                                                (getFocusedBucketId
-                                                    bucketSale
-                                                    prevModel.bucketView
-                                                    prevModel.now
-                                                    prevModel.testMode
-                                                )
+                                                enterInfo.bucketId
                                                 (Wallet.userInfo prevModel.wallet)
                                                 prevModel.testMode
 
@@ -970,7 +917,7 @@ runCmdDown cmdDown prevModel =
                                 prevModel.enterUXModel
                         in
                         { oldEnterUXModel
-                            | allowanceState = Loading
+                            | allowance = Nothing
                         }
                 }
                 (case ( Wallet.userInfo newWallet, newBucketSale ) of

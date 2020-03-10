@@ -1,4 +1,4 @@
-module BucketSale.Types exposing (AllowanceState(..), BucketData, BucketSale, BucketState(..), BucketView(..), Buy, EnterInfo, EnterUXModel, FetchedBucketInfo(..), Model, Msg(..), RelevantTimingInfo, TrackedTx, TxStatus(..), TxType(..), UpdateResult, ValidBucketInfo, buyFromBindingBuy, calcClaimableTokens, calcEffectivePricePerToken, currentBucketTimeLeft, getBucketEndTime, getBucketInfo, getCurrentBucket, getCurrentBucketId, getFocusedBucketId, getRelevantTimingInfo, justModelUpdate, makeBlankBucket, updateAllBuckets, updateBucketAt)
+module BucketSale.Types exposing (..)
 
 import BigInt exposing (BigInt)
 import ChainCmd exposing (ChainCmd)
@@ -40,7 +40,7 @@ type alias EnterUXModel =
     { daiInput : String
     , daiAmount : Maybe (Result String TokenValue)
     , referrer : Maybe Address
-    , allowanceState : AllowanceState
+    , allowance : Maybe TokenValue
     }
 
 
@@ -67,9 +67,9 @@ type Msg
     | CancelClicked
     | EnterButtonClicked EnterInfo
     | ConfirmClicked EnterInfo
-    | TxSigned Int TxType (Result String TxHash)
-    | TxBroadcast Int TxType (Result String Tx)
-    | TxMined Int TxType (Result String TxReceipt)
+    | TxSigned Int ActionData (Result String TxHash)
+    | TxBroadcast Int ActionData (Result String Tx)
+    | TxMined Int ActionData (Result String TxReceipt)
 
 
 type alias UpdateResult =
@@ -99,16 +99,14 @@ type alias EnterInfo =
 
 type alias TrackedTx =
     { hash : Maybe TxHash
-
-    --, txType : TxType
-    , description : String
+    , action : ActionData
     , status : TxStatus
     }
 
 
-type TxType
+type ActionData
     = Unlock
-    | Enter
+    | Enter EnterInfo
     | Exit
 
 
@@ -119,12 +117,6 @@ type TxStatus
     | Mined
     | Rejected
     | Failed
-
-
-type AllowanceState
-    = Loading
-    | Loaded TokenValue
-    | UnlockMining
 
 
 type BucketView
