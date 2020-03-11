@@ -305,21 +305,31 @@ updateValidModel msg prevModel =
 
         WalletStatus walletSentry ->
             let
-                newWallet =
+                ( newWallet, foundWeb3Account ) =
                     case walletSentry.account of
                         Just address ->
-                            Wallet.Active <|
+                            ( Wallet.Active <|
                                 UserInfo
                                     walletSentry.networkId
                                     address
+                            , True
+                            )
 
                         Nothing ->
-                            Wallet.OnlyNetwork walletSentry.networkId
+                            ( Wallet.OnlyNetwork walletSentry.networkId
+                            , False
+                            )
             in
             { prevModel
                 | userAddress = walletSentry.account
                 , wallet = newWallet
             }
+                |> (if foundWeb3Account then
+                        removeUserNoticesByLabel UN.noWeb3Account.label
+
+                    else
+                        addUserNotice UN.noWeb3Account
+                   )
                 |> runCmdDown (CmdDown.UpdateWallet newWallet)
 
         BucketSaleMsg bucketSaleMsg ->
@@ -432,6 +442,16 @@ addUserNotice userNotice prevModel =
                     prevModel.userNotices
                     [ userNotice ]
         }
+
+
+removeUserNoticesByLabel : String -> ValidModel -> ValidModel
+removeUserNoticesByLabel label prevModel =
+    { prevModel
+        | userNotices =
+            prevModel.userNotices
+                |> List.filter
+                    (.label >> (/=) label)
+    }
 
 
 encodeGTag : GTagData -> Json.Decode.Value
