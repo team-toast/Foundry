@@ -421,7 +421,13 @@ checkJurisdictionElement jModel =
     case jModel of
         Checking _ ->
             Element.text "Checking _ ->"
+
         FetchError httpError ->
+            let
+                _ =
+                    Debug.log "http error" httpError
+            in
             Element.text "Error httpError ->"
+
         Excluded ->
             Element.text "Excluded ->"

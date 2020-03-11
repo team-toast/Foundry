@@ -546,7 +546,7 @@ storeNewReferrerCmd refAddress =
 inspectLocationRequestCmd : Cmd Msg
 inspectLocationRequestCmd =
     Http.get
-        { url = "http://api.ipstack.com/check?access_key=6d5c6c5d22f49d6de59d939beef80cc4&fields=country_code"
+        { url = "http://ip-api.com/json/?fields=countryCode"
         , expect =
             Http.expectJson
                 JurisdictionFetched
@@ -557,7 +557,7 @@ inspectLocationRequestCmd =
 locationResponseJurisdictionDecoder : Json.Decode.Decoder Jurisdiction
 locationResponseJurisdictionDecoder =
     Json.Decode.field
-        "country_code"
+        "countryCode"
         Json.Decode.string
         |> Json.Decode.map countryCodeToJurisdiction
 
