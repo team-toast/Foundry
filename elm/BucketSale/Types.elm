@@ -28,6 +28,7 @@ type alias Model =
     , totalTokensExited : Maybe TokenValue
     , userFryBalance : Maybe TokenValue
     , bucketView : BucketView
+    , jurisdictionCheckStatus : JurisdictionCheckStatus
     , enterUXModel : EnterUXModel
     , userExitInfo : Maybe BucketSaleWrappers.ExitInfo
     , trackedTxs : List TrackedTx
@@ -50,6 +51,7 @@ type Msg
     | TimezoneGot Time.Zone
     | Refresh
     | UpdateNow Time.Posix
+    | JurisdictionFetched (Result Http.Error Jurisdiction)
     | SaleStartTimestampFetched (Result Http.Error BigInt)
     | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
     | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
@@ -88,6 +90,11 @@ justModelUpdate model =
     , cmdUps = []
     }
 
+type JurisdictionCheckStatus
+    = Checking
+    | Excluded
+    | Allowed
+    | FetchError Http.Error
 
 type alias EnterInfo =
     { userInfo : UserInfo
@@ -330,3 +337,7 @@ getRelevantTimingInfo bucketInfo now testMode =
                     bucketInfo.bucketData.startTime
                     now
         )
+
+type Jurisdiction
+    = ChinaOrUSA
+    | JurisdictionsWeArentIntimidatedIntoExcluding

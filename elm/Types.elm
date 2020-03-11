@@ -25,18 +25,7 @@ type alias Flags =
     }
 
 
-type Model
-    = JurisdictionCheck JurisdictionCheckModel
-    | Valid ValidModel
-
-
-type JurisdictionCheckModel
-    = Checking ( Flags, Url, Browser.Navigation.Key )
-    | Excluded
-    | FetchError Http.Error
-
-
-type alias ValidModel =
+type alias Model =
     { key : Browser.Navigation.Key
     , testMode : Bool
     , pageRoute : Routing.PageRoute
@@ -53,7 +42,6 @@ type alias ValidModel =
 
 type Msg
     = NoOp
-    | JurisdictionFetched (Result Http.Error Jurisdiction)
     | GotoRoute Routing.PageRoute
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
@@ -72,8 +60,3 @@ type Msg
 type Submodel
     = NullSubmodel
     | BucketSaleModel BucketSale.Types.Model
-
-
-type Jurisdiction
-    = ChinaOrUSA
-    | JurisdictionsWeArentIntimidatedIntoExcluding

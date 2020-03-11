@@ -16,6 +16,8 @@ import Eth.Types exposing (Address, HttpProvider, Tx, TxHash, TxReceipt)
 import Helpers.BigInt as BigIntHelpers
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
+import Http
+import Json.Decode
 import List.Extra
 import Maybe.Extra
 import Task
@@ -48,6 +50,7 @@ init maybeReferrer testMode wallet now =
       , totalTokensExited = Nothing
       , userFryBalance = Nothing
       , bucketView = ViewCurrent
+      , jurisdictionCheckStatus = Checking
       , enterUXModel = initEnterUXModel maybeReferrer
       , userExitInfo = Nothing
       , trackedTxs = []
@@ -58,6 +61,7 @@ init maybeReferrer testMode wallet now =
         ([ fetchSaleStartTimestampCmd testMode
          , fetchTotalTokensExitedCmd testMode
          , Task.perform TimezoneGot Time.here
+         , inspectLocationRequestCmd
          ]
             ++ (case Wallet.userInfo wallet of
                     Just userInfo ->
@@ -176,6 +180,31 @@ update msg prevModel =
                 cmd
                 ChainCmd.none
                 []
+
+        JurisdictionFetched fetchResult ->
+            let
+                _ =
+                    Debug.log "BYPASSING Jurisdiction control!!" ""
+
+                -- unusedStuff =
+                --     case fetchResult of
+                --         Err httpErr ->
+                --             ( JurisdictionCheck <| FetchError httpErr
+                --             , Cmd.none
+                --             )
+                --         Ok jurisdiction ->
+                --             case jurisdiction of
+                --                 ChinaOrUSA ->
+                --                     ( JurisdictionCheck Excluded
+                --                     , Cmd.none
+                --                     )
+                --                 JurisdictionsWeArentIntimidatedIntoExcluding ->
+                --                     Tuple.mapFirst Valid <| initValidModel initValidModelStuff
+            in
+            justModelUpdate
+                {prevModel
+                    | jurisdictionCheckStatus = Allowed
+                }
 
         SaleStartTimestampFetched fetchResult ->
             case fetchResult of
@@ -893,6 +922,34 @@ updateTrackedTxStatus id newStatus =
         (\trackedTx ->
             { trackedTx | status = newStatus }
         )
+
+
+inspectLocationRequestCmd : Cmd Msg
+inspectLocationRequestCmd =
+    Http.get
+        { url = "http://ip-api.com/json/?fields=countryCode"
+        , expect =
+            Http.expectJson
+                JurisdictionFetched
+                locationResponseJurisdictionDecoder
+        }
+
+
+locationResponseJurisdictionDecoder : Json.Decode.Decoder Jurisdiction
+locationResponseJurisdictionDecoder =
+    Json.Decode.field
+        "countryCode"
+        Json.Decode.string
+        |> Json.Decode.map countryCodeToJurisdiction
+
+
+countryCodeToJurisdiction : String -> Jurisdiction
+countryCodeToJurisdiction code =
+    if code == "US" || code == "CN" then
+        ChinaOrUSA
+
+    else
+        JurisdictionsWeArentIntimidatedIntoExcluding
 
 
 runCmdDown : CmdDown -> Model -> UpdateResult

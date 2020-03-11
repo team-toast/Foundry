@@ -50,48 +50,41 @@ root model =
 
 
 pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
-pageElementAndModal maybeValidModel =
-    case maybeValidModel of
-        JurisdictionCheck jModel ->
-            ( checkJurisdictionElement jModel
-            , []
-            )
+pageElementAndModal model =
+    let
+        ( submodelEl, modalEls ) =
+            submodelElementAndModal model
 
-        Valid model ->
-            let
-                ( submodelEl, modalEls ) =
-                    submodelElementAndModal model
+        maybeTestnetIndicator =
+            if model.testMode then
+                Element.el
+                    [ Element.centerX
+                    , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
+                    , Element.Font.bold
+                    , Element.Font.italic
+                    , Element.Font.color EH.softRed
+                    ]
+                    (Element.text "In Test (Kovan) mode")
 
-                maybeTestnetIndicator =
-                    if model.testMode then
-                        Element.el
-                            [ Element.centerX
-                            , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
-                            , Element.Font.bold
-                            , Element.Font.italic
-                            , Element.Font.color EH.softRed
-                            ]
-                            (Element.text "In Test (Kovan) mode")
-
-                    else
-                        Element.none
-            in
-            ( Element.column
-                [ Element.behindContent <| headerBackground model.dProfile
-                , Element.inFront <| headerContent model.dProfile model
-                , Element.width Element.fill
-                , Element.height Element.fill
-                , Element.padding (30 |> changeForMobile 10 model.dProfile)
-                , Element.spacing (20 |> changeForMobile 10 model.dProfile)
-                ]
-                [ Element.el
-                    [ Element.height (Element.px (60 |> changeForMobile 110 model.dProfile)) ]
-                    Element.none
-                , maybeTestnetIndicator
-                , submodelEl
-                ]
-            , modalEls ++ userNoticeEls model.dProfile model.userNotices
-            )
+            else
+                Element.none
+    in
+    ( Element.column
+        [ Element.behindContent <| headerBackground model.dProfile
+        , Element.inFront <| headerContent model.dProfile model
+        , Element.width Element.fill
+        , Element.height Element.fill
+        , Element.padding (30 |> changeForMobile 10 model.dProfile)
+        , Element.spacing (20 |> changeForMobile 10 model.dProfile)
+        ]
+        [ Element.el
+            [ Element.height (Element.px (60 |> changeForMobile 110 model.dProfile)) ]
+            Element.none
+        , maybeTestnetIndicator
+        , submodelEl
+        ]
+    , modalEls ++ userNoticeEls model.dProfile model.userNotices
+    )
 
 
 headerBackground : DisplayProfile -> Element Msg
@@ -118,7 +111,7 @@ headerBackground dProfile =
         Element.none
 
 
-headerContent : DisplayProfile -> ValidModel -> Element Msg
+headerContent : DisplayProfile -> Model -> Element Msg
 headerContent dProfile model =
     Element.row
         [ Element.width Element.fill
@@ -287,7 +280,7 @@ headerMenuAttributes =
     ]
 
 
-submodelElementAndModal : ValidModel -> ( Element Msg, List (Element Msg) )
+submodelElementAndModal : Model -> ( Element Msg, List (Element Msg) )
 submodelElementAndModal model =
     let
         ( submodelEl, modalEls ) =
@@ -414,20 +407,3 @@ userNotice dProfile ( id, notice ) =
                 , Element.width Element.fill
                 ]
         )
-
-
-checkJurisdictionElement : JurisdictionCheckModel -> Element Msg
-checkJurisdictionElement jModel =
-    case jModel of
-        Checking _ ->
-            Element.text "Checking _ ->"
-
-        FetchError httpError ->
-            let
-                _ =
-                    Debug.log "http error" httpError
-            in
-            Element.text "Error httpError ->"
-
-        Excluded ->
-            Element.text "Excluded ->"

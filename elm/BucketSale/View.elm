@@ -74,6 +74,7 @@ root model =
                         )
                         model.wallet
                         model.enterUXModel
+                        model.jurisdictionCheckStatus
                         model.trackedTxs
                         model.showReferralModal
                         model.now
@@ -131,8 +132,8 @@ closedBucketsPane model =
         ]
 
 
-focusedBucketPane : BucketSale -> Int -> Wallet.State -> EnterUXModel -> List TrackedTx -> Bool -> Time.Posix -> Bool -> Element Msg
-focusedBucketPane bucketSale bucketId wallet enterUXModel trackedTxs referralModalActive now testMode =
+focusedBucketPane : BucketSale -> Int -> Wallet.State -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> Bool -> Element Msg
+focusedBucketPane bucketSale bucketId wallet enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width <| Element.px 780
@@ -162,7 +163,7 @@ focusedBucketPane bucketSale bucketId wallet enterUXModel trackedTxs referralMod
                         , focusedBucketTimeLeftEl
                             (getRelevantTimingInfo bucketInfo now testMode)
                             testMode
-                        , enterBidUX wallet enterUXModel bucketInfo trackedTxs testMode
+                        , enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
                         ]
                )
         )
@@ -457,8 +458,8 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Wallet.State -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> Bool -> Element Msg
-enterBidUX wallet enterUXModel bucketInfo trackedTxs testMode =
+enterBidUX : Wallet.State -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Element Msg
+enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
     let
         miningEnters =
             trackedTxs
@@ -491,7 +492,7 @@ enterBidUX wallet enterUXModel bucketInfo trackedTxs testMode =
         [ bidInputBlock enterUXModel bucketInfo testMode
         , bidImpactBlock enterUXModel bucketInfo miningEnters testMode
         , otherBidsImpactMsg
-        , actionButton wallet enterUXModel bucketInfo unlockMining testMode
+        , actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode
         ]
 
 
@@ -846,73 +847,84 @@ otherBidsImpactMsg =
         ]
 
 
-actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> Bool -> Element Msg
-actionButton wallet enterUXModel bucketInfo unlockMining testMode =
-    case Wallet.userInfo wallet of
-        Nothing ->
-            connectToWeb3Button wallet
-
-        Just userInfo ->
-            let
-                unlockDaiButton =
-                    EH.redButton
-                        Desktop
-                        [ Element.width Element.fill ]
-                        [ "Unlock Dai" ]
-                        UnlockDaiButtonClicked
-
-                continueButton daiAmount =
-                    EH.redButton
-                        Desktop
-                        [ Element.width Element.fill ]
-                        [ "Continue" ]
-                        (EnterButtonClicked <|
-                            EnterInfo
-                                userInfo
-                                bucketInfo.id
-                                daiAmount
-                                enterUXModel.referrer
-                        )
-
-                disabledContinueButton =
-                    EH.disabledButton
-                        Desktop
-                        [ Element.width Element.fill ]
-                        "Continue"
-                        Nothing
-
-                inProgressMsg text =
-                    Element.el
-                        [ Element.centerX
-                        , Element.Font.size 22
-                        , Element.Font.italic
-                        , Element.Font.color grayTextColor
-                        ]
-                        (Element.text text)
-            in
-            case enterUXModel.allowance of
+actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> Bool -> Element Msg
+actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
+    case jurisdictionCheckStatus of
+        Allowed ->
+            case Wallet.userInfo wallet of
                 Nothing ->
-                    inProgressMsg "Fetching Dai unlock status..."
+                    connectToWeb3Button wallet
 
-                Just allowance ->
-                    if enterUXModel.allowance == Just TokenValue.zero then
-                        unlockDaiButton
+                Just userInfo ->
+                    let
+                        unlockDaiButton =
+                            EH.redButton
+                                Desktop
+                                [ Element.width Element.fill ]
+                                [ "Unlock Dai" ]
+                                UnlockDaiButtonClicked
 
-                    else if unlockMining then
-                        inProgressMsg "Mining Dai unlock..."
+                        continueButton daiAmount =
+                            EH.redButton
+                                Desktop
+                                [ Element.width Element.fill ]
+                                [ "Continue" ]
+                                (EnterButtonClicked <|
+                                    EnterInfo
+                                        userInfo
+                                        bucketInfo.id
+                                        daiAmount
+                                        enterUXModel.referrer
+                                )
 
-                    else
-                        -- Allowance is loaded and nonzero, and we are not mining an Unlock
-                        case enterUXModel.daiAmount of
-                            Just (Ok daiAmount) ->
-                                if TokenValue.compare daiAmount allowance /= GT then
-                                    continueButton daiAmount
+                        disabledContinueButton =
+                            EH.disabledButton
+                                Desktop
+                                [ Element.width Element.fill ]
+                                "Continue"
+                                Nothing
 
-                                else
-                                    unlockDaiButton
+                        inProgressMsg text =
+                            Element.el
+                                [ Element.centerX
+                                , Element.Font.size 22
+                                , Element.Font.italic
+                                , Element.Font.color grayTextColor
+                                ]
+                                (Element.text text)
+                    in
+                    case enterUXModel.allowance of
+                        Nothing ->
+                            inProgressMsg "Fetching Dai unlock status..."
 
-                            _ ->
-                                disabledContinueButton
+                        Just allowance ->
+                            if enterUXModel.allowance == Just TokenValue.zero then
+                                unlockDaiButton
+
+                            else if unlockMining then
+                                inProgressMsg "Mining Dai unlock..."
+
+                            else
+                                -- Allowance is loaded and nonzero, and we are not mining an Unlock
+                                case enterUXModel.daiAmount of
+                                    Just (Ok daiAmount) ->
+                                        if TokenValue.compare daiAmount allowance /= GT then
+                                            continueButton daiAmount
+
+                                        else
+                                            unlockDaiButton
+
+                                    _ ->
+                                        disabledContinueButton
+
+        Checking ->
+            Element.text "Pretending to check jurisdiction..."
+
+        Excluded ->
+            Debug.todo ""
+
+        FetchError httpError ->
+            Debug.todo ""
 
 
 noBucketsLeftBlock : Element Msg
