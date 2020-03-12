@@ -29,25 +29,7 @@ import Wallet
 
 init : Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
 init maybeReferrer testMode wallet now =
-    let
-        interpretedWallet =
-            case ( testMode, Wallet.network wallet ) of
-                ( None, Just Eth.Net.Mainnet ) ->
-                    wallet
-
-                ( TestMainnet, Just Eth.Net.Mainnet ) ->
-                    wallet
-
-                ( TestKovan, Just Eth.Net.Kovan ) ->
-                    wallet
-
-                ( TestGanache, Just (Eth.Net.Private 123456) ) ->
-                    wallet
-
-                _ ->
-                    Wallet.WrongNetwork
-    in
-    ( { wallet = interpretedWallet
+    ( { wallet = verifyWalletCorrectNetwork wallet testMode
       , testMode = testMode
       , now = now
       , timezone = Nothing
@@ -81,6 +63,25 @@ init maybeReferrer testMode wallet now =
                )
         )
     )
+
+
+verifyWalletCorrectNetwork : Wallet.State -> TestMode -> Wallet.State
+verifyWalletCorrectNetwork wallet testMode =
+    case ( testMode, Wallet.network wallet ) of
+        ( None, Just Eth.Net.Mainnet ) ->
+            wallet
+
+        ( TestMainnet, Just Eth.Net.Mainnet ) ->
+            wallet
+
+        ( TestKovan, Just Eth.Net.Kovan ) ->
+            wallet
+
+        ( TestGanache, Just (Eth.Net.Private 123456) ) ->
+            wallet
+
+        _ ->
+            Wallet.WrongNetwork
 
 
 initEnterUXModel : Maybe Address -> EnterUXModel
@@ -970,7 +971,7 @@ runCmdDown cmdDown prevModel =
             in
             UpdateResult
                 { prevModel
-                    | wallet = newWallet
+                    | wallet = verifyWalletCorrectNetwork newWallet prevModel.testMode
                     , bucketSale = newBucketSale
                     , userFryBalance = Nothing
                     , userExitInfo = Nothing
