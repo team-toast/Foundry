@@ -27,15 +27,21 @@ import Utils
 import Wallet
 
 
-init : Maybe Address -> Bool -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
+init : Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
 init maybeReferrer testMode wallet now =
     let
         interpretedWallet =
             case ( testMode, Wallet.network wallet ) of
-                ( True, _ ) ->
-                    Debug.todo "test mode disabled. Remove '/test' from url."
+                ( None, Just Eth.Net.Mainnet ) ->
+                    wallet
 
-                ( False, Just Eth.Net.Mainnet ) ->
+                ( TestMainnet, Just Eth.Net.Mainnet ) ->
+                    wallet
+
+                ( TestKovan, Just Eth.Net.Kovan ) ->
+                    wallet
+
+                ( TestGanache, Just (Eth.Net.Private 123456) ) ->
                     wallet
 
                 _ ->
@@ -202,7 +208,7 @@ update msg prevModel =
                 --                     Tuple.mapFirst Valid <| initValidModel initValidModelStuff
             in
             justModelUpdate
-                {prevModel
+                { prevModel
                     | jurisdictionCheckStatus = Allowed
                 }
 
@@ -783,7 +789,7 @@ update msg prevModel =
                         []
 
 
-initBucketSale : Bool -> Time.Posix -> Time.Posix -> Result String BucketSale
+initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result String BucketSale
 initBucketSale testMode saleStartTime now =
     if TimeHelpers.compare saleStartTime now == GT then
         Err <|
@@ -816,7 +822,7 @@ initBucketSale testMode saleStartTime now =
                 )
 
 
-fetchBucketDataCmd : Int -> Maybe UserInfo -> Bool -> Cmd Msg
+fetchBucketDataCmd : Int -> Maybe UserInfo -> TestMode -> Cmd Msg
 fetchBucketDataCmd id maybeUserInfo testMode =
     Cmd.batch
         [ fetchTotalValueEnteredCmd id testMode
@@ -829,7 +835,7 @@ fetchBucketDataCmd id maybeUserInfo testMode =
         ]
 
 
-fetchTotalValueEnteredCmd : Int -> Bool -> Cmd Msg
+fetchTotalValueEnteredCmd : Int -> TestMode -> Cmd Msg
 fetchTotalValueEnteredCmd id testMode =
     BucketSaleWrappers.getTotalValueEnteredForBucket
         testMode
@@ -837,7 +843,7 @@ fetchTotalValueEnteredCmd id testMode =
         (BucketValueEnteredFetched id)
 
 
-fetchBucketUserBuyCmd : Int -> UserInfo -> Bool -> Cmd Msg
+fetchBucketUserBuyCmd : Int -> UserInfo -> TestMode -> Cmd Msg
 fetchBucketUserBuyCmd id userInfo testMode =
     BucketSaleWrappers.getUserBuyForBucket
         testMode
@@ -846,7 +852,7 @@ fetchBucketUserBuyCmd id userInfo testMode =
         (UserBuyFetched userInfo.address id)
 
 
-fetchUserExitInfoCmd : UserInfo -> Bool -> Cmd Msg
+fetchUserExitInfoCmd : UserInfo -> TestMode -> Cmd Msg
 fetchUserExitInfoCmd userInfo testMode =
     BucketSaleWrappers.getUserExitInfo
         testMode
@@ -854,7 +860,7 @@ fetchUserExitInfoCmd userInfo testMode =
         (UserExitInfoFetched userInfo.address)
 
 
-fetchUserAllowanceForSaleCmd : UserInfo -> Bool -> Cmd Msg
+fetchUserAllowanceForSaleCmd : UserInfo -> TestMode -> Cmd Msg
 fetchUserAllowanceForSaleCmd userInfo testMode =
     Contracts.Wrappers.getAllowanceCmd
         testMode
@@ -863,21 +869,21 @@ fetchUserAllowanceForSaleCmd userInfo testMode =
         AllowanceFetched
 
 
-fetchSaleStartTimestampCmd : Bool -> Cmd Msg
+fetchSaleStartTimestampCmd : TestMode -> Cmd Msg
 fetchSaleStartTimestampCmd testMode =
     BucketSaleWrappers.getSaleStartTimestampCmd
         testMode
         SaleStartTimestampFetched
 
 
-fetchTotalTokensExitedCmd : Bool -> Cmd Msg
+fetchTotalTokensExitedCmd : TestMode -> Cmd Msg
 fetchTotalTokensExitedCmd testMode =
     BucketSaleWrappers.getTotalExitedTokens
         testMode
         TotalTokensExitedFetched
 
 
-fetchUserFryBalanceCmd : UserInfo -> Bool -> Cmd Msg
+fetchUserFryBalanceCmd : UserInfo -> TestMode -> Cmd Msg
 fetchUserFryBalanceCmd userInfo testMode =
     BucketSaleWrappers.getFryBalance
         testMode

@@ -132,7 +132,7 @@ closedBucketsPane model =
         ]
 
 
-focusedBucketPane : BucketSale -> Int -> Wallet.State -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> Bool -> Element Msg
+focusedBucketPane : BucketSale -> Int -> Wallet.State -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
 focusedBucketPane bucketSale bucketId wallet enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
@@ -311,7 +311,7 @@ totalExitedBlock maybeTotalExited =
                 ]
 
 
-focusedBucketHeaderEl : Int -> Maybe UserInfo -> Maybe Address -> Bool -> Bool -> Element Msg
+focusedBucketHeaderEl : Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
 focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
         [ Element.spacing 8
@@ -340,7 +340,7 @@ focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive t
         ]
 
 
-maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> Bool -> Element Msg
+maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
 maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive testMode =
     case maybeUserInfo of
         Nothing ->
@@ -418,7 +418,7 @@ prevBucketArrow currentBucketId =
         (Element.text "<")
 
 
-focusedBucketTimeLeftEl : RelevantTimingInfo -> Bool -> Element Msg
+focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> Element Msg
 focusedBucketTimeLeftEl timingInfo testMode =
     Element.row
         [ Element.width Element.fill
@@ -458,7 +458,7 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Wallet.State -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Element Msg
+enterBidUX : Wallet.State -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
 enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
     let
         miningEnters =
@@ -496,7 +496,7 @@ enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs tes
         ]
 
 
-bidInputBlock : EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
+bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> Element Msg
 bidInputBlock enterUXModel bucketInfo testMode =
     centerpaneBlockContainer ActiveStyle
         [ emphasizedText ActiveStyle "I want to bid:"
@@ -549,7 +549,7 @@ bidInputBlock enterUXModel bucketInfo testMode =
         ]
 
 
-pricePerTokenMsg : TokenValue -> Maybe TokenValue -> Bool -> Element Msg
+pricePerTokenMsg : TokenValue -> Maybe TokenValue -> TestMode -> Element Msg
 pricePerTokenMsg totalValueEntered maybeDaiAmount testMode =
     Element.paragraph
         [ Element.Font.size 14
@@ -585,7 +585,7 @@ pricePerTokenMsg totalValueEntered maybeDaiAmount testMode =
         )
 
 
-bidImpactBlock : EnterUXModel -> ValidBucketInfo -> List EnterInfo -> Bool -> Element Msg
+bidImpactBlock : EnterUXModel -> ValidBucketInfo -> List EnterInfo -> TestMode -> Element Msg
 bidImpactBlock enterUXModel bucketInfo miningEnters testMode =
     centerpaneBlockContainer PassiveStyle <|
         [ emphasizedText PassiveStyle "Your current bid standing:" ]
@@ -615,7 +615,7 @@ bidImpactBlock enterUXModel bucketInfo miningEnters testMode =
                )
 
 
-bidImpactParagraphEl : TokenValue -> ( TokenValue, TokenValue, TokenValue ) -> Bool -> Element Msg
+bidImpactParagraphEl : TokenValue -> ( TokenValue, TokenValue, TokenValue ) -> TestMode -> Element Msg
 bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode =
     let
         totalUserBidAmount =
@@ -731,7 +731,7 @@ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmo
         ]
 
 
-bidBarEl : TokenValue -> ( TokenValue, TokenValue, TokenValue ) -> Bool -> Element Msg
+bidBarEl : TokenValue -> ( TokenValue, TokenValue, TokenValue ) -> TestMode -> Element Msg
 bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode =
     let
         totalValueEnteredAfterBidAndMining =
@@ -847,7 +847,7 @@ otherBidsImpactMsg =
         ]
 
 
-actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> Bool -> Element Msg
+actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
 actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
     case jurisdictionCheckStatus of
         Allowed ->
@@ -932,7 +932,7 @@ noBucketsLeftBlock =
     Element.text "There are no more future blocks."
 
 
-maybeBucketsLeftBlock : BucketSale -> Time.Posix -> Bool -> Element Msg
+maybeBucketsLeftBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
 maybeBucketsLeftBlock bucketSale now testMode =
     let
         currentBucketId =
@@ -959,7 +959,7 @@ maybeBucketsLeftBlock bucketSale now testMode =
         ]
 
 
-maybeFryInFutureBucketsBlock : BucketSale -> Time.Posix -> Bool -> Element Msg
+maybeFryInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
 maybeFryInFutureBucketsBlock bucketSale now testMode =
     let
         currentBucketId =
@@ -1233,7 +1233,7 @@ referralBonusIndicator hasReferral focusedStyle =
         )
 
 
-referralModal : UserInfo -> Maybe Address -> Bool -> Element Msg
+referralModal : UserInfo -> Maybe Address -> TestMode -> Element Msg
 referralModal userInfo maybeReferrer testMode =
     let
         highlightedText text =
@@ -1356,7 +1356,7 @@ referralModal userInfo maybeReferrer testMode =
         ]
 
 
-referralLinkElement : Address -> Bool -> Element Msg
+referralLinkElement : Address -> TestMode -> Element Msg
 referralLinkElement referrerAddress testMode =
     Element.el
         [ Element.width Element.fill

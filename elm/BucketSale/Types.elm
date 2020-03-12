@@ -20,7 +20,7 @@ import Wallet
 
 type alias Model =
     { wallet : Wallet.State
-    , testMode : Bool
+    , testMode : TestMode
     , now : Time.Posix
     , timezone : Maybe Time.Zone
     , saleStartTime : Maybe Time.Posix
@@ -191,7 +191,7 @@ updateBucketAt id func bucketSale =
         Nothing
 
 
-getBucketInfo : BucketSale -> Int -> Time.Posix -> Bool -> FetchedBucketInfo
+getBucketInfo : BucketSale -> Int -> Time.Posix -> TestMode -> FetchedBucketInfo
 getBucketInfo bucketSale bucketId now testMode =
     List.Extra.getAt bucketId bucketSale.buckets
         |> Maybe.map
@@ -213,14 +213,14 @@ getBucketInfo bucketSale bucketId now testMode =
         |> Maybe.withDefault InvalidBucket
 
 
-getBucketEndTime : BucketData -> Bool -> Time.Posix
+getBucketEndTime : BucketData -> TestMode -> Time.Posix
 getBucketEndTime bucket testMode =
     TimeHelpers.add
         bucket.startTime
         (Config.bucketSaleBucketInterval testMode)
 
 
-getFocusedBucketId : BucketSale -> BucketView -> Time.Posix -> Bool -> Int
+getFocusedBucketId : BucketSale -> BucketView -> Time.Posix -> TestMode -> Int
 getFocusedBucketId bucketSale bucketView now testMode =
     case bucketView of
         ViewCurrent ->
@@ -230,7 +230,7 @@ getFocusedBucketId bucketSale bucketView now testMode =
             id
 
 
-getCurrentBucketId : BucketSale -> Time.Posix -> Bool -> Int
+getCurrentBucketId : BucketSale -> Time.Posix -> TestMode -> Int
 getCurrentBucketId bucketSale now testMode =
     (TimeHelpers.sub now bucketSale.startTime
         |> TimeHelpers.posixToSeconds
@@ -240,7 +240,7 @@ getCurrentBucketId bucketSale now testMode =
            )
 
 
-getCurrentBucket : BucketSale -> Time.Posix -> Bool -> FetchedBucketInfo
+getCurrentBucket : BucketSale -> Time.Posix -> TestMode -> FetchedBucketInfo
 getCurrentBucket bucketSale now testMode =
     getBucketInfo
         bucketSale
@@ -249,7 +249,7 @@ getCurrentBucket bucketSale now testMode =
         testMode
 
 
-currentBucketTimeLeft : BucketSale -> Time.Posix -> Bool -> Maybe Time.Posix
+currentBucketTimeLeft : BucketSale -> Time.Posix -> TestMode -> Maybe Time.Posix
 currentBucketTimeLeft bucketSale now testMode =
     case getCurrentBucket bucketSale now testMode of
         InvalidBucket ->
@@ -262,7 +262,7 @@ currentBucketTimeLeft bucketSale now testMode =
                     now
 
 
-makeBlankBucket : Bool -> Time.Posix -> Int -> BucketData
+makeBlankBucket : TestMode -> Time.Posix -> Int -> BucketData
 makeBlankBucket testMode bucketSaleStartTime bucketId =
     BucketData
         (TimeHelpers.posixToSeconds bucketSaleStartTime
@@ -282,7 +282,7 @@ buyFromBindingBuy bindingBuy =
         (BigInt.compare bindingBuy.buyerTokensExited (BigInt.fromInt 0) /= EQ)
 
 
-calcClaimableTokens : TokenValue -> TokenValue -> Bool -> TokenValue
+calcClaimableTokens : TokenValue -> TokenValue -> TestMode -> TokenValue
 calcClaimableTokens totalValueEntered daiIn testMode =
     if TokenValue.isZero daiIn then
         TokenValue.zero
@@ -301,7 +301,7 @@ calcClaimableTokens totalValueEntered daiIn testMode =
             claimableRatio
 
 
-calcEffectivePricePerToken : TokenValue -> Bool -> TokenValue
+calcEffectivePricePerToken : TokenValue -> TestMode -> TokenValue
 calcEffectivePricePerToken totalValueEntered testMode =
     TokenValue.toFloatWithWarning totalValueEntered
         / (TokenValue.toFloatWithWarning <| Config.bucketSaleTokensPerBucket testMode)
@@ -314,7 +314,7 @@ type alias RelevantTimingInfo =
     }
 
 
-getRelevantTimingInfo : ValidBucketInfo -> Time.Posix -> Bool -> RelevantTimingInfo
+getRelevantTimingInfo : ValidBucketInfo -> Time.Posix -> TestMode -> RelevantTimingInfo
 getRelevantTimingInfo bucketInfo now testMode =
     RelevantTimingInfo
         bucketInfo.state

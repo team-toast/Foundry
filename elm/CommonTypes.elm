@@ -7,6 +7,12 @@ import Json.Decode
 import Json.Encode
 
 
+type TestMode
+    = None
+    | TestMainnet
+    | TestKovan
+    | TestGanache
+
 type DisplayProfile
     = Desktop
     | Mobile

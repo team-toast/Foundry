@@ -56,18 +56,26 @@ pageElementAndModal model =
             submodelElementAndModal model
 
         maybeTestnetIndicator =
-            if model.testMode then
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
-                    , Element.Font.bold
-                    , Element.Font.italic
-                    , Element.Font.color EH.softRed
-                    ]
-                    (Element.text "In Test (Kovan) mode")
+            Element.el
+                [ Element.centerX
+                , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
+                , Element.Font.bold
+                , Element.Font.italic
+                , Element.Font.color EH.softRed
+                ]
+            <|
+                case model.testMode of
+                    None ->
+                        Element.none
 
-            else
-                Element.none
+                    TestMainnet ->
+                        Element.text "In Test (Mainnet) mode"
+
+                    TestKovan ->
+                        Element.text "In Test (Kovan) mode"
+
+                    TestGanache ->
+                        Element.text "In Test (Local) mode"
     in
     ( Element.column
         [ Element.behindContent <| headerBackground model.dProfile
