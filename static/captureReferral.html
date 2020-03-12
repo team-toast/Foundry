@@ -1,0 +1,33 @@
+<html>
+
+<head>
+    <script>
+        const domains = [
+            "https://foundrydao.com",
+            "https://www.foundrydao.com",
+            "http://localhost"
+            ]
+        
+        window.onmessage = function(event) {
+            if (! domains.includes(event.origin)) {
+                return;
+            }
+        
+            referralString = event.data;
+
+            if (typeof (Storage) !== "undefined") {
+                if (localStorage.getItem("referralAddressString") !== null) {
+                    // already have a referral; ignore this request
+                    console.log("ignoring");
+                    return;
+                }
+                else {
+                    localStorage.setItem("referralAddressString", referralString);
+                    console.log("stored " + referralString);
+                }
+            } 
+        }
+    </script>
+</head>
+
+</html>
