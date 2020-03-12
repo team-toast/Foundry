@@ -736,7 +736,6 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
     let
         totalValueEnteredAfterBidAndMining =
             totalValueEntered
-                |> TokenValue.add existingUserBidAmount
                 |> TokenValue.add miningUserBidAmount
                 |> TokenValue.add extraUserBidAmount
     in
