@@ -2,11 +2,11 @@
 // goal:
 // find both the ip location and the geolocation of the browser and verify they are in the same county
 
-toRad = function (value) {
-    return value * Math.PI / 180;
-}
+
 
 function haversine(point1, point2) {
+    toRad = (value) => value * Math.PI / 180;
+
     var R = 6371; // earth radius in km
     var dLat = toRad(point2.lat - point1.lat);
     var dLon = toRad(point2.lng - point1.lng);
