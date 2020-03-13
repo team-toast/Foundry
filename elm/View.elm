@@ -17,7 +17,7 @@ import UserNotice as UN exposing (UserNotice)
 
 root : Model -> Browser.Document Msg
 root model =
-    { title = "Foundry"
+    { title = "Foundry Sale"
     , body =
         [ let
             ( pageEl, modalEls ) =
