@@ -2,8 +2,6 @@
 // goal:
 // find both the ip location and the geolocation of the browser and verify they are in the same county
 
-
-
 function haversine(point1, point2) {
     toRad = (value) => value * Math.PI / 180;
 
