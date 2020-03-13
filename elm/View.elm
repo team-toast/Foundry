@@ -17,11 +17,11 @@ import UserNotice as UN exposing (UserNotice)
 
 root : Model -> Browser.Document Msg
 root model =
-    { title = "Foundry"
+    { title = "Foundry Sale"
     , body =
         [ let
             ( pageEl, modalEls ) =
-                pageElementAndModal model.dProfile model
+                pageElementAndModal model
 
             mainElementAttributes =
                 [ Element.width Element.fill
@@ -49,41 +49,49 @@ root model =
     }
 
 
-pageElementAndModal : DisplayProfile -> Model -> ( Element Msg, List (Element Msg) )
-pageElementAndModal dProfile model =
+pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
+pageElementAndModal model =
     let
         ( submodelEl, modalEls ) =
-            submodelElementAndModal dProfile model
+            submodelElementAndModal model
 
         maybeTestnetIndicator =
-            if model.testMode then
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size (24 |> changeForMobile 16 dProfile)
-                    , Element.Font.bold
-                    , Element.Font.italic
-                    , Element.Font.color EH.softRed
-                    ]
-                    (Element.text "In Test (Kovan) mode")
+            Element.el
+                [ Element.centerX
+                , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
+                , Element.Font.bold
+                , Element.Font.italic
+                , Element.Font.color EH.softRed
+                ]
+            <|
+                case model.testMode of
+                    None ->
+                        Element.none
 
-            else
-                Element.none
+                    TestMainnet ->
+                        Element.text "In Test (Mainnet) mode"
+
+                    TestKovan ->
+                        Element.text "In Test (Kovan) mode"
+
+                    TestGanache ->
+                        Element.text "In Test (Local) mode"
     in
     ( Element.column
-        [ Element.behindContent <| headerBackground dProfile
-        , Element.inFront <| headerContent dProfile model
+        [ Element.behindContent <| headerBackground model.dProfile
+        , Element.inFront <| headerContent model.dProfile model
         , Element.width Element.fill
         , Element.height Element.fill
-        , Element.padding (30 |> changeForMobile 10 dProfile)
-        , Element.spacing (20 |> changeForMobile 10 dProfile)
+        , Element.padding (30 |> changeForMobile 10 model.dProfile)
+        , Element.spacing (20 |> changeForMobile 10 model.dProfile)
         ]
         [ Element.el
-            [ Element.height (Element.px (60 |> changeForMobile 110 dProfile)) ]
+            [ Element.height (Element.px (60 |> changeForMobile 110 model.dProfile)) ]
             Element.none
         , maybeTestnetIndicator
         , submodelEl
         ]
-    , modalEls ++ userNoticeEls dProfile model.userNotices
+    , modalEls ++ userNoticeEls model.dProfile model.userNotices
     )
 
 
@@ -280,8 +288,8 @@ headerMenuAttributes =
     ]
 
 
-submodelElementAndModal : DisplayProfile -> Model -> ( Element Msg, List (Element Msg) )
-submodelElementAndModal dProfile model =
+submodelElementAndModal : Model -> ( Element Msg, List (Element Msg) )
+submodelElementAndModal model =
     let
         ( submodelEl, modalEls ) =
             case model.submodel of

@@ -19,7 +19,7 @@ import Time
 import TokenValue exposing (TokenValue)
 
 
-getAllowanceCmd : Bool -> Address -> Address -> (Result Http.Error BigInt -> msg) -> Cmd msg
+getAllowanceCmd : TestMode -> Address -> Address -> (Result Http.Error BigInt -> msg) -> Cmd msg
 getAllowanceCmd testMode owner spender msgConstructor =
     Eth.call
         (EthHelpers.appHttpProvider testMode)

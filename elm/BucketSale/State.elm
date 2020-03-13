@@ -16,6 +16,8 @@ import Eth.Types exposing (Address, HttpProvider, Tx, TxHash, TxReceipt)
 import Helpers.BigInt as BigIntHelpers
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
+import Http
+import Json.Decode
 import List.Extra
 import Maybe.Extra
 import Task
@@ -25,21 +27,9 @@ import Utils
 import Wallet
 
 
-init : Maybe Address -> Bool -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
+init : Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
 init maybeReferrer testMode wallet now =
-    let
-        interpretedWallet =
-            case ( testMode, Wallet.network wallet ) of
-                ( True, _ ) ->
-                    Debug.todo "test mode disabled. Remove '/test' from url."
-
-                ( False, Just Eth.Net.Mainnet ) ->
-                    wallet
-
-                _ ->
-                    Wallet.WrongNetwork
-    in
-    ( { wallet = interpretedWallet
+    ( { wallet = verifyWalletCorrectNetwork wallet testMode
       , testMode = testMode
       , now = now
       , timezone = Nothing
@@ -48,6 +38,7 @@ init maybeReferrer testMode wallet now =
       , totalTokensExited = Nothing
       , userFryBalance = Nothing
       , bucketView = ViewCurrent
+      , jurisdictionCheckStatus = Checking
       , enterUXModel = initEnterUXModel maybeReferrer
       , userExitInfo = Nothing
       , trackedTxs = []
@@ -58,6 +49,7 @@ init maybeReferrer testMode wallet now =
         ([ fetchSaleStartTimestampCmd testMode
          , fetchTotalTokensExitedCmd testMode
          , Task.perform TimezoneGot Time.here
+         , inspectLocationRequestCmd
          ]
             ++ (case Wallet.userInfo wallet of
                     Just userInfo ->
@@ -73,12 +65,31 @@ init maybeReferrer testMode wallet now =
     )
 
 
+verifyWalletCorrectNetwork : Wallet.State -> TestMode -> Wallet.State
+verifyWalletCorrectNetwork wallet testMode =
+    case ( testMode, Wallet.network wallet ) of
+        ( None, Just Eth.Net.Mainnet ) ->
+            wallet
+
+        ( TestMainnet, Just Eth.Net.Mainnet ) ->
+            wallet
+
+        ( TestKovan, Just Eth.Net.Kovan ) ->
+            wallet
+
+        ( TestGanache, Just (Eth.Net.Private 123456) ) ->
+            wallet
+
+        _ ->
+            Wallet.WrongNetwork
+
+
 initEnterUXModel : Maybe Address -> EnterUXModel
 initEnterUXModel maybeReferrer =
     { daiInput = ""
     , daiAmount = Nothing
     , referrer = maybeReferrer
-    , allowanceState = Loading
+    , allowance = Nothing
     }
 
 
@@ -176,6 +187,31 @@ update msg prevModel =
                 cmd
                 ChainCmd.none
                 []
+
+        JurisdictionFetched fetchResult ->
+            let
+                _ =
+                    Debug.log "BYPASSING Jurisdiction control!!" ""
+
+                -- unusedStuff =
+                --     case fetchResult of
+                --         Err httpErr ->
+                --             ( JurisdictionCheck <| FetchError httpErr
+                --             , Cmd.none
+                --             )
+                --         Ok jurisdiction ->
+                --             case jurisdiction of
+                --                 ChinaOrUSA ->
+                --                     ( JurisdictionCheck Excluded
+                --                     , Cmd.none
+                --                     )
+                --                 JurisdictionsWeArentIntimidatedIntoExcluding ->
+                --                     Tuple.mapFirst Valid <| initValidModel initValidModelStuff
+            in
+            justModelUpdate
+                { prevModel
+                    | jurisdictionCheckStatus = Allowed
+                }
 
         SaleStartTimestampFetched fetchResult ->
             case fetchResult of
@@ -395,40 +431,18 @@ update msg prevModel =
                     in
                     justModelUpdate prevModel
 
-                Ok allowance ->
-                    case prevModel.enterUXModel.allowanceState of
-                        UnlockMining ->
-                            if allowance == EthHelpers.maxUintValue then
-                                justModelUpdate
-                                    { prevModel
-                                        | enterUXModel =
-                                            let
-                                                oldEnterUXModel =
-                                                    prevModel.enterUXModel
-                                            in
-                                            { oldEnterUXModel
-                                                | allowanceState =
-                                                    Loaded <| TokenValue.tokenValue allowance
-                                            }
-                                    }
-
-                            else
-                                justModelUpdate prevModel
-
-                        _ ->
-                            justModelUpdate
-                                { prevModel
-                                    | enterUXModel =
-                                        let
-                                            oldEnterUXModel =
-                                                prevModel.enterUXModel
-                                        in
-                                        { oldEnterUXModel
-                                            | allowanceState =
-                                                Loaded <|
-                                                    TokenValue.tokenValue allowance
-                                        }
+                Ok newAllowance ->
+                    justModelUpdate
+                        { prevModel
+                            | enterUXModel =
+                                let
+                                    oldEnterUXModel =
+                                        prevModel.enterUXModel
+                                in
+                                { oldEnterUXModel
+                                    | allowance = Just <| TokenValue.tokenValue newAllowance
                                 }
+                        }
 
         FocusToBucket bucketId ->
             case prevModel.bucketSale of
@@ -450,58 +464,35 @@ update msg prevModel =
                                             )
                                     )
 
-                        maybeBucketData =
-                            getBucketInfo
-                                bucketSale
-                                (getFocusedBucketId
-                                    bucketSale
-                                    newBucketView
-                                    prevModel.now
-                                    prevModel.testMode
-                                )
-                                prevModel.now
-                                prevModel.testMode
-                                |> (\fetchedBucketInfo ->
-                                        case fetchedBucketInfo of
-                                            ValidBucket bucketInfo ->
-                                                Just bucketInfo.bucketData
+                        maybeFetchBucketDataCmd =
+                            let
+                                bucketInfo =
+                                    getBucketInfo
+                                        bucketSale
+                                        (getFocusedBucketId
+                                            bucketSale
+                                            newBucketView
+                                            prevModel.now
+                                            prevModel.testMode
+                                        )
+                                        prevModel.now
+                                        prevModel.testMode
+                            in
+                            case bucketInfo of
+                                ValidBucket bucketData ->
+                                    fetchBucketDataCmd
+                                        bucketId
+                                        (Wallet.userInfo prevModel.wallet)
+                                        prevModel.testMode
 
-                                            _ ->
-                                                Nothing
-                                   )
-
-                        cmd =
-                            maybeBucketData
-                                |> Maybe.map
-                                    (\bucketData ->
-                                        case ( bucketData.totalValueEntered, bucketData.userBuy ) of
-                                            ( Just _, Just _ ) ->
-                                                Cmd.none
-
-                                            ( Nothing, _ ) ->
-                                                fetchBucketDataCmd
-                                                    bucketId
-                                                    (Wallet.userInfo prevModel.wallet)
-                                                    prevModel.testMode
-
-                                            ( Just _, Nothing ) ->
-                                                case Wallet.userInfo prevModel.wallet of
-                                                    Just userInfo ->
-                                                        fetchBucketUserBuyCmd
-                                                            bucketId
-                                                            userInfo
-                                                            prevModel.testMode
-
-                                                    Nothing ->
-                                                        Cmd.none
-                                    )
-                                |> Maybe.withDefault Cmd.none
+                                _ ->
+                                    Cmd.none
                     in
                     UpdateResult
                         { prevModel
                             | bucketView = newBucketView
                         }
-                        cmd
+                        maybeFetchBucketDataCmd
                         ChainCmd.none
                         []
 
@@ -562,7 +553,7 @@ update msg prevModel =
                         |> trackNewTx
                             (TrackedTx
                                 Nothing
-                                "Unlock DAI"
+                                Unlock
                                 Signing
                             )
 
@@ -602,26 +593,24 @@ update msg prevModel =
 
         ConfirmClicked enterInfo ->
             let
+                actionData =
+                    Enter enterInfo
+
                 ( trackedTxId, newTrackedTxs ) =
                     prevModel.trackedTxs
                         |> trackNewTx
                             (TrackedTx
                                 Nothing
-                                ("Bid on bucket "
-                                    ++ String.fromInt enterInfo.bucketId
-                                    ++ " with "
-                                    ++ TokenValue.toConciseString enterInfo.amount
-                                    ++ " DAI"
-                                )
+                                actionData
                                 Signing
                             )
 
                 chainCmd =
                     let
                         customSend =
-                            { onMined = Just ( TxMined trackedTxId Enter, Nothing )
-                            , onSign = Just <| TxSigned trackedTxId Enter
-                            , onBroadcast = Just <| TxBroadcast trackedTxId Enter
+                            { onMined = Just ( TxMined trackedTxId actionData, Nothing )
+                            , onSign = Just <| TxSigned trackedTxId actionData
+                            , onBroadcast = Just <| TxBroadcast trackedTxId actionData
                             }
 
                         txParams =
@@ -651,7 +640,7 @@ update msg prevModel =
                         |> trackNewTx
                             (TrackedTx
                                 Nothing
-                                "Claim FRY"
+                                Exit
                                 Signing
                             )
 
@@ -680,12 +669,12 @@ update msg prevModel =
                 chainCmd
                 []
 
-        TxSigned trackedTxId txType txHashResult ->
+        TxSigned trackedTxId actionData txHashResult ->
             case txHashResult of
                 Err errStr ->
                     let
                         _ =
-                            Debug.log "Error signing tx" ( txType, errStr )
+                            Debug.log "Error signing tx" ( actionData, errStr )
                     in
                     justModelUpdate
                         { prevModel
@@ -701,17 +690,8 @@ update msg prevModel =
                                 |> updateTrackedTxStatus trackedTxId Mining
 
                         newEnterUXModel =
-                            case txType of
-                                Unlock ->
-                                    let
-                                        oldEnterUXModel =
-                                            prevModel.enterUXModel
-                                    in
-                                    { oldEnterUXModel
-                                        | allowanceState = UnlockMining
-                                    }
-
-                                Enter ->
+                            case actionData of
+                                Enter enterInfo ->
                                     let
                                         oldEnterUXModel =
                                             prevModel.enterUXModel
@@ -730,12 +710,12 @@ update msg prevModel =
                             , enterUXModel = newEnterUXModel
                         }
 
-        TxBroadcast trackedTxId txType txResult ->
+        TxBroadcast trackedTxId actionData txResult ->
             case txResult of
                 Err errStr ->
                     let
                         _ =
-                            Debug.log "Error broadcasting tx" ( txType, errStr )
+                            Debug.log "Error broadcasting tx" ( actionData, errStr )
                     in
                     justModelUpdate
                         { prevModel
@@ -749,33 +729,18 @@ update msg prevModel =
                         newTrackedTxs =
                             prevModel.trackedTxs
                                 |> updateTrackedTxStatus trackedTxId Mining
-
-                        newEnterUXModel =
-                            case txType of
-                                Unlock ->
-                                    let
-                                        oldEnterUXModel =
-                                            prevModel.enterUXModel
-                                    in
-                                    { oldEnterUXModel
-                                        | allowanceState = Loaded (TokenValue.tokenValue EthHelpers.maxUintValue)
-                                    }
-
-                                _ ->
-                                    prevModel.enterUXModel
                     in
                     justModelUpdate
                         { prevModel
                             | trackedTxs = newTrackedTxs
-                            , enterUXModel = newEnterUXModel
                         }
 
-        TxMined trackedTxId txType txReceiptResult ->
+        TxMined trackedTxId actionData txReceiptResult ->
             case txReceiptResult of
                 Err errStr ->
                     let
                         _ =
-                            Debug.log "Error mining tx" ( txType, errStr )
+                            Debug.log "Error mining tx" ( actionData, errStr )
                     in
                     justModelUpdate
                         { prevModel
@@ -791,7 +756,7 @@ update msg prevModel =
                                 |> updateTrackedTxStatus trackedTxId Mined
 
                         cmd =
-                            case ( txType, Wallet.userInfo prevModel.wallet ) of
+                            case ( actionData, Wallet.userInfo prevModel.wallet ) of
                                 ( Exit, Just userInfo ) ->
                                     Cmd.batch
                                         [ fetchUserExitInfoCmd
@@ -802,16 +767,11 @@ update msg prevModel =
                                             prevModel.testMode
                                         ]
 
-                                ( Enter, _ ) ->
+                                ( Enter enterInfo, _ ) ->
                                     case prevModel.bucketSale of
                                         Just (Ok bucketSale) ->
                                             fetchBucketDataCmd
-                                                (getFocusedBucketId
-                                                    bucketSale
-                                                    prevModel.bucketView
-                                                    prevModel.now
-                                                    prevModel.testMode
-                                                )
+                                                enterInfo.bucketId
                                                 (Wallet.userInfo prevModel.wallet)
                                                 prevModel.testMode
 
@@ -830,7 +790,7 @@ update msg prevModel =
                         []
 
 
-initBucketSale : Bool -> Time.Posix -> Time.Posix -> Result String BucketSale
+initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result String BucketSale
 initBucketSale testMode saleStartTime now =
     if TimeHelpers.compare saleStartTime now == GT then
         Err <|
@@ -863,7 +823,7 @@ initBucketSale testMode saleStartTime now =
                 )
 
 
-fetchBucketDataCmd : Int -> Maybe UserInfo -> Bool -> Cmd Msg
+fetchBucketDataCmd : Int -> Maybe UserInfo -> TestMode -> Cmd Msg
 fetchBucketDataCmd id maybeUserInfo testMode =
     Cmd.batch
         [ fetchTotalValueEnteredCmd id testMode
@@ -876,7 +836,7 @@ fetchBucketDataCmd id maybeUserInfo testMode =
         ]
 
 
-fetchTotalValueEnteredCmd : Int -> Bool -> Cmd Msg
+fetchTotalValueEnteredCmd : Int -> TestMode -> Cmd Msg
 fetchTotalValueEnteredCmd id testMode =
     BucketSaleWrappers.getTotalValueEnteredForBucket
         testMode
@@ -884,7 +844,7 @@ fetchTotalValueEnteredCmd id testMode =
         (BucketValueEnteredFetched id)
 
 
-fetchBucketUserBuyCmd : Int -> UserInfo -> Bool -> Cmd Msg
+fetchBucketUserBuyCmd : Int -> UserInfo -> TestMode -> Cmd Msg
 fetchBucketUserBuyCmd id userInfo testMode =
     BucketSaleWrappers.getUserBuyForBucket
         testMode
@@ -893,7 +853,7 @@ fetchBucketUserBuyCmd id userInfo testMode =
         (UserBuyFetched userInfo.address id)
 
 
-fetchUserExitInfoCmd : UserInfo -> Bool -> Cmd Msg
+fetchUserExitInfoCmd : UserInfo -> TestMode -> Cmd Msg
 fetchUserExitInfoCmd userInfo testMode =
     BucketSaleWrappers.getUserExitInfo
         testMode
@@ -901,7 +861,7 @@ fetchUserExitInfoCmd userInfo testMode =
         (UserExitInfoFetched userInfo.address)
 
 
-fetchUserAllowanceForSaleCmd : UserInfo -> Bool -> Cmd Msg
+fetchUserAllowanceForSaleCmd : UserInfo -> TestMode -> Cmd Msg
 fetchUserAllowanceForSaleCmd userInfo testMode =
     Contracts.Wrappers.getAllowanceCmd
         testMode
@@ -910,21 +870,21 @@ fetchUserAllowanceForSaleCmd userInfo testMode =
         AllowanceFetched
 
 
-fetchSaleStartTimestampCmd : Bool -> Cmd Msg
+fetchSaleStartTimestampCmd : TestMode -> Cmd Msg
 fetchSaleStartTimestampCmd testMode =
     BucketSaleWrappers.getSaleStartTimestampCmd
         testMode
         SaleStartTimestampFetched
 
 
-fetchTotalTokensExitedCmd : Bool -> Cmd Msg
+fetchTotalTokensExitedCmd : TestMode -> Cmd Msg
 fetchTotalTokensExitedCmd testMode =
     BucketSaleWrappers.getTotalExitedTokens
         testMode
         TotalTokensExitedFetched
 
 
-fetchUserFryBalanceCmd : UserInfo -> Bool -> Cmd Msg
+fetchUserFryBalanceCmd : UserInfo -> TestMode -> Cmd Msg
 fetchUserFryBalanceCmd userInfo testMode =
     BucketSaleWrappers.getFryBalance
         testMode
@@ -971,6 +931,34 @@ updateTrackedTxStatus id newStatus =
         )
 
 
+inspectLocationRequestCmd : Cmd Msg
+inspectLocationRequestCmd =
+    Http.get
+        { url = "http://ip-api.com/json/?fields=countryCode"
+        , expect =
+            Http.expectJson
+                JurisdictionFetched
+                locationResponseJurisdictionDecoder
+        }
+
+
+locationResponseJurisdictionDecoder : Json.Decode.Decoder Jurisdiction
+locationResponseJurisdictionDecoder =
+    Json.Decode.field
+        "countryCode"
+        Json.Decode.string
+        |> Json.Decode.map countryCodeToJurisdiction
+
+
+countryCodeToJurisdiction : String -> Jurisdiction
+countryCodeToJurisdiction code =
+    if code == "US" || code == "CN" then
+        ChinaOrUSA
+
+    else
+        JurisdictionsWeArentIntimidatedIntoExcluding
+
+
 runCmdDown : CmdDown -> Model -> UpdateResult
 runCmdDown cmdDown prevModel =
     case cmdDown of
@@ -983,7 +971,7 @@ runCmdDown cmdDown prevModel =
             in
             UpdateResult
                 { prevModel
-                    | wallet = newWallet
+                    | wallet = verifyWalletCorrectNetwork newWallet prevModel.testMode
                     , bucketSale = newBucketSale
                     , userFryBalance = Nothing
                     , userExitInfo = Nothing
@@ -993,7 +981,7 @@ runCmdDown cmdDown prevModel =
                                 prevModel.enterUXModel
                         in
                         { oldEnterUXModel
-                            | allowanceState = Loading
+                            | allowance = Nothing
                         }
                 }
                 (case ( Wallet.userInfo newWallet, newBucketSale ) of
