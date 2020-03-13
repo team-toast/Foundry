@@ -11,7 +11,8 @@ function haversine(point1, point2) {
     var lat1 = toRad(point1.lat);
     var lat2 = toRad(point2.lat);
 
-    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    var a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.sin(dLon / 2) * Math.sin(dLon / 2) *
         Math.cos(lat1) * Math.cos(lat2);
 
