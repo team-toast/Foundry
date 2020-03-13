@@ -111,7 +111,7 @@ closedBucketsPane : Model -> Element Msg
 closedBucketsPane model =
     Element.column
         (commonPaneAttributes
-            ++ [ Element.width <| Element.px 450
+            ++ [ Element.width <| Element.fillPortion 1
                , Element.paddingXY 32 25
                ]
         )
@@ -136,10 +136,10 @@ focusedBucketPane : BucketSale -> Int -> Wallet.State -> EnterUXModel -> Jurisdi
 focusedBucketPane bucketSale bucketId wallet enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
-            ++ [ Element.width <| Element.px 780
+            ++ [ Element.width <| Element.fillPortion 2
                , Element.paddingXY 35 31
                , Element.spacing 7
-               , Element.height <| Element.px 800
+               , Element.height Element.shrink
                ]
         )
         ([ focusedBucketHeaderEl
@@ -191,7 +191,7 @@ futureBucketsPane model bucketSale =
         ValidBucket nextBucketInfo ->
             Element.column
                 (commonPaneAttributes
-                    ++ [ Element.width <| Element.px 450
+                    ++ [ Element.width <| Element.fillPortion 1
                        , Element.paddingXY 32 25
                        ]
                 )
