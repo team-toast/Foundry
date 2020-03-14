@@ -2,6 +2,50 @@
 // goal:
 // find both the ip location and the geolocation of the browser and verify they are in the same county
 
+class Result {
+    constructor(value, error) {
+        this.__value = value;
+        this.__error = error;
+    }
+    static Error(error) {
+        return Result.of(null, error);
+    }
+    static of(valueToBox, error) {
+        return new Result(valueToBox, error);
+    }
+    flatMap(fn) {
+        if (this.isError()) return Result.Error(this.__error);
+        const r = fn(this.__value);
+
+        return r.isError() ?
+            Result.Error(r.__error) :
+            Result.of(r.__value);
+    }
+    getOrElse(elseVal) {
+        return this.isError() ? elseVal : this.__value;
+    }
+    getOrEmptyArray() {
+        return this.getOrElse([]);
+    }
+    getOrNull() {
+        return this.getOrElse(null);
+    }
+    getError() {
+        return this.__error;
+    }
+    getErrorMessage() {
+        return { ErrorMessage: this.getError().message }
+    }
+    isError() {
+        return this.__error != null;
+    }
+    map(fn) {
+        return this.isError() ?
+            Result.of(null, this.__error) :
+            Result.of(fn(this.__value));
+    }
+}
+
 function haversine(point1, point2) {
     toRad = (value) => value * Math.PI / 180;
 
@@ -11,7 +55,7 @@ function haversine(point1, point2) {
     var lat1 = toRad(point1.lat);
     var lat2 = toRad(point2.lat);
 
-    var a = 
+    var a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.sin(dLon / 2) * Math.sin(dLon / 2) *
         Math.cos(lat1) * Math.cos(lat2);
@@ -36,33 +80,40 @@ function getLocationPromise() {
     });
 }
 
+async function monadPromise(promise) {
+    return await promise.then(result => Result.of(result)).catch(error => Result.Error(error));
+}
+
 async function duelLocationCheck() {
     // fire off the request to ipgelocation.io so long
     var ipResponseTask = getJsonPromise("https://api.ipgeolocation.io/ipgeo?apiKey=0a44cf721e614b2ba440943b51d9a235");
 
     // get the browser's location, and fire off a look up for the country code 
-    var position = await getLocationPromise();
-    var reverseGeoResponseTask = getJsonPromise("https://geocode.xyz/" + position.coords.latitude + "," + position.coords.longitude + "?json=1&auth=933556588498608367442x4952");
+    var position = await monadPromise(getLocationPromise());
+    if (position.isError()) return position.getErrorMessage();
+    var reverseGeoResponseTask = getJsonPromise("https://geocode.xyz/" + position.getOrNull().coords.latitude + "," + position.getOrNull().coords.longitude + "?json=1&auth=933556588498608367442x4952");
 
     // now wait for the responses
-    var ipResponse = await ipResponseTask;
+    var ipResponse = await monadPromise(ipResponseTask);
+    if (ipResponse.isError()) return ipResponse.getErrorMessage();
     //console.log(ipResponse);
-    var reverseGeoResponse = await reverseGeoResponseTask;
+    var reverseGeoResponse = await monadPromise(reverseGeoResponseTask);
+    if (reverseGeoResponse.isError()) return reverseGeoResponse.getErrorMessage();
     //console.log(reverseGeoResponse);
 
     // calculate the results
     var ipLoc = {
-        lat: ipResponse.latitude,
-        lng: ipResponse.longitude,
-        country: ipResponse.country_code2
+        lat: ipResponse.getOrNull().latitude,
+        lng: ipResponse.getOrNull().longitude,
+        country: ipResponse.getOrNull().country_code2
     };
     //console.log(ipLoc);
 
     var geoLoc = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        country: reverseGeoResponse.prov,
-        acc: position.coords.accuracy
+        lat: position.getOrNull().coords.latitude,
+        lng: position.getOrNull().coords.longitude,
+        country: reverseGeoResponse.getOrNull().prov,
+        acc: position.getOrNull().coords.accuracy
     };
     //console.log(geoLoc);
 
@@ -81,6 +132,7 @@ async function duelLocationCheck() {
 
 async function displayResults() {
     var result = await duelLocationCheck();
-    $("#json").html(JSON.stringify(result, null, 4));
+    var resultString = JSON.stringify(result, null, 4);
+    $("#json").html(resultString);
     console.log(result);
 }
