@@ -31,7 +31,7 @@ class Result {
         return this.getOrElse(null);
     }
     getError() {
-        return this.__error;
+        return this.__error == "" ? { message: "Unknown" } : this.__error ;
     }
     getErrorMessage() {
         return { ErrorMessage: this.getError().message }
@@ -66,17 +66,15 @@ function haversine(point1, point2) {
 
 function getJsonPromise(url) {
     return new Promise((resolve, reject) => {
-        $.get(url, "json", (response) => resolve(response));
+        var rej = (a, b, c) => { reject(c); };
+        var result = $.get(url, "json").then(resolve, rej);
     });
 }
 
 function getLocationPromise() {
     return new Promise((resolve, reject) => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(resolve, reject);
-        } else {
-            reject();
-        }
+        if (navigator.geolocation)
+            navigator.geolocation.getCurrentPosition(resolve, reject);  
     });
 }
 
@@ -91,13 +89,13 @@ async function duelLocationCheck() {
     // get the browser's location, and fire off a look up for the country code 
     var position = await monadPromise(getLocationPromise());
     if (position.isError()) return position.getErrorMessage();
-    var reverseGeoResponseTask = getJsonPromise("https://geocode.xyz/" + position.getOrNull().coords.latitude + "," + position.getOrNull().coords.longitude + "?json=1&auth=933556588498608367442x4952");
+    var reverseGeoResponseTask = monadPromise(getJsonPromise("https://geocode.xyz/" + position.getOrNull().coords.latitude + "," + position.getOrNull().coords.longitude + "?json=1&auth=933556588498608367442x4952"));
 
     // now wait for the responses
     var ipResponse = await monadPromise(ipResponseTask);
     if (ipResponse.isError()) return ipResponse.getErrorMessage();
     //console.log(ipResponse);
-    var reverseGeoResponse = await monadPromise(reverseGeoResponseTask);
+    var reverseGeoResponse = await reverseGeoResponseTask;
     if (reverseGeoResponse.isError()) return reverseGeoResponse.getErrorMessage();
     //console.log(reverseGeoResponse);
 
