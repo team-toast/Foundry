@@ -70,6 +70,7 @@ let bucketSale =
         bucketCount 
         FRY.Address 
         DAI.Address 
+        (BigInteger(100UL * days))
 
 let addFryMinter newMinter =
     let isMinter = FRY.Query "isMinter" [| newMinter |]
