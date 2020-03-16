@@ -60,6 +60,14 @@ contract BucketSale
             IERC20 _tokenSoldFor)    // typically DAI
         public
     {
+        require(_treasury != address(0), "Treasury can't be 0x0");
+        require(_startOfSale >= block.timestamp, "Start of sale can't be in the past");
+        require(_bucketPeriod > 0, "Bucket period can't be 0");
+        require(_bucketSupply > 0, "Bucket supply can't be 0");
+        require(_bucketCount > 0, "Bucket count can't be 0");
+        require(address(_tokenOnSale) != address(0), "Token on sale can't be 0x0");
+        require(address(_tokenSoldFor) != address(0), "Token sold for can't be 0x0");
+
         treasury = _treasury;
         startOfSale = _startOfSale;
         bucketPeriod = _bucketPeriod;
