@@ -50,19 +50,26 @@ let makeTreasury owner =
 let treasury = makeTreasury ethConn.Account.Address
 
 
-let makeBucketSale treasury startOfSale bucketPeriod bucketSupply bucketCount tokenOnSale tokenSoldFor =
+let makeBucketSale treasury startOfSale bucketPeriod bucketSupply bucketCount tokenOnSale tokenSoldFor timeTravel =
     let abi = Abi("../../../../build/contracts/BucketSale.json")
     
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
             [| treasury; startOfSale; bucketPeriod; bucketSupply; bucketCount; tokenOnSale; tokenSoldFor |]
         |> runNow
-    
+    ethConn.TimeTravel timeTravel
     ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
 
-let bucketSale = makeBucketSale treasury.Address startOfSale bucketPeriod bucketSupply bucketCount FRY.Address DAI.Address
-    
+let bucketSale = 
+    makeBucketSale 
+        treasury.Address 
+        startOfSale 
+        bucketPeriod 
+        bucketSupply 
+        bucketCount 
+        FRY.Address 
+        DAI.Address 
 
 let addFryMinter newMinter =
     let isMinter = FRY.Query "isMinter" [| newMinter |]

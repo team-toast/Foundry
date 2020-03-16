@@ -1,5 +1,7 @@
 module Constants
 
+open System
+
 type EthAddress(rawString: string) =
     static member Zero = "0x0000000000000000000000000000000000000000"
     member _.StringValue = rawString.ToLower()
