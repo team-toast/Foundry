@@ -52,6 +52,7 @@ type Msg
     | TimezoneGot Time.Zone
     | Refresh
     | UpdateNow Time.Posix
+    | VerifyJurisdictionClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)
     | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
@@ -354,6 +355,7 @@ type Jurisdiction
     | JurisdictionsWeArentIntimidatedIntoExcluding
 
 type JurisdictionCheckStatus
-    = Checking
+    = WaitingForClick
+    | Checking
     | Checked Jurisdiction
     | Error String

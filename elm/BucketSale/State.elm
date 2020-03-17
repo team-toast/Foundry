@@ -40,7 +40,7 @@ init maybeReferrer testMode wallet now =
       , totalTokensExited = Nothing
       , userFryBalance = Nothing
       , bucketView = ViewCurrent
-      , jurisdictionCheckStatus = Checking
+      , jurisdictionCheckStatus = WaitingForClick
       , enterUXModel = initEnterUXModel maybeReferrer
       , userExitInfo = Nothing
       , trackedTxs = []
@@ -51,7 +51,6 @@ init maybeReferrer testMode wallet now =
         ([ fetchSaleStartTimestampCmd testMode
          , fetchTotalTokensExitedCmd testMode
          , Task.perform TimezoneGot Time.here
-         , beginLocationCheck ()
          ]
             ++ (case Wallet.userInfo wallet of
                     Just userInfo ->
@@ -187,6 +186,15 @@ update msg prevModel =
                     | now = newNow
                 }
                 cmd
+                ChainCmd.none
+                []
+
+        VerifyJurisdictionClicked ->
+            UpdateResult
+                { prevModel
+                    | jurisdictionCheckStatus = Checking
+                }
+                (beginLocationCheck ())
                 ChainCmd.none
                 []
 
