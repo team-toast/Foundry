@@ -20,8 +20,11 @@
     "rimraf": "^2.6.3"
   },
   "dependencies": {
+    "babel-core": "^6.26.3",
+    "babel-polyfill": "^6.26.0",
     "clipboard": "^2.0.6",
-    "elm-ethereum-ports": "^1.0.0"
+    "elm-ethereum-ports": "^1.0.0",
+    "jquery": "^3.4.1"
   },
   "assetsPath": "./static/assets"
 }

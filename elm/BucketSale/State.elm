@@ -1,4 +1,4 @@
-module BucketSale.State exposing (init, runCmdDown, subscriptions, update)
+port module BucketSale.State exposing (init, runCmdDown, subscriptions, update)
 
 import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
@@ -18,6 +18,7 @@ import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
 import Json.Decode
+import Json.Decode.Extra
 import List.Extra
 import Maybe.Extra
 import Task
@@ -49,7 +50,7 @@ init maybeReferrer testMode wallet now =
         ([ fetchSaleStartTimestampCmd testMode
          , fetchTotalTokensExitedCmd testMode
          , Task.perform TimezoneGot Time.here
-         , inspectLocationRequestCmd
+         , beginLocationCheck ()
          ]
             ++ (case Wallet.userInfo wallet of
                     Just userInfo ->
@@ -188,10 +189,10 @@ update msg prevModel =
                 ChainCmd.none
                 []
 
-        JurisdictionFetched fetchResult ->
+        LocationCheckResult decodeResult ->
             let
                 _ =
-                    Debug.log "BYPASSING Jurisdiction control!!" ""
+                    Debug.log "Got this json value" decodeResult
 
                 -- unusedStuff =
                 --     case fetchResult of
@@ -931,25 +932,6 @@ updateTrackedTxStatus id newStatus =
         )
 
 
-inspectLocationRequestCmd : Cmd Msg
-inspectLocationRequestCmd =
-    Http.get
-        { url = "http://ip-api.com/json/?fields=countryCode"
-        , expect =
-            Http.expectJson
-                JurisdictionFetched
-                locationResponseJurisdictionDecoder
-        }
-
-
-locationResponseJurisdictionDecoder : Json.Decode.Decoder Jurisdiction
-locationResponseJurisdictionDecoder =
-    Json.Decode.field
-        "countryCode"
-        Json.Decode.string
-        |> Json.Decode.map countryCodeToJurisdiction
-
-
 countryCodeToJurisdiction : String -> Jurisdiction
 countryCodeToJurisdiction code =
     if code == "US" || code == "CN" then
@@ -1035,4 +1017,43 @@ subscriptions model =
     Sub.batch
         [ Time.every 3000 <| always Refresh
         , Time.every 500 UpdateNow
+        , locationCheckResult
+            (Json.Decode.decodeValue locationCheckDecoder >> LocationCheckResult)
         ]
+
+
+locationCheckDecoder : Json.Decode.Decoder (Result String LocationInfo)
+locationCheckDecoder =
+    Json.Decode.oneOf
+        [ Json.Decode.map Err <|
+            Json.Decode.field "ErrorMessage" Json.Decode.string
+        , Json.Decode.map Ok locationInfoDecoder
+        ]
+
+
+locationInfoDecoder : Json.Decode.Decoder LocationInfo
+locationInfoDecoder =
+    Json.Decode.map2
+        LocationInfo
+        countryInfoDecoder
+        (Json.Decode.field "kmDistance" Json.Decode.float)
+
+
+countryInfoDecoder : Json.Decode.Decoder CountryInfo
+countryInfoDecoder =
+    Json.Decode.map2
+        (\countryMatches countryString ->
+            if countryMatches then
+                Matching countryString
+
+            else
+                NotMatching
+        )
+        (Json.Decode.field "countryMatches" Json.Decode.bool)
+        (Json.Decode.field "country" Json.Decode.string)
+
+
+port beginLocationCheck : () -> Cmd msg
+
+
+port locationCheckResult : (Json.Decode.Value -> msg) -> Sub msg

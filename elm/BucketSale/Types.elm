@@ -12,6 +12,7 @@ import Eth.Types exposing (Address, Tx, TxHash, TxReceipt)
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
+import Json.Decode
 import List.Extra
 import Time
 import TokenValue exposing (TokenValue)
@@ -51,7 +52,7 @@ type Msg
     | TimezoneGot Time.Zone
     | Refresh
     | UpdateNow Time.Posix
-    | JurisdictionFetched (Result Http.Error Jurisdiction)
+    | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)
     | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
     | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
@@ -90,11 +91,13 @@ justModelUpdate model =
     , cmdUps = []
     }
 
+
 type JurisdictionCheckStatus
     = Checking
     | Excluded
     | Allowed
     | FetchError Http.Error
+
 
 type alias EnterInfo =
     { userInfo : UserInfo
@@ -337,6 +340,18 @@ getRelevantTimingInfo bucketInfo now testMode =
                     bucketInfo.bucketData.startTime
                     now
         )
+
+
+type alias LocationInfo =
+    { countryInfo : CountryInfo
+    , distanceKm : Float
+    }
+
+
+type CountryInfo
+    = Matching String
+    | NotMatching
+
 
 type Jurisdiction
     = ChinaOrUSA

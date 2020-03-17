@@ -1,6 +1,7 @@
 var elm_ethereum_ports = require('elm-ethereum-ports');
-var networkChangeNotifier = require('./networkChangeNotifier');
 var clipboardLib = require('clipboard');
+var networkChangeNotifier = require('./networkChangeNotifier');
+var locationCheck = require('./dualLocationCheck.js');
 
 import { Elm } from '../../elm/App'
 
@@ -37,6 +38,7 @@ function startDapp() {
 
             gtagPortStuff(app);
             referrerStoragePortStuff(app);
+            locationCheckPortStuff(app);
 
             web3PortStuff(app, web3);
         });
@@ -54,6 +56,7 @@ function startDapp() {
 
         gtagPortStuff(app);
         referrerStoragePortStuff(app);
+        locationCheckPortStuff(app);
 
         console.log("Web3 wallet not detected.");
     }
@@ -83,6 +86,13 @@ function referrerStoragePortStuff(app) {
         if (typeof (Storage !== "undefined")) {
             localStorage.setItem("referralAddressString", data);
         }
+    });
+}
+
+function locationCheckPortStuff(app) {
+    app.ports.beginLocationCheck.subscribe(function(data) {
+        console.log(locationCheck);
+        locationCheck.dualLocationCheckWithCallback(app.ports.locationCheckResult.send);
     });
 }
 
