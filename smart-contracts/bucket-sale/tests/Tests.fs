@@ -34,12 +34,21 @@ let ``M000 - Can send eth``() =
 [<Specification("BucketSale", "constructor", 1)>]
 [<Fact>]
 let ``B_C000 - Can construct the contract``() =
+    let abi = Abi("../../../../build/contracts/BucketSale.json")
     let tokenOnSale = makeAccount().Address
     let tokenSoldFor = makeAccount().Address
-    let abi = Abi("../../../../build/contracts/BucketSale.json")
+    let startOfSale = debug.BlockTimestamp + BigInteger(10UL * hours)
+  
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| treasury.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; tokenOnSale; tokenSoldFor |]
+            [| 
+                treasury.Address; 
+                startOfSale; 
+                bucketPeriod; 
+                bucketSupply; 
+                bucketCount; 
+                tokenOnSale; 
+                tokenSoldFor |]
         |> runNow
 
     deployTxReceipt |> shouldSucceed
@@ -49,6 +58,7 @@ let ``B_C000 - Can construct the contract``() =
 
     contract.Query "treasury" [||] |> shouldEqualIgnoringCase treasury.Address
     contract.Query "startOfSale" [||] |> should equal startOfSale
+    contract.Query "startOfSale" [||] |> should greaterThan debug.BlockTimestamp 
     contract.Query "bucketPeriod" [||] |> should equal bucketPeriod
     contract.Query "bucketSupply" [||] |> should equal bucketSupply
     contract.Query "bucketCount" [||] |> should equal bucketCount
@@ -60,6 +70,10 @@ let ``B_C000 - Can construct the contract``() =
 [<Specification("BucketSale", "enter", 5)>]
 [<Fact>]
 let ``B_EN001|B_EN005 - Cannot enter a past bucket``() =
+    let valueToEnter = rnd.Next(1,100) |> BigInteger
+    seedWithDAI debug.ContractPlug.Address valueToEnter
+    approveDAIFor valueToEnter bucketSale.Address debug
+
     let currentBucket = bucketSale.Query "currentBucket" [||] |> uint64
     let bucketInPast = currentBucket - 1UL
     let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; bucketInPast; 1UL; EthAddress.Zero |] debug
@@ -70,6 +84,10 @@ let ``B_EN001|B_EN005 - Cannot enter a past bucket``() =
 [<Specification("BucketSale", "enter", 2)>]
 [<Fact>]
 let ``B_EN002 - Cannot enter a bucket beyond the designated bucket count (no referrer)``() =
+    let valueToEnter = rnd.Next(1,100) |> BigInteger
+    seedWithDAI debug.ContractPlug.Address valueToEnter
+    approveDAIFor valueToEnter bucketSale.Address debug
+
     addFryMinter bucketSale.Address
     let bucketCount = bucketSale.Query "bucketCount" [||] // will be one greater than what can be correctly entered
     let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; bucketCount; 1UL; EthAddress.Zero |] debug

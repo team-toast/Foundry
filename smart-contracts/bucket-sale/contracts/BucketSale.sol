@@ -4,6 +4,14 @@ import "../../common/openzeppelin/math/Math.sol";
 import "../../common/openzeppelin/math/SafeMath.sol";
 import "../../common/openzeppelin/token/ERC20/ERC20Mintable.sol";
 
+contract IDecimals
+{
+    function decimals()
+        public
+        view
+        returns (uint8);
+}
+
 contract BucketSale
 {
     using SafeMath for uint256;
@@ -63,6 +71,14 @@ contract BucketSale
             IERC20 _tokenSoldFor)    // typically DAI
         public
     {
+        require(_treasury != address(0), "Treasury can't be 0x0");
+        // require(_startOfSale > block.timestamp, "Start of sale can't be in the past");
+        require(_bucketPeriod > 0, "Bucket period can't be 0");
+        require(_bucketSupply > 0, "Bucket supply can't be 0");
+        require(_bucketCount > 0, "Bucket count can't be 0");
+        require(address(_tokenOnSale) != address(0), "Token on sale can't be 0x0");
+        require(address(_tokenSoldFor) != address(0), "Token sold for can't be 0x0");
+
         treasury = _treasury;
         startOfSale = _startOfSale;
         bucketPeriod = _bucketPeriod;
@@ -95,10 +111,12 @@ contract BucketSale
             address _referrer)
         public
     {
-        registerEnter(_bucketId, _buyer, _amount);
-        referredTotal[_referrer] = referredTotal[_referrer].add(_amount); // referredTotal[0x0] will track buys with no referral
+        require(_amount > 0, "You cannot enter nothing");
+
         bool transferSuccess = tokenSoldFor.transferFrom(msg.sender, treasury, _amount);
         require(transferSuccess, "enter transfer failed");
+        registerEnter(_bucketId, _buyer, _amount);
+        referredTotal[_referrer] = referredTotal[_referrer].add(_amount); // referredTotal[0x0] will track buys with no referral
 
         if (_referrer != address(0)) // If there is a referrer
         {
@@ -199,7 +217,7 @@ contract BucketSale
         else
         {
             // integer number of dai contributed
-            uint daiContributed = referredTotal[_referrerAddress].div(10 ** 18);
+            uint daiContributed = referredTotal[_referrerAddress].div(10 ** uint(IDecimals(address(tokenSoldFor)).decimals()));
 
             /*
             A more explicit way to do the following 'uint multiplier' line would be something like:

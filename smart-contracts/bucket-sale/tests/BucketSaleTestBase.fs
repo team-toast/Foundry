@@ -50,18 +50,27 @@ let makeTreasury owner =
 let treasury = makeTreasury ethConn.Account.Address
 
 
-let makeBucketSale treasury startOfSale bucketPeriod bucketSupply bucketCount tokenOnSale tokenSoldFor =
+let makeBucketSale treasury startOfSale bucketPeriod bucketSupply bucketCount tokenOnSale tokenSoldFor timeTravel =
     let abi = Abi("../../../../build/contracts/BucketSale.json")
     
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
             [| treasury; startOfSale; bucketPeriod; bucketSupply; bucketCount; tokenOnSale; tokenSoldFor |]
         |> runNow
-    
+    ethConn.TimeTravel timeTravel
     ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
 
-let bucketSale = makeBucketSale treasury.Address startOfSale bucketPeriod bucketSupply bucketCount FRY.Address DAI.Address
+let bucketSale = 
+    makeBucketSale 
+        treasury.Address 
+        startOfSale 
+        bucketPeriod 
+        bucketSupply 
+        bucketCount 
+        FRY.Address 
+        DAI.Address
+        (BigInteger(0UL * days))
     
 
 let addFryMinter newMinter =
@@ -84,11 +93,15 @@ let seedWithDAI (recipient:string) (amount:BigInteger) =
     transferDaiTxReceipt |> shouldSucceed
     DAI.Query "balanceOf" [| recipient |] |> should equal (balanceBefore + amount)
 
+let approveDAIFor (amount:BigInteger) (approvedAddress:string) (sender:IAsyncTxSender) =
+    seedWithDAI debug.ContractPlug.Address amount
+    let approveDaiTxReceipt = DAI.ExecuteFunctionFrom "approve" [| approvedAddress; amount |] sender
+    approveDaiTxReceipt |> shouldSucceed
+
 let enterBucket sender buyer bucketToEnter valueToEnter referrer =
     valueToEnter |> should greaterThan BigInteger.Zero
     seedWithDAI debug.ContractPlug.Address valueToEnter
-    let approveDaiTxReceipt = DAI.ExecuteFunctionFrom "approve" [| bucketSale.Address; valueToEnter |] debug
-    approveDaiTxReceipt |> shouldSucceed
+    approveDAIFor valueToEnter bucketSale.Address debug
 
     let referrerReferredTotalBefore = bucketSale.Query "referredTotal" [| referrer |]
     let referrerRewardPercBefore = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
