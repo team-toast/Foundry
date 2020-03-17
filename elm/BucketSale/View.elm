@@ -875,11 +875,16 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
 
         Error errStr ->
             Element.column
-                [ Element.spacing 10 ]
+                [ Element.spacing 10
+                , Element.width Element.fill
+                ]
                 [ msgInstead "Error verifying jurisdiction." red
                 , Element.paragraph
                     [ Element.Font.color grayTextColor ]
                     [ Element.text errStr ]
+                , Element.paragraph
+                    [ Element.Font.color grayTextColor ]
+                    [ Element.text "There may be more info in the console." ]
                 ]
 
         Checked ChinaOrUSA ->
