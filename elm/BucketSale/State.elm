@@ -21,6 +21,7 @@ import Json.Decode
 import Json.Decode.Extra
 import List.Extra
 import Maybe.Extra
+import Result.Extra
 import Task
 import Time
 import TokenValue exposing (TokenValue)
@@ -190,28 +191,10 @@ update msg prevModel =
                 []
 
         LocationCheckResult decodeResult ->
-            let
-                _ =
-                    Debug.log "Got this json value" decodeResult
-
-                -- unusedStuff =
-                --     case fetchResult of
-                --         Err httpErr ->
-                --             ( JurisdictionCheck <| FetchError httpErr
-                --             , Cmd.none
-                --             )
-                --         Ok jurisdiction ->
-                --             case jurisdiction of
-                --                 ChinaOrUSA ->
-                --                     ( JurisdictionCheck Excluded
-                --                     , Cmd.none
-                --                     )
-                --                 JurisdictionsWeArentIntimidatedIntoExcluding ->
-                --                     Tuple.mapFirst Valid <| initValidModel initValidModelStuff
-            in
             justModelUpdate
                 { prevModel
-                    | jurisdictionCheckStatus = Allowed
+                    | jurisdictionCheckStatus =
+                        locationCheckResultToJurisdictionStatus decodeResult
                 }
 
         SaleStartTimestampFetched fetchResult ->
@@ -932,15 +915,6 @@ updateTrackedTxStatus id newStatus =
         )
 
 
-countryCodeToJurisdiction : String -> Jurisdiction
-countryCodeToJurisdiction code =
-    if code == "US" || code == "CN" then
-        ChinaOrUSA
-
-    else
-        JurisdictionsWeArentIntimidatedIntoExcluding
-
-
 runCmdDown : CmdDown -> Model -> UpdateResult
 runCmdDown cmdDown prevModel =
     case cmdDown of
@@ -1012,14 +986,43 @@ runCmdDown cmdDown prevModel =
             justModelUpdate prevModel
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.batch
-        [ Time.every 3000 <| always Refresh
-        , Time.every 500 UpdateNow
-        , locationCheckResult
-            (Json.Decode.decodeValue locationCheckDecoder >> LocationCheckResult)
-        ]
+locationCheckResultToJurisdictionStatus : Result Json.Decode.Error (Result String LocationInfo) -> JurisdictionCheckStatus
+locationCheckResultToJurisdictionStatus decodeResult =
+    decodeResult
+        |> Result.map
+            (\checkResult ->
+                checkResult
+                    |> Result.map
+                        (\locationInfo ->
+                            case locationInfo.countryInfo of
+                                Matching countryCode ->
+                                    Checked <|
+                                        countryCodeToJurisdiction countryCode
+
+                                NotMatching ->
+                                    Error
+                                        "Geolocation and IP analysis give different country codes."
+                        )
+                    |> Result.mapError
+                        (\e ->
+                            Error <|
+                                "Location check failed: "
+                                    ++ e
+                        )
+                    |> Result.Extra.merge
+            )
+        |> Result.mapError
+            (\e -> Error <| "Location check response decode error: " ++ Json.Decode.errorToString e)
+        |> Result.Extra.merge
+
+
+countryCodeToJurisdiction : String -> Jurisdiction
+countryCodeToJurisdiction code =
+    if code == "US" || code == "CN" then
+        ChinaOrUSA
+
+    else
+        JurisdictionsWeArentIntimidatedIntoExcluding
 
 
 locationCheckDecoder : Json.Decode.Decoder (Result String LocationInfo)
@@ -1051,6 +1054,16 @@ countryInfoDecoder =
         )
         (Json.Decode.field "countryMatches" Json.Decode.bool)
         (Json.Decode.field "country" Json.Decode.string)
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Time.every 3000 <| always Refresh
+        , Time.every 500 UpdateNow
+        , locationCheckResult
+            (Json.Decode.decodeValue locationCheckDecoder >> LocationCheckResult)
+        ]
 
 
 port beginLocationCheck : () -> Cmd msg

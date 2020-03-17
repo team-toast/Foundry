@@ -92,11 +92,7 @@ justModelUpdate model =
     }
 
 
-type JurisdictionCheckStatus
-    = Checking
-    | Excluded
-    | Allowed
-    | FetchError Http.Error
+
 
 
 type alias EnterInfo =
@@ -356,3 +352,8 @@ type CountryInfo
 type Jurisdiction
     = ChinaOrUSA
     | JurisdictionsWeArentIntimidatedIntoExcluding
+
+type JurisdictionCheckStatus
+    = Checking
+    | Checked Jurisdiction
+    | Error String
