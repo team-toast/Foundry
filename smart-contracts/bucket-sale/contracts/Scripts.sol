@@ -30,14 +30,22 @@ contract Scripts {
         //      *add buy amount to the first array element
         //      *append the bucketId to the array
 
-        uint[1201] memory results;
+        uint[1201] memory results; // some gas to allocate this memory * 1201
         uint pointer = 0;
+
+        // mutlipy the loop gas by at least _bucketSale.currentBucket()
         for (uint bucketId = 0; bucketId < Math.min(_bucketSale.currentBucket(), _bucketSale.bucketCount()); bucketId = bucketId.add(1))
         {
+            // mapping lookup cost
+            // does this differ for empty and non-empty values?
             (uint valueEntered, uint buyerTokensExited) = _bucketSale.buys(bucketId, _buyer);
 
             if (valueEntered > 0 && buyerTokensExited == 0) {
+                // some basic set of gas, all memory related.
+                // is there any sort of optimization which may play a role here?
+
                 // update the running total for this buyer
+                // this involves 2 mapping lookups again.
                 results[0] = results[0]
                     .add(_bucketSale.calculateExitableTokens(bucketId, _buyer));
 
