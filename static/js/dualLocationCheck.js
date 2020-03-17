@@ -99,11 +99,10 @@ var commonModule = (function() {
         var ipResponse = await monadPromise(ipResponseTask);
         if (ipResponse.isError())
             return ipResponse.getErrorMessage();
-        //console.log(ipResponse);
+
         var reverseGeoResponse = await reverseGeoResponseTask;
         if (reverseGeoResponse.isError())
             return reverseGeoResponse.getErrorMessage();
-        //console.log(reverseGeoResponse);
 
         // calculate the results
         var ipLoc = {
@@ -111,7 +110,7 @@ var commonModule = (function() {
             lng: ipResponse.getOrNull().longitude,
             country: ipResponse.getOrNull().country_code2
         };
-        //console.log(ipLoc);
+        console.log("fetched IP location: ", ipLoc);
 
         var geoLoc = {
             lat: position.getOrNull().coords.latitude,
@@ -119,7 +118,7 @@ var commonModule = (function() {
             country: reverseGeoResponse.getOrNull().prov,
             acc: position.getOrNull().coords.accuracy
         };
-        //console.log(geoLoc);
+        console.log("geo location: ", geoLoc);
 
         var distance = haversine(geoLoc, ipLoc);
         var result = {
@@ -129,7 +128,6 @@ var commonModule = (function() {
             countryMatches: ipLoc.country == geoLoc.country,
             country: ipLoc.country == geoLoc.country ? ipLoc.country : "invalid"
         };
-        //console.log(result);
 
         return result;
     }
