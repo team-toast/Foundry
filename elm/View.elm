@@ -144,7 +144,24 @@ brandAndLogo dProfile =
 
 smLinks : DisplayProfile -> Element Msg
 smLinks dProfile =
-    Element.text "gon be some smLinks here"
+    [ ( Images.twitter, "https://twitter.com/FoundryDAO" )
+    , ( Images.github, "https://github.com/burnable-tech/foundry/" )
+    ]
+        |> List.map
+            (\(image, url) ->
+                Element.newTabLink
+                    []
+                    { url = url
+                    , label =
+                        Images.toElement
+                            [ Element.height <| Element.px 40 ]
+                            image
+                    }
+            )
+        |> Element.row
+            [ Element.padding 10
+            , Element.spacing 10
+            ]
 
 
 type HeaderLinkStyle
