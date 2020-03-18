@@ -32,8 +32,49 @@ let ``M000 - Can send eth``() =
 
 
 [<Specification("BucketSale", "constructor", 1)>]
+[<Specification("BucketSale", "constructor", 2)>]
+[<Specification("BucketSale", "constructor", 3)>]
+[<Specification("BucketSale", "constructor", 4)>]
+[<Specification("BucketSale", "constructor", 5)>]
+[<Specification("BucketSale", "constructor", 6)>]
+[<Specification("BucketSale", "constructor", 7)>]
 [<Fact>]
-let ``B_C000 - Can construct the contract``() =
+let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006|B_C007 - Cannot construct the contract with faulty parameters``() =
+    let abi = Abi("../../../../build/contracts/BucketSale.json")
+
+    let faultyTreasury = (EthAddress.Zero, "treasury cannot be 0x0")
+    // let faultyStartOfSale = (debug.BlockTimestamp - BigInteger.One, "start of sale cannot be in the past")
+    let faultyBucketPeriod = (BigInteger.Zero, "bucket period cannot be 0")
+    let faultyBucketSupply = (BigInteger.Zero, "bucket supply cannot be 0")
+    let faultyBucketCount = (BigInteger.Zero, "bucket count cannot be 0")
+    let faultyTokenOnSale = (EthAddress.Zero, "token on sale cannot be 0x0")
+    let faultyTokenSoldFor = (EthAddress.Zero, "token sold for cannot be 0x0")
+
+    let tokenOnSale = makeAccount().Address
+    let tokenSoldFor = makeAccount().Address
+    let startOfSale = debug.BlockTimestamp + BigInteger(10UL * hours)
+  
+    for param in [0..6] do
+        let pickParam condition faulty correct = if condition then fst faulty else correct
+        try 
+            ethConn.DeployContractAsync abi
+                [| 
+                    pickParam (param = 0) faultyTreasury treasury.Address; 
+                    // pickParam (param = 1) faultyStartOfSale startOfSale; 
+                    startOfSale
+                    pickParam (param = 2) faultyBucketPeriod bucketPeriod; 
+                    pickParam (param = 3) faultyBucketSupply bucketSupply; 
+                    pickParam (param = 4) faultyBucketCount bucketCount; 
+                    pickParam (param = 5) faultyTokenOnSale tokenOnSale; 
+                    pickParam (param = 6) faultyTokenSoldFor tokenSoldFor |]
+            |> runNow
+            |> ignore
+        with
+            | _ -> printfn "Exception handled.";
+
+[<Specification("BucketSale", "constructor", 8)>]
+[<Fact>]
+let ``B_C008 - Can construct the contract``() =
     let abi = Abi("../../../../build/contracts/BucketSale.json")
     let tokenOnSale = makeAccount().Address
     let tokenSoldFor = makeAccount().Address
@@ -65,11 +106,36 @@ let ``B_C000 - Can construct the contract``() =
     contract.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase tokenOnSale
     contract.Query "tokenSoldFor" [||] |> shouldEqualIgnoringCase tokenSoldFor
 
-
 [<Specification("BucketSale", "enter", 1)>]
-[<Specification("BucketSale", "enter", 5)>]
 [<Fact>]
-let ``B_EN001|B_EN005 - Cannot enter a past bucket``() =
+let ``B_EN001 - Cannot enter without providing funds``() =
+    let zeroValue = BigInteger(0UL)
+    let seedDAIAmount = BigInteger(10UL)
+    seedWithDAI debug.ContractPlug.Address seedDAIAmount
+    approveDAIFor seedDAIAmount bucketSale.Address debug
+
+    let currentBucket = bucketSale.Query "currentBucket" [||] |> uint64
+    let bucketInPast = currentBucket - 1UL
+    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; bucketInPast; zeroValue; EthAddress.Zero |] debug
+    let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
+    forwardEvent |> shouldRevertWithMessage "no funds provided"
+
+[<Specification("BucketSale", "enter", 2)>]
+[<Fact>]
+let ``B_EN002 - Cannot enter a bucket if payment reverts``() =
+    addFryMinter bucketSale.Address
+    seedWithDAI debug.ContractPlug.Address (BigInteger(10UL))
+    let currentBucket = bucketSale.Query "currentBucket" [||]
+
+    // Since we never approve the DAI to be used in the enter by the bucketSale contract, this will fail
+    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; currentBucket; 1UL; EthAddress.Zero |] debug
+    let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
+    forwardEvent |> shouldRevertWithUnknownMessage
+
+[<Specification("BucketSale", "enter", 3)>]
+[<Specification("BucketSale", "enter", 6)>]
+[<Fact>]
+let ``B_EN003|B_EN006 - Cannot enter a past bucket``() =
     let valueToEnter = rnd.Next(1,100) |> BigInteger
     seedWithDAI debug.ContractPlug.Address valueToEnter
     approveDAIFor valueToEnter bucketSale.Address debug
@@ -81,9 +147,9 @@ let ``B_EN001|B_EN005 - Cannot enter a past bucket``() =
     forwardEvent |> shouldRevertWithMessage "cannot enter past buckets"
 
 
-[<Specification("BucketSale", "enter", 2)>]
+[<Specification("BucketSale", "enter", 4)>]
 [<Fact>]
-let ``B_EN002 - Cannot enter a bucket beyond the designated bucket count (no referrer)``() =
+let ``B_EN004 - Cannot enter a bucket beyond the designated bucket count (no referrer)``() =
     let valueToEnter = rnd.Next(1,100) |> BigInteger
     seedWithDAI debug.ContractPlug.Address valueToEnter
     approveDAIFor valueToEnter bucketSale.Address debug
@@ -95,22 +161,9 @@ let ``B_EN002 - Cannot enter a bucket beyond the designated bucket count (no ref
     forwardEvent |> shouldRevertWithMessage "invalid bucket id--past end of sale"
 
 
-[<Specification("BucketSale", "enter", 3)>]
+[<Specification("BucketSale", "enter", 5)>]
 [<Fact>]
-let ``B_EN003 - Cannot enter a bucket if payment reverts (with no referrer)``() =
-    addFryMinter bucketSale.Address
-    seedWithDAI debug.ContractPlug.Address (BigInteger(10UL))
-    let currentBucket = bucketSale.Query "currentBucket" [||]
-
-    // Since we never approve the DAI to be used in the enter by the bucketSale contract, this will fail
-    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; currentBucket; 1UL; EthAddress.Zero |] debug
-    let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
-    forwardEvent |> shouldRevertWithUnknownMessage
-
-
-[<Specification("BucketSale", "enter", 4)>]
-[<Fact>]
-let ``B_EN004 - Can enter a bucket with no referrer``() =
+let ``B_EN005 - Can enter a bucket with no referrer``() =
     // arrange
     addFryMinter bucketSale.Address
 
@@ -138,9 +191,9 @@ let ``B_EN004 - Can enter a bucket with no referrer``() =
                 referrer)
 
 
-[<Specification("BucketSale", "enter", 6)>]
+[<Specification("BucketSale", "enter", 7)>]
 [<Fact>]
-let ``B_EN006 - Cannot enter a bucket beyond the designated bucket count - 1 (because of referrer)``() =
+let ``B_EN007 - Cannot enter a bucket beyond the designated bucket count - 1 (because of referrer)``() =
     let valueToEnter = BigInteger(10L)
 
     addFryMinter bucketSale.Address
@@ -158,17 +211,6 @@ let ``B_EN006 - Cannot enter a bucket beyond the designated bucket count - 1 (be
 
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage "invalid bucket id--past end of sale"
-
-
-[<Specification("BucketSale", "enter", 7)>]
-[<Fact>]
-let ``B_EN007 - Cannot enter a bucket if payment reverts (with referrer)``() =
-    addFryMinter bucketSale.Address
-    seedWithDAI debug.ContractPlug.Address (BigInteger(10UL)) // seed but do not approve, which will make the enter revert
-    let currentBucket = bucketSale.Query "currentBucket" [||]
-    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; currentBucket; 1UL; debug.ContractPlug.Address |] debug
-    let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
-    forwardEvent |> shouldRevertWithUnknownMessage
 
 
 [<Specification("BucketSale", "enter", 8)>]

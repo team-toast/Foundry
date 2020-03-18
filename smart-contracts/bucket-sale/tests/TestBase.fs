@@ -43,9 +43,14 @@ type Abi(filename) =
     member this.Bytecode = JsonConvert.DeserializeObject<JObject>(this.JsonString).GetValue("bytecode").ToString()
 
 type IAsyncTxSender =
-    abstract member SendTxAsync : string -> BigInteger -> string -> Task<TransactionReceipt> 
+    abstract member SendTxAsync : string -> BigInteger -> string -> Task<TransactionReceipt>
 
 type EthereumConnection(nodeURI: string, privKey: string) =
+    member val public Gas = hexBigInt 4000000UL
+    member val public GasPrice = hexBigInt 1000000000UL
+    member val public Account = Accounts.Account(privKey)
+    member val public Web3 = Web3(Accounts.Account(privKey), nodeURI)
+
     interface IAsyncTxSender with
         member this.SendTxAsync toAddress value data = 
             let input: TransactionInput =
@@ -53,14 +58,10 @@ type EthereumConnection(nodeURI: string, privKey: string) =
                     data, 
                     toAddress, 
                     this.Account.Address, 
-                    this.Gas, this.GasPrice, 
+                    this.Gas, 
+                    this.GasPrice, 
                     HexBigInteger(value))
             this.Web3.Eth.TransactionManager.SendTransactionAndWaitForReceiptAsync(input, null)
-
-    member val public Gas = hexBigInt 4000000UL
-    member val public GasPrice = hexBigInt 1000000000UL
-    member val public Account = Accounts.Account(privKey)
-    member val public Web3 = Web3(Accounts.Account(privKey), nodeURI)
 
     member this.DeployContractAsync (abi: Abi) (arguments: obj array) =
         this.Web3.Eth.DeployContract.SendRequestAndWaitForReceiptAsync(
@@ -71,7 +72,7 @@ type EthereumConnection(nodeURI: string, privKey: string) =
             hexBigInt 0UL, 
             null, 
             arguments)  
-    
+                
     member this.TimeTravel seconds = 
         this.Web3.Client.SendRequestAsync(method = "evm_increaseTime", paramList = [| seconds |]) 
         |> Async.AwaitTask 

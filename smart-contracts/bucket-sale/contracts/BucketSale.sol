@@ -71,13 +71,13 @@ contract BucketSale
             IERC20 _tokenSoldFor)    // typically DAI
         public
     {
-        require(_treasury != address(0), "Treasury can't be 0x0");
-        // require(_startOfSale > block.timestamp, "Start of sale can't be in the past");
-        require(_bucketPeriod > 0, "Bucket period can't be 0");
-        require(_bucketSupply > 0, "Bucket supply can't be 0");
-        require(_bucketCount > 0, "Bucket count can't be 0");
-        require(address(_tokenOnSale) != address(0), "Token on sale can't be 0x0");
-        require(address(_tokenSoldFor) != address(0), "Token sold for can't be 0x0");
+        require(_treasury != address(0), "treasury cannot be 0x0");
+        // require(_startOfSale > block.timestamp, "start of sale can't be in the past");
+        require(_bucketPeriod > 0, "bucket period cannot be 0");
+        require(_bucketSupply > 0, "bucket supply cannot be 0");
+        require(_bucketCount > 0, "bucket count cannot be 0");
+        require(address(_tokenOnSale) != address(0), "token on sale cannot be 0x0");
+        require(address(_tokenSoldFor) != address(0), "token sold for cannot be 0x0");
 
         treasury = _treasury;
         startOfSale = _startOfSale;
@@ -111,10 +111,11 @@ contract BucketSale
             address _referrer)
         public
     {
-        require(_amount > 0, "You cannot enter nothing");
+        require(_amount > 0, "no funds provided");
 
         bool transferSuccess = tokenSoldFor.transferFrom(msg.sender, treasury, _amount);
         require(transferSuccess, "enter transfer failed");
+
         registerEnter(_bucketId, _buyer, _amount);
         referredTotal[_referrer] = referredTotal[_referrer].add(_amount); // referredTotal[0x0] will track buys with no referral
 
