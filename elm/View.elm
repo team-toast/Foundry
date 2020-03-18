@@ -78,16 +78,12 @@ pageElementAndModal model =
                         Element.text "In Test (Local) mode"
     in
     ( Element.column
-        [ Element.behindContent <| headerBackground model.dProfile
-        , Element.inFront <| headerContent model.dProfile model
-        , Element.width Element.fill
+        [ Element.width Element.fill
         , Element.height Element.fill
-        , Element.padding (30 |> changeForMobile 10 model.dProfile)
         , Element.spacing (20 |> changeForMobile 10 model.dProfile)
+        , Element.behindContent <| headerBackground model.dProfile
         ]
-        [ Element.el
-            [ Element.height (Element.px (60 |> changeForMobile 110 model.dProfile)) ]
-            Element.none
+        [ header model.dProfile
         , maybeTestnetIndicator
         , submodelEl
         ]
@@ -97,82 +93,58 @@ pageElementAndModal model =
 
 headerBackground : DisplayProfile -> Element Msg
 headerBackground dProfile =
-    let
-        bottomBackgroundColor =
-            Element.rgb255 10 33 108
-
-        headerColor =
-            Element.rgb255 7 27 92
-    in
     Element.el
         [ Element.width Element.fill
         , Element.height <| Element.px 600
-        , Element.Background.color bottomBackgroundColor
-        , Element.inFront <|
-            Element.el
-                [ Element.width Element.fill
-                , Element.height <| Element.px (80 |> changeForMobile 120 dProfile)
-                , Element.Background.color headerColor
-                ]
-                Element.none
+        , Element.Background.color <| Element.rgb255 20 53 138
         ]
         Element.none
 
 
-headerContent : DisplayProfile -> Model -> Element Msg
-headerContent dProfile model =
+header : DisplayProfile -> Element Msg
+header dProfile =
     Element.row
-        [ Element.width Element.fill
-        , Element.spacing (30 |> changeForMobile 10 dProfile)
-        , Element.paddingXY 30 17 |> changeForMobile (Element.padding 10) dProfile
+        [ Element.height <| Element.px 100
+        , Element.width Element.fill
+        , Element.Background.color <| Element.rgb255 10 33 108
         ]
-        [ --     let
-          --     smLinks =
-          --         [ Element.el
-          --             [ Element.centerY
-          --             , Element.alignRight
-          --             ]
-          --           <|
-          --             headerExternalLink dProfile "Blog" "https://medium.com/daihard-buidlers"
-          --         , Element.el
-          --             [ Element.centerY
-          --             , Element.alignRight
-          --             ]
-          --           <|
-          --             headerExternalLink dProfile "Reddit" "https://reddit.com/r/DAIHard"
-          --         , Element.el
-          --             [ Element.centerY
-          --             , Element.alignRight
-          --             ]
-          --           <|
-          --             headerExternalLink dProfile "Telegram" "https://t.me/daihardexchange_group"
-          --         ]
-          --   in
-          case dProfile of
-            Desktop ->
-                Element.column
-                    [ Element.spacing 5
-                    , Element.alignRight
-                    , Element.alignTop
-                    ]
-                    [ Element.el [ Element.alignRight ] <| logoElement dProfile
-                    , Element.row
-                        [ Element.spacing 10
-                        ]
-                        []
-
-                    -- smLinks
-                    ]
-
-            Mobile ->
-                Element.column
-                    [ Element.spacing 10
-                    , Element.alignTop
-                    , Element.alignRight
-                    ]
-                    -- ([ logoElement dProfile ] ++ smLinks)
-                    [ logoElement dProfile ]
+        [ Element.el
+            [ Element.alignLeft
+            , Element.centerY
+            ]
+            (brandAndLogo dProfile)
+        , Element.el
+            [ Element.alignRight
+            , Element.centerY
+            ]
+            (smLinks dProfile)
         ]
+
+
+brandAndLogo : DisplayProfile -> Element Msg
+brandAndLogo dProfile =
+    Element.row
+        [ Element.height Element.fill
+        , Element.padding (20 |> changeForMobile 10 dProfile)
+        , Element.spacing (30 |> changeForMobile 20 dProfile)
+        ]
+        [ Images.toElement
+            [ Element.height Element.fill ]
+            Images.fryIcon
+        , Element.el
+            [ Element.Font.color EH.white
+            , Element.Font.size 35
+            , Element.Font.bold
+            , Element.centerY
+            ]
+          <|
+            Element.text "Foundry."
+        ]
+
+
+smLinks : DisplayProfile -> Element Msg
+smLinks dProfile =
+    Element.text "gon be some smLinks here"
 
 
 type HeaderLinkStyle
