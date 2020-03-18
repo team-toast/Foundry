@@ -130,19 +130,34 @@ brandAndLogo dProfile =
     Element.row
         [ Element.height Element.fill
         , Element.padding (20 |> changeForMobile 10 dProfile)
-        , Element.spacing (30 |> changeForMobile 20 dProfile)
+        , Element.spacing 10
         ]
         [ Images.toElement
-            [ Element.height Element.fill ]
+            [ Element.centerY ]
             Images.fryIcon
-        , Element.el
-            [ Element.Font.color EH.white
-            , Element.Font.size 35
-            , Element.Font.bold
-            , Element.centerY
+        , Element.column
+            [ Element.spacing 5]
+            [ Element.el
+                [ Element.Font.color EH.white
+                , Element.Font.size 35
+                , Element.Font.bold
+                , Element.centerY
+                ]
+            <|
+                Element.text "Foundry"
+            , Element.newTabLink
+                [ Element.centerX
+                , Element.Background.color EH.lightBlue
+                , Element.paddingXY 10 3
+                , Element.Border.rounded 4
+                , Element.Font.color EH.white
+                , Element.Font.size 18
+                ]
+                { url = "https://foundrydao.com"
+                , label =
+                    Element.text "More Info"
+                }
             ]
-          <|
-            Element.text "Foundry."
         ]
 
 
