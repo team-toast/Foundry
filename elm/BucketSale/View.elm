@@ -381,8 +381,8 @@ maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive t
 
 focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
 focusedBucketSubheaderEl bucketInfo =
-    case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
-        ( Just totalValueEntered, Just userBuy ) ->
+    case bucketInfo.bucketData.totalValueEntered of
+        Just totalValueEntered ->
             Element.paragraph
                 [ Element.Font.color grayTextColor
                 , Element.Font.size 15
@@ -490,7 +490,7 @@ enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs tes
         , Element.spacing 20
         ]
         [ bidInputBlock enterUXModel bucketInfo testMode
-        , bidImpactBlock enterUXModel bucketInfo miningEnters testMode
+        , bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode
         , otherBidsImpactMsg
         , actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode
         ]
@@ -499,6 +499,7 @@ enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs tes
 bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> Element Msg
 bidInputBlock enterUXModel bucketInfo testMode =
     centerpaneBlockContainer ActiveStyle
+        []
         [ emphasizedText ActiveStyle "I want to bid:"
         , Element.row
             [ Element.Background.color <| Element.rgba 1 1 1 0.08
@@ -585,34 +586,49 @@ pricePerTokenMsg totalValueEntered maybeDaiAmount testMode =
         )
 
 
-bidImpactBlock : EnterUXModel -> ValidBucketInfo -> List EnterInfo -> TestMode -> Element Msg
-bidImpactBlock enterUXModel bucketInfo miningEnters testMode =
-    centerpaneBlockContainer PassiveStyle <|
-        [ emphasizedText PassiveStyle "Your current bid standing:" ]
-            ++ (case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
-                    ( Just totalValueEntered, Just userBuy ) ->
-                        let
-                            existingUserBidAmount =
-                                userBuy.valueEntered
+bidImpactBlock : EnterUXModel -> ValidBucketInfo -> Wallet.State -> List EnterInfo -> TestMode -> Element Msg
+bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode =
+    centerpaneBlockContainer PassiveStyle
+        [ Element.height <| Element.px 310 ]
+    <|
+        case Wallet.userInfo wallet of
+            Nothing ->
+                [ Element.el
+                    [ Element.Font.italic
+                    , Element.Font.color grayTextColor
+                    , Element.centerX
+                    , Element.centerY
+                    ]
+                  <|
+                    Element.text "Wallet not connected."
+                ]
 
-                            miningUserBidAmount =
-                                miningEnters
-                                    |> List.map .amount
-                                    |> List.foldl TokenValue.add TokenValue.zero
+            Just _ ->
+                [ emphasizedText PassiveStyle "Your current bid standing:" ]
+                    ++ (case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
+                            ( Just totalValueEntered, Just userBuy ) ->
+                                let
+                                    existingUserBidAmount =
+                                        userBuy.valueEntered
 
-                            extraUserBidAmount =
-                                enterUXModel.daiAmount
-                                    |> Maybe.map Result.toMaybe
-                                    |> Maybe.Extra.join
-                                    |> Maybe.withDefault TokenValue.zero
-                        in
-                        [ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
-                        , bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
-                        ]
+                                    miningUserBidAmount =
+                                        miningEnters
+                                            |> List.map .amount
+                                            |> List.foldl TokenValue.add TokenValue.zero
 
-                    _ ->
-                        [ loadingElement ]
-               )
+                                    extraUserBidAmount =
+                                        enterUXModel.daiAmount
+                                            |> Maybe.map Result.toMaybe
+                                            |> Maybe.Extra.join
+                                            |> Maybe.withDefault TokenValue.zero
+                                in
+                                [ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
+                                , bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
+                                ]
+
+                            _ ->
+                                [ loadingElement ]
+                       )
 
 
 bidImpactParagraphEl : TokenValue -> ( TokenValue, TokenValue, TokenValue ) -> TestMode -> Element Msg
@@ -837,12 +853,13 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
 otherBidsImpactMsg : Element Msg
 otherBidsImpactMsg =
     centerpaneBlockContainer PassiveStyle
-        [ emphasizedText PassiveStyle "If other bids ARE made:"
+        []
+        [ emphasizedText PassiveStyle "If other bids are made:"
         , Element.paragraph
             [ Element.width Element.fill
             , Element.Font.color grayTextColor
             ]
-            [ Element.text "The price per token will increase further, and the amount of FRY you can claim from the bucket will decrease proportionally. (For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve.)" ]
+            [ Element.text "The price per token will increase further, and the amount of FRY you can claim from the bucket will decrease proportionally. For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve." ]
         ]
 
 
@@ -1476,8 +1493,8 @@ type CommonBlockStyle
     | PassiveStyle
 
 
-centerpaneBlockContainer : CommonBlockStyle -> List (Element Msg) -> Element Msg
-centerpaneBlockContainer styleType =
+centerpaneBlockContainer : CommonBlockStyle -> List (Attribute Msg) -> List (Element Msg) -> Element Msg
+centerpaneBlockContainer styleType attributes =
     Element.column
         ([ Element.width Element.fill
          , Element.Border.rounded 4
@@ -1485,6 +1502,7 @@ centerpaneBlockContainer styleType =
          , Element.spacing 13
          , Element.Font.size 16
          ]
+            ++ attributes
             ++ (case styleType of
                     ActiveStyle ->
                         [ Element.Background.color deepBlue
