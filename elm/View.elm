@@ -85,7 +85,11 @@ pageElementAndModal model =
         ]
         [ header model.dProfile
         , maybeTestnetIndicator
-        , submodelEl
+        , Element.el
+            [ Element.width Element.fill
+            , Element.paddingXY 20 0
+            ]
+            submodelEl
         ]
     , modalEls ++ userNoticeEls model.dProfile model.userNotices
     )
@@ -148,7 +152,7 @@ smLinks dProfile =
     , ( Images.github, "https://github.com/burnable-tech/foundry/" )
     ]
         |> List.map
-            (\(image, url) ->
+            (\( image, url ) ->
                 Element.newTabLink
                     []
                     { url = url
@@ -160,7 +164,7 @@ smLinks dProfile =
             )
         |> Element.row
             [ Element.padding 10
-            , Element.spacing 10
+            , Element.spacing 20
             ]
 
 
