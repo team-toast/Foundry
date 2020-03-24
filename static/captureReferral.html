@@ -17,12 +17,12 @@
             if (typeof (Storage) !== "undefined") {
                 if (localStorage.getItem("referralAddressString") !== null) {
                     // already have a referral; ignore this request
-                    console.log("ignoring");
+                    console.log("ignoring new referral " + referralString);
                     return;
                 }
                 else {
                     localStorage.setItem("referralAddressString", referralString);
-                    console.log("stored " + referralString);
+                    console.log("stored new referral " + referralString);
                 }
             } 
         }

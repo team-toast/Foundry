@@ -8,8 +8,8 @@
     "url": ""
   },
   "scripts": {
-    "dev": "parcel static/index.html --public-path ./",
-    "build": "parcel build static/index.html --public-path ./"
+    "dev": "parcel static/index.html static/captureReferral.html",
+    "build": "parcel build static/index.html static/captureReferral.html"
   },
   "devDependencies": {
     "elm": "^0.19.1-3",
