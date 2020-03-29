@@ -72,7 +72,6 @@ contract BucketSale
         public
     {
         require(_treasury != address(0), "treasury cannot be 0x0");
-        // require(_startOfSale > block.timestamp, "start of sale can't be in the past");
         require(_bucketPeriod > 0, "bucket period cannot be 0");
         require(_bucketSupply > 0, "bucket supply cannot be 0");
         require(_bucketCount > 0, "bucket count cannot be 0");

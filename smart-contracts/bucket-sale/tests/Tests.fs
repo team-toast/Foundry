@@ -40,6 +40,11 @@ let ``M000 - Can send eth``() =
 [<Specification("BucketSale", "constructor", 7)>]
 [<Fact>]
 let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006|B_C007 - Cannot construct the contract with faulty parameters``() =
+    // Notes: 
+    // 1.Due to not being able to easily extract revert messages from constructor calls,
+    //   I've opted to not test the return messages. When I update the testing framework later I'll add it in.
+    // 2.Some issue presently is causing ganache to constantly revert if any startOfSale value is checked for on the constructor.
+    //   This is a very minor issue as there is no reason to enfore the check.
     let abi = Abi("../../../../build/contracts/BucketSale.json")
 
     let faultyTreasury = (EthAddress.Zero, "treasury cannot be 0x0")
