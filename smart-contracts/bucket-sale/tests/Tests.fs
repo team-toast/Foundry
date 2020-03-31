@@ -39,16 +39,16 @@ let ``M000 - Can send eth``() =
 [<Specification("BucketSale", "constructor", 6)>]
 [<Specification("BucketSale", "constructor", 7)>]
 [<Fact>]
-let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006|B_C007 - Cannot construct the contract with faulty parameters``() =
+let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006- Cannot construct the contract with faulty parameters``() =
     // Notes: 
     // 1.Due to not being able to easily extract revert messages from constructor calls,
     //   I've opted to not test the return messages. When I update the testing framework later I'll add it in.
     // 2.Some issue presently is causing ganache to constantly revert if any startOfSale value is checked for on the constructor.
     //   This is a very minor issue as there is no reason to enfore the check.
+    //   @Adam Dossa, please note this and evaluate if this opens any attack vectors. 
     let abi = Abi("../../../../build/contracts/BucketSale.json")
 
     let faultyTreasury = (EthAddress.Zero, "treasury cannot be 0x0")
-    // let faultyStartOfSale = (debug.BlockTimestamp - BigInteger.One, "start of sale cannot be in the past")
     let faultyBucketPeriod = (BigInteger.Zero, "bucket period cannot be 0")
     let faultyBucketSupply = (BigInteger.Zero, "bucket supply cannot be 0")
     let faultyBucketCount = (BigInteger.Zero, "bucket count cannot be 0")
@@ -77,6 +77,7 @@ let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006|B_C007 - Cannot construct the co
         with
             | _ -> printfn "Exception handled.";
 
+
 [<Specification("BucketSale", "constructor", 8)>]
 [<Fact>]
 let ``B_C008 - Can construct the contract``() =
@@ -99,7 +100,6 @@ let ``B_C008 - Can construct the contract``() =
 
     deployTxReceipt |> shouldSucceed
 
-    // Assert
     let contract = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
     contract.Query "treasury" [||] |> shouldEqualIgnoringCase treasury.Address
@@ -110,6 +110,7 @@ let ``B_C008 - Can construct the contract``() =
     contract.Query "bucketCount" [||] |> should equal bucketCount
     contract.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase tokenOnSale
     contract.Query "tokenSoldFor" [||] |> shouldEqualIgnoringCase tokenSoldFor
+
 
 [<Specification("BucketSale", "enter", 1)>]
 [<Fact>]
@@ -125,6 +126,7 @@ let ``B_EN001 - Cannot enter without providing funds``() =
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage "no funds provided"
 
+
 [<Specification("BucketSale", "enter", 2)>]
 [<Fact>]
 let ``B_EN002 - Cannot enter a bucket if payment reverts``() =
@@ -136,6 +138,7 @@ let ``B_EN002 - Cannot enter a bucket if payment reverts``() =
     let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; currentBucket; 1UL; EthAddress.Zero |] debug
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithUnknownMessage
+
 
 [<Specification("BucketSale", "enter", 3)>]
 [<Specification("BucketSale", "enter", 6)>]
@@ -169,7 +172,6 @@ let ``B_EN004 - Cannot enter a bucket beyond the designated bucket count (no ref
 [<Specification("BucketSale", "enter", 5)>]
 [<Fact>]
 let ``B_EN005 - Can enter a bucket with no referrer``() =
-    // arrange
     addFryMinter bucketSale.Address
 
     let currentBucket = bucketSale.Query "currentBucket" [||]
@@ -221,7 +223,6 @@ let ``B_EN007 - Cannot enter a bucket beyond the designated bucket count - 1 (be
 [<Specification("BucketSale", "enter", 8)>]
 [<Fact>]
 let ``B_EN008 - Can enter a bucket with a referrer``() =
-    // arrange
     addFryMinter bucketSale.Address
 
     let currentBucket = bucketSale.Query "currentBucket" [||]
@@ -246,6 +247,7 @@ let ``B_EN008 - Can enter a bucket with a referrer``() =
                 bucketToEnter
                 valueToEnter
                 randomReferrer)
+
 
 [<Specification("BucketSale", "exit", 1)>]
 [<Fact>]
@@ -417,7 +419,6 @@ let ``F_C001 - Can construct a forwarder with an owner``() =
     forwarder.Query "owner" [| |] |> shouldEqualIgnoringCase owner.Address
 
 
-
 [<Specification("Forwarder", "changeOwner", 1)>]
 [<Fact>]
 let ``F_CO001 - Cannot change the owner if not called by the current owner``() =
@@ -497,6 +498,7 @@ let ``F_F003A - Should succeed when called by a owner when making a successful c
     DAI.Query "balanceOf" [| treasury.Address |] |> should equal (treasuryBalanceBefore - amount)
     DAI.Query "balanceOf" [| recipient.Address |] |> should equal (recipientBalanceBefore + amount)
 
+
 [<Specification("Forwarder", "foward", 3)>]
 [<Fact>]
 let ``F_F003B - Should succeed when called by a owner and sending eth``() =
@@ -519,6 +521,7 @@ let ``F_F003B - Should succeed when called by a owner and sending eth``() =
     ethConn.GetEtherBalance treasury.Address |> should equal (treasuryBalanceBefore - amount)
     ethConn.GetEtherBalance recipient.Address |> should equal (recipientBalanceBefore + amount)
 
+
 [<Specification("Forwarder", "fallback", 1)>]
 [<Fact>]
 let ``F_FB001 - Should be able to receive eth``() =
@@ -531,5 +534,3 @@ let ``F_FB001 - Should be able to receive eth``() =
     sendEtherTx |> shouldSucceed 
     sendEtherTx.Logs |> should be Empty
     ethConn.GetEtherBalance testTreasury.Address |> should equal (balanceBefore + amount)
-
-
