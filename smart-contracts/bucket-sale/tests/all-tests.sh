@@ -7,7 +7,9 @@ cd tests
 
 dotnet test --filter DisplayName~M000
 
-dotnet test --filter DisplayName~B_C000
+# dotnet test --filter DisplayName~B_C000 # s: This doesn't seem to correspond to any test or spec line
+dotnet test --filter DisplayName~B_C001
+dotnet test --filter DisplayName~B_C008
 dotnet test --filter DisplayName~B_EN001
 dotnet test --filter DisplayName~B_EN002
 dotnet test --filter DisplayName~B_EN003

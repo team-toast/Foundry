@@ -194,6 +194,8 @@ let ethConn =
     isRinkeby (EthereumConnection(rinkebyURI, rinkebyPrivKey)) (EthereumConnection(ganacheURI, ganachePrivKey))
 
 let debug = Debug(ethConn)
+// s: 'debug' is very vague, and misled me for some time, thinking i.e. 'debug.Contract.address' was the sale address
+// perhaps something like testDriverAccount?
 
 let shouldEqualIgnoringCase (a: string) (b: string) =
     let aString = a |> string

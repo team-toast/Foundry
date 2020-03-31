@@ -71,6 +71,7 @@ contract BucketSale
             IERC20 _tokenSoldFor)    // typically DAI
         public
     {
+        // s: have we decided not to enforce _startOfSale >= now?
         require(_treasury != address(0), "treasury cannot be 0x0");
         require(_bucketPeriod > 0, "bucket period cannot be 0");
         require(_bucketSupply > 0, "bucket supply cannot be 0");

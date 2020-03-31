@@ -64,8 +64,7 @@ let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006- Cannot construct the contract w
         try 
             ethConn.DeployContractAsync abi
                 [| 
-                    pickParam (param = 0) faultyTreasury treasury.Address; 
-                    // pickParam (param = 1) faultyStartOfSale startOfSale; 
+                    pickParam (param = 0) faultyTreasury treasury.Address;  
                     startOfSale
                     pickParam (param = 2) faultyBucketPeriod bucketPeriod; 
                     pickParam (param = 3) faultyBucketSupply bucketSupply; 
@@ -121,8 +120,7 @@ let ``B_EN001 - Cannot enter without providing funds``() =
     approveDAIFor seedDAIAmount bucketSale.Address debug
 
     let currentBucket = bucketSale.Query "currentBucket" [||] |> uint64
-    let bucketInPast = currentBucket - 1UL
-    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; bucketInPast; zeroValue; EthAddress.Zero |] debug
+    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; currentBucket; zeroValue; EthAddress.Zero |] debug
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage "no funds provided"
 
@@ -163,8 +161,8 @@ let ``B_EN004 - Cannot enter a bucket beyond the designated bucket count (no ref
     approveDAIFor valueToEnter bucketSale.Address debug
 
     addFryMinter bucketSale.Address
-    let bucketCount = bucketSale.Query "bucketCount" [||] // will be one greater than what can be correctly entered
-    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; bucketCount; 1UL; EthAddress.Zero |] debug
+    let bucketIdPastSaleEnd = bucketSale.Query "bucketCount" [||] // will be one greater than what can be correctly entered
+    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; bucketIdPastSaleEnd; 1UL; EthAddress.Zero |] debug
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage "invalid bucket id--past end of sale"
 
@@ -177,7 +175,7 @@ let ``B_EN005 - Can enter a bucket with no referrer``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
 
     let valueToEnter = BigInteger 10UL
-    let referrer = EthAddress.Zero
+    let nullReferrer = EthAddress.Zero
     let buyer = ethConn.Account.Address
     let sender = ethConn.Account.Address
 
@@ -190,17 +188,17 @@ let ``B_EN005 - Can enter a bucket with no referrer``() =
     Array.ForEach(
         bucketsToEnter,
         fun bucketToEnter ->
-            enterBucket
+            enterBucketAndValidateState
                 sender
                 buyer
                 bucketToEnter
                 valueToEnter
-                referrer)
+                nullReferrer)
 
 
 [<Specification("BucketSale", "enter", 7)>]
 [<Fact>]
-let ``B_EN007 - Cannot enter a bucket beyond the designated bucket count - 1 (because of referrer)``() =
+let ``B_EN007 - Cannot enter a bucket beyond (bucketCount - 1) (because of referrer)``() =
     let valueToEnter = BigInteger(10L)
 
     addFryMinter bucketSale.Address
@@ -241,7 +239,7 @@ let ``B_EN008 - Can enter a bucket with a referrer``() =
     Array.ForEach(
         bucketsToEnter,
         fun bucketToEnter ->
-            enterBucket
+            enterBucketAndValidateState
                 sender
                 buyer
                 bucketToEnter
@@ -277,8 +275,8 @@ let ``B_EX001 - Cannot exit a bucket that is not yet concluded``() =
 [<Fact>]
 let ``B_EX002 - Cannot exit a bucket you did not enter``() =
     let currentBucket = bucketSale.Query "currentBucket" [||]
-    let randomAddress = makeAccount().Address
-    let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket - BigInteger.One; randomAddress |] debug
+    let randomBuyer = makeAccount().Address
+    let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket - BigInteger.One; randomBuyer |] debug
 
     let firstForwardEvent = decodeFirstEvent<ForwardedEventDTO> firstReceipt
     firstForwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
@@ -299,7 +297,7 @@ let ``B_EX003 - Cannot exit a buy you have already exited``() =
     let sender = ethConn.Account.Address
     let randomReferrer = makeAccount().Address
 
-    enterBucket
+    enterBucketAndValidateState
         sender
         buyer
         currentBucket
@@ -333,7 +331,7 @@ let ``B_EX004 - Cannot exit a bucket if the token minting fails``() =
     let sender = ethConn.Account.Address
     let randomReferrer = makeAccount().Address
 
-    enterBucket
+    enterBucketAndValidateState
         sender
         buyer
         currentBucket
@@ -352,7 +350,21 @@ let ``B_EX004 - Cannot exit a bucket if the token minting fails``() =
     exitForwardEvent.Wei |> should equal BigInteger.Zero
     exitForwardEvent |> shouldRevertWithUnknownMessage // unknown internal revert of the ERC20 minting, error is not necessarily known
 
-
+// s: Test B_EX005 failed! Can't reproduce but here was the message...
+(*
+[xUnit.net 00:00:07.33]     EnterTests.B_EX005 - Can exit a valid past bucket that was entered [FAIL]
+X EnterTests.B_EX005 - Can exit a valid past bucket that was entered [6s 546ms]
+  Error Message:
+   FsUnit.Xunit+MatchException : Exception of type 'FsUnit.Xunit+MatchException' was thrown.
+Expected: Equals 20588
+Actual:   was 35294
+  Stack Trace:
+     at FsUnit.Xunit.Assert.That.Static[a](a actual, IMatcher`1 matcher)
+   at BucketSaleTestBase.exitBucket[a](String buyer, a bucketEntered, BigInteger valueEntered) in /home/oglog/dev/dapps/foundry/smart-contracts/bucket-sale/tests/BucketSaleTestBase.fs:line 214
+   at EnterTests.B_EX005 - Can exit a valid past bucket that was entered() in /home/oglog/dev/dapps/foundry/smart-contracts/bucket-sale/tests/Tests.fs:line 399
+                                                                                
+Test Run Failed.
+*)
 [<Specification("BucketSale", "exit", 5)>]
 [<Fact>]
 let ``B_EX005 - Can exit a valid past bucket that was entered``() =
@@ -361,7 +373,7 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
     let initialTimeJump = rnd.Next(0, (bucketCount * bucketPeriod / (BigInteger 2)) |> int32) |> uint64
     ethConn.TimeTravel initialTimeJump
 
-    let currentBucketBeforeEntering = bucketSale.Query "currentBucket" [||] // `bucketBeforeEntering` is a confusing name to me
+    let currentBucketBeforeEntering = bucketSale.Query "currentBucket" [||]
     currentBucketBeforeEntering |> should lessThan bucketCount
     let sender = ethConn.Account.Address
     let randomBuyer = makeAccount().Address
@@ -388,7 +400,7 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
     buysToPerform |> Seq.length |> should greaterThanOrEqualTo 5
 
     for (buyer, bucketToEnter, valueToEnter, referrer) in buysToPerform do
-        enterBucket
+        enterBucketAndValidateState
             sender
             buyer
             bucketToEnter
@@ -399,7 +411,7 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
     ethConn.TimeTravel jumpAfterBuys
 
     for (buyer, bucketEntered, valueEntered, _) in buysToPerform do
-        exitBucket 
+        exitBucketAndValidateState 
             buyer 
             bucketEntered 
             valueEntered
@@ -455,7 +467,7 @@ let ``F_F001 - Cannot be called by a non-owner``() =
     let forwardTx = treasury.ExecuteFunctionFrom "forward" [| EthAddress.Zero; "".HexToByteArray(); BigInteger 0UL |] debug
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should equal 1
-    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Debug.ContractDefinition.ForwardedEventDTO>
+    let forwardEvent = forwardTx |> decodeFirstEvent<ForwardedEventDTO>
     forwardEvent.MsgSender |> shouldEqualIgnoringCase ethConn.Account.Address
     forwardEvent.Success |> should equal false
     forwardEvent.To |> shouldEqualIgnoringCase treasury.Address
@@ -470,7 +482,7 @@ let ``F_F002 - Should succeed when called by a owner and handle a reverting call
     
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should equal 1
-    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
+    let forwardEvent = forwardTx |> decodeFirstEvent<ForwardedEventDTO>
     forwardEvent.Success |> should equal false
     forwardEvent.To |> shouldEqualIgnoringCase bucketSale.Address
     forwardEvent.Wei |> should equal BigInteger.Zero
@@ -490,7 +502,7 @@ let ``F_F003A - Should succeed when called by a owner when making a successful c
     
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should greaterThan 1
-    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
+    let forwardEvent = forwardTx |> decodeFirstEvent<ForwardedEventDTO>
     forwardEvent.Success |> should equal true
     forwardEvent.To |> shouldEqualIgnoringCase DAI.Address
     forwardEvent.Wei |> should equal BigInteger.Zero
