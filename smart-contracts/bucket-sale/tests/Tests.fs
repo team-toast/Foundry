@@ -376,8 +376,8 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
     let currentBucketBeforeEntering = bucketSale.Query "currentBucket" [||]
     currentBucketBeforeEntering |> should lessThan bucketCount
     let sender = ethConn.Account.Address
-    let randomBuyer = makeAccount().Address
-    let randomReferrer = makeAccount().Address
+    let randomBuyer() = makeAccount().Address
+    let randomReferrer() = makeAccount().Address
 
     let makeBuy _ =
         let bucketToEnter = 
@@ -386,12 +386,12 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
         bucketToEnter |> should greaterThanOrEqualTo currentBucketBeforeEntering
         bucketToEnter |> should lessThanOrEqualTo (bucketCount - BigInteger.One) 
 
-        randomBuyer,
+        randomBuyer(),
         bucketToEnter, 
         rnd.Next(1, 100) |> BigInteger,
-        randomReferrer
+        randomReferrer()
         
-    let numberOfBuysToPerform = rnd.Next(5,10)
+    let numberOfBuysToPerform = rnd.Next(10,20)
     let buysToPerform = 
         {1 |> int32 .. numberOfBuysToPerform}
         |> Seq.map makeBuy 
