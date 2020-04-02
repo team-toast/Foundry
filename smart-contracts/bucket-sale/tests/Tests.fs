@@ -502,7 +502,7 @@ let ``F_F003A - Should succeed when called by a owner when making a successful c
     
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should greaterThan 1
-    let forwardEvent = forwardTx |> decodeFirstEvent<ForwardedEventDTO>
+    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
     forwardEvent.Success |> should equal true
     forwardEvent.To |> shouldEqualIgnoringCase DAI.Address
     forwardEvent.Wei |> should equal BigInteger.Zero
