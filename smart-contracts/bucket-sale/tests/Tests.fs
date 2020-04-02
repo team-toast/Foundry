@@ -350,21 +350,7 @@ let ``B_EX004 - Cannot exit a bucket if the token minting fails``() =
     exitForwardEvent.Wei |> should equal BigInteger.Zero
     exitForwardEvent |> shouldRevertWithUnknownMessage // unknown internal revert of the ERC20 minting, error is not necessarily known
 
-// s: Test B_EX005 failed! Can't reproduce but here was the message...
-(*
-[xUnit.net 00:00:07.33]     EnterTests.B_EX005 - Can exit a valid past bucket that was entered [FAIL]
-X EnterTests.B_EX005 - Can exit a valid past bucket that was entered [6s 546ms]
-  Error Message:
-   FsUnit.Xunit+MatchException : Exception of type 'FsUnit.Xunit+MatchException' was thrown.
-Expected: Equals 20588
-Actual:   was 35294
-  Stack Trace:
-     at FsUnit.Xunit.Assert.That.Static[a](a actual, IMatcher`1 matcher)
-   at BucketSaleTestBase.exitBucket[a](String buyer, a bucketEntered, BigInteger valueEntered) in /home/oglog/dev/dapps/foundry/smart-contracts/bucket-sale/tests/BucketSaleTestBase.fs:line 214
-   at EnterTests.B_EX005 - Can exit a valid past bucket that was entered() in /home/oglog/dev/dapps/foundry/smart-contracts/bucket-sale/tests/Tests.fs:line 399
-                                                                                
-Test Run Failed.
-*)
+    
 [<Specification("BucketSale", "exit", 5)>]
 [<Fact>]
 let ``B_EX005 - Can exit a valid past bucket that was entered``() =
