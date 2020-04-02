@@ -482,7 +482,7 @@ let ``F_F002 - Should succeed when called by a owner and handle a reverting call
     
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should equal 1
-    let forwardEvent = forwardTx |> decodeFirstEvent<ForwardedEventDTO>
+    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
     forwardEvent.Success |> should equal false
     forwardEvent.To |> shouldEqualIgnoringCase bucketSale.Address
     forwardEvent.Wei |> should equal BigInteger.Zero
