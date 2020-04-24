@@ -26,4 +26,46 @@ FoundryDAO's cash flow come from the project incomes that it has invested in. Th
 ## What is liquid democracy?
 Liquid democracy is a form of member managed governance that negates the need for a "manager" or "executive" tier in the organization, but allows for fine grained specialization to form. It works by allowing users to delegate their voting power to other users who they deem as prudent and informed about the proposals brought to the Foundry. Those users could themselves then re-delegate those votes to yet other users. This is beneficial in that it allows users to specialize in getting proficient at governance, while allowing people who do not wish to become experts in FoundryDAO's affairs to still invest, but seed their voting power with someone they trust. 
 
+# About the ICO
+## Doesn't the SEC have a major problem with ICOs?
+Our ICO is not open to US investors, qualified or otherwise. We block participation from aggressive jurisdictions. 
 
+## Where does the money go?
+The money goes into a treasury contract which will be owned by the FoundryDAO's governance contract. Initially this contract will be a simple multisig controlled by the creators of the DAO, but soon thereafter, once auditing of the v.1 smart contract is complete, will move entirely to the liquid democracy governance contract. This will place all funds raised under direct control of the FRY token holders themselves.
+
+## How long does the sale last?
+Just under 18 months.
+
+## How many FRY tokens will be sold?
+60,000,000 will be sold. 33,333 every 7 hours. 
+
+## How many FRY tokens will there be?
+At the end of the sale, there will be 100,000,000 FRY tokens. 
+After the initial sale, the perpetual sale will dilute FRY tokens at a rate of 5% per year in exchange for new, spendable funds in the treasury. 
+
+## Is there a "pre-mine"?
+30,000,000 FRY tokens will go to the initial team in vesting contracts to ensure their continued participation.
+10,000,000 FRY tokens will be put in the Foundry treasury itself to pull in more long term talent. 
+
+## --Doesn't that put disproportionate power in the hands of the creators of FoundryDAO?--
+At first the creators will have considerable power, that power will soon dwindle as not all their tokens will be available for voting or sale and more participants can enter the governance process. 
+Over the longer time scale, the continuous sale will constantly dilute control of the earlier participants, but not token value. 
+
+## What will the money be used for
+Initially there will be three proposals that participation in the ICO will signal approval of. 
+1. A very modest budget to seed a larger team for SmokeSignal.
+2. A very modest budget to seed a larger team for DAIHard.
+3. Auditing budget for the seminal version of Foundry's liquid democracy.
+Thereafter all proposals will go through the FoundryDAO governance contract. 
+
+## What if I don't like the initial projects?
+Then please do not send money to the ICO. Or wait until the 
+
+## How much is the sale looking to raise?
+As much as the market deems appropriate.
+
+## What is the "continuous sale"?
+FoundryDAO is not a closed fund. It will continue to sell FRY at a conservative rate in perpetuity. It does this to ensure it always DAI funds it can spend and always pulls in fresh participants. 
+
+## Won't the "continuous sale" dilute my FRY tokens?
+While the sale dilutes your % share of control of Foundry, is does not dilute the value, because the dilution is offset by an equivalent increase in the assets controlled by Foundry.
