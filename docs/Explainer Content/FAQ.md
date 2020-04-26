@@ -1,5 +1,3 @@
-
-
 # FoundyDAO FAQ
 
 # About FoundryDAO
@@ -59,13 +57,41 @@ Initially there will be three proposals that participation in the ICO will signa
 Thereafter all proposals will go through the FoundryDAO governance contract. 
 
 ## What if I don't like the initial projects?
-Then please do not send money to the ICO. Or wait until the 
+Then please do not send money to the ICO. Or wait until the full governance contract is up if you want the fully decentralized experience. 
 
 ## How much is the sale looking to raise?
 As much as the market deems appropriate.
+The first two proposals are $ 123 for DAIHard and $456 for SmokeSignal.
 
 ## What is the "continuous sale"?
 FoundryDAO is not a closed fund. It will continue to sell FRY at a conservative rate in perpetuity. It does this to ensure it always DAI funds it can spend and always pulls in fresh participants. 
 
 ## Won't the "continuous sale" dilute my FRY tokens?
 While the sale dilutes your % share of control of Foundry, is does not dilute the value, because the dilution is offset by an equivalent increase in the assets controlled by Foundry.
+
+## How do I participate?
+To participate in the ICO, you need a small amount of Ether for gas and DAI. If you go to sale.foundrydao.com using the MetaMask or Nifty Wallet browser plug-ins is the way. The sale also works with the MetaMask mobile wallet and TrustWallet.
+
+## How does the sale work?
+The sale has 1855 rounds of 30,000 FRY tokens each. Each round is 7 hours long. To participate you send DAI to the sale, specifying the current bucket or a future bucket. You cannot participate in past buckets.
+Once a bucket has concluded, you can withdraw your FRY tokens. You will receive your portion of 30,000 FRY tokens, proportional to your contribution of DAI to the bucket. If 1000 DAI was provided to that bucket, of which you supplied 100 DAI, you will get 10% or 3,000 FRY tokens. 
+
+## Will FoundryDAO be live before the sale ends?
+Yes.
+
+# About Referrals
+## What is the goal of the referral program?
+To incentivize marketers for bringing in participants to the sale and to retain marketing expertise within the FRY token holder group. 
+
+## What are the benefits of using a referral code from someone else?
+You will get 10% of the value you are entering into a sale bucket, also entered into the next sale bucket. So if you are buying 100 DAI in bucket 20, then you will also be credited for a purchase of 10 DAI in bucket 21. The amount of FRY you get in out of bucket 21 might not be 10% of that you got out of bucket 20 because the value entered into the buckets may differ. 
+
+## What are the benefits of sharing a referral code?
+When someone buys with your referral code, you are credited as if you bought into the next bucket. Your credit in the following bucket starts at 10% and can go as high as 100% of the purchase of the person buying with your referral code. The bonus % is based on the amount of total sales referred with your code; 1% for every 1,000 DAI raised. 
+So if you generate a referral code and share it with someone and they buy 1,000 DAI in bucket 23, then you will be credited with a sale of 11% (110 DAI) in bucket 24. If someone later buys another 2,000 DAI in bucket 40 for instance, then you will be credited with 13% (130 DAI) in bucket 41.  
+
+## How do I make a referral link?
+Visit sale.foundrydao.com, you will be prompted if you are not using a referral code with the words "No Referral Bonus" in the top right corner of the sale block. If you click it you will see an explainer modal with a button you can click to generate one. You can then copy it by clicking "Copy Link".
+
+## Where do I find my referral link if I've already made it? 
+Go to sale.foundrydao.com, in the top right of the sale block, you will either see "Referral Bonus Active" or ""No Referral Bonus". Clicking will open a modal that will allow you to copy it to your clipboard for sharing with others. 
