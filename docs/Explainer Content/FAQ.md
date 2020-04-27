@@ -28,6 +28,16 @@ Liquid democracy is a form of member managed governance that negates the need fo
 ## Doesn't the SEC have a major problem with ICOs?
 Our ICO is not open to US investors, qualified or otherwise. We block participation from aggressive jurisdictions. 
 
+## How do I participate?
+You can head over to sale.foundrydao.com  
+To participate you will need some Ether (Eth) for gas and DAI to purchase FRY with. 
+
+## How do I get DAI?
+You can swap Ether for DAI on over at kyberswap.com
+
+## How do I get Ether?
+This depends on your jurisdiction. Most countries have very reputable crypto currency exchanges at this point. 
+
 ## Where does the money go?
 The money goes into a treasury contract which will be owned by the FoundryDAO's governance contract. Initially this contract will be a simple multisig controlled by the creators of the DAO, but soon thereafter, once auditing of the v.1 smart contract is complete, will move entirely to the liquid democracy governance contract. This will place all funds raised under direct control of the FRY token holders themselves.
 
@@ -95,3 +105,4 @@ Visit sale.foundrydao.com, you will be prompted if you are not using a referral 
 
 ## Where do I find my referral link if I've already made it? 
 Go to sale.foundrydao.com, in the top right of the sale block, you will either see "Referral Bonus Active" or ""No Referral Bonus". Clicking will open a modal that will allow you to copy it to your clipboard for sharing with others. 
+
