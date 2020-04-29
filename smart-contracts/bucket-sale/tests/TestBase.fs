@@ -222,9 +222,9 @@ let makeAccount() =
     Account(privateKey);
 
 
-let startOfSale = debug.BlockTimestamp - BigInteger (1UL * days)
+let startOfSale = debug.BlockTimestamp + BigInteger (1UL * hours)
 let bucketPeriod = 7UL * hours |> BigInteger
 let bucketSupply = 50000UL |> BigInteger
 let bucketCount = 1250UL |> BigInteger
-let tokenOnSale = zeroAddress
-let tokenSoldFor = zeroAddress
+let tokenOnSale = makeAccount().Address
+let tokenSoldFor = makeAccount().Address

@@ -35,9 +35,10 @@ let ``M000 - Can send eth``() =
 [<Fact>]
 let ``B_C000 - Can construct the contract``() =
     let abi = Abi("../../../../build/contracts/BucketSale.json")
+    let startOfSale = debug.BlockTimestamp
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
-            [| treasury.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; zeroAddress; zeroAddress |]
+            [| treasury.Address; startOfSale; bucketPeriod; bucketSupply; bucketCount; tokenOnSale; tokenSoldFor |]
         |> runNow
 
     deployTxReceipt |> shouldSucceed
