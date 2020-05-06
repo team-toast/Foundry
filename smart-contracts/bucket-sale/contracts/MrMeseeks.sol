@@ -9,6 +9,11 @@ contract MrMeseeks
 {
     using SafeMath for uint256;
 
+    event Deployed(
+        Forwarder _governanceTreasury,
+        FRY _fryAddress,
+        BucketSale _bucketSale);
+
     constructor(
             address _teamToastMultisig,
             uint _startOfSale,
@@ -49,6 +54,8 @@ contract MrMeseeks
 
         // Have this contract renounce minting rights
         fryToken.renounceMinter();
+
+        emit Deployed(governanceTreasury, fryToken, bucketSale);
 
         // Meseeks
         selfdestruct(msg.sender);
