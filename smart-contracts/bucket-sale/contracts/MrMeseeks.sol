@@ -5,7 +5,7 @@ import "./BucketSale.sol";
 import "./Forwarder.sol";
 
 
-contract Deployer
+contract MrMeseeks
 {
     using SafeMath for uint256;
 
@@ -49,5 +49,8 @@ contract Deployer
 
         // Have this contract renounce minting rights
         fryToken.renounceMinter();
+
+        // Meseeks
+        selfdestruct(msg.sender);
     }
 }
