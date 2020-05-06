@@ -57,7 +57,7 @@ contract MrMeseeks
 
         emit Deployed(governanceTreasury, fryToken, bucketSale);
 
-        // I'm Mr Meseeks, look at me!
+        // Meseeks
         selfdestruct(msg.sender);
     }
 }

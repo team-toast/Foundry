@@ -39,16 +39,16 @@ let ``M000 - Can send eth``() =
 [<Specification("BucketSale", "constructor", 6)>]
 [<Specification("BucketSale", "constructor", 7)>]
 [<Fact>]
-let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006|B_C007 - Cannot construct the contract with faulty parameters``() =
+let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006- Cannot construct the contract with faulty parameters``() =
     // Notes: 
     // 1.Due to not being able to easily extract revert messages from constructor calls,
     //   I've opted to not test the return messages. When I update the testing framework later I'll add it in.
     // 2.Some issue presently is causing ganache to constantly revert if any startOfSale value is checked for on the constructor.
-    //   This is a very minor issue as there is no reason to enforce the check.
+    //   This is a very minor issue as there is no reason to enfore the check.
+    //   @Adam Dossa, please note this and evaluate if this opens any attack vectors. 
     let abi = Abi("../../../../build/contracts/BucketSale.json")
 
     let faultyTreasury = (EthAddress.Zero, "treasury cannot be 0x0")
-    // let faultyStartOfSale = (debug.BlockTimestamp - BigInteger.One, "start of sale cannot be in the past")
     let faultyBucketPeriod = (BigInteger.Zero, "bucket period cannot be 0")
     let faultyBucketSupply = (BigInteger.Zero, "bucket supply cannot be 0")
     let faultyBucketCount = (BigInteger.Zero, "bucket count cannot be 0")
@@ -64,8 +64,7 @@ let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006|B_C007 - Cannot construct the co
         try 
             ethConn.DeployContractAsync abi
                 [| 
-                    pickParam (param = 0) faultyTreasury treasury.Address; 
-                    // pickParam (param = 1) faultyStartOfSale startOfSale; 
+                    pickParam (param = 0) faultyTreasury treasury.Address;  
                     startOfSale
                     pickParam (param = 2) faultyBucketPeriod bucketPeriod; 
                     pickParam (param = 3) faultyBucketSupply bucketSupply; 
@@ -76,6 +75,7 @@ let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006|B_C007 - Cannot construct the co
             |> ignore
         with
             | _ -> printfn "Exception handled.";
+
 
 [<Specification("BucketSale", "constructor", 8)>]
 [<Fact>]
@@ -99,7 +99,6 @@ let ``B_C008 - Can construct the contract``() =
 
     deployTxReceipt |> shouldSucceed
 
-    // Assert
     let contract = ContractPlug(ethConn, abi, deployTxReceipt.ContractAddress)
 
     contract.Query "treasury" [||] |> shouldEqualIgnoringCase treasury.Address
@@ -111,6 +110,7 @@ let ``B_C008 - Can construct the contract``() =
     contract.Query "tokenOnSale" [||] |> shouldEqualIgnoringCase tokenOnSale
     contract.Query "tokenSoldFor" [||] |> shouldEqualIgnoringCase tokenSoldFor
 
+
 [<Specification("BucketSale", "enter", 1)>]
 [<Fact>]
 let ``B_EN001 - Cannot enter without providing funds``() =
@@ -120,10 +120,10 @@ let ``B_EN001 - Cannot enter without providing funds``() =
     approveDAIFor seedDAIAmount bucketSale.Address debug
 
     let currentBucket = bucketSale.Query "currentBucket" [||] |> uint64
-    let bucketInPast = currentBucket - 1UL // s: why are we using a bucket in the past? I verified this is failing for the right reason. Still tho
-    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; bucketInPast; zeroValue; EthAddress.Zero |] debug
+    let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; currentBucket; zeroValue; EthAddress.Zero |] debug
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithMessage "no funds provided"
+
 
 [<Specification("BucketSale", "enter", 2)>]
 [<Fact>]
@@ -136,6 +136,7 @@ let ``B_EN002 - Cannot enter a bucket if payment reverts``() =
     let receipt = bucketSale.ExecuteFunctionFrom "agreeToTermsAndConditionsListedInThisContractAndEnterSale" [| ethConn.Account.Address; currentBucket; 1UL; EthAddress.Zero |] debug
     let forwardEvent = debug.DecodeForwardedEvents receipt |> Seq.head
     forwardEvent |> shouldRevertWithUnknownMessage
+
 
 [<Specification("BucketSale", "enter", 3)>]
 [<Specification("BucketSale", "enter", 6)>]
@@ -169,7 +170,6 @@ let ``B_EN004 - Cannot enter a bucket beyond the designated bucket count (no ref
 [<Specification("BucketSale", "enter", 5)>]
 [<Fact>]
 let ``B_EN005 - Can enter a bucket with no referrer``() =
-    // arrange
     addFryMinter bucketSale.Address
 
     let currentBucket = bucketSale.Query "currentBucket" [||]
@@ -245,6 +245,7 @@ let ``B_EN008 - Can enter a bucket with a referrer``() =
                 bucketToEnter
                 valueToEnter
                 randomReferrer)
+
 
 [<Specification("BucketSale", "exit", 1)>]
 [<Fact>]
@@ -349,21 +350,7 @@ let ``B_EX004 - Cannot exit a bucket if the token minting fails``() =
     exitForwardEvent.Wei |> should equal BigInteger.Zero
     exitForwardEvent |> shouldRevertWithUnknownMessage // unknown internal revert of the ERC20 minting, error is not necessarily known
 
-// s: Test B_EX005 failed! Can't reproduce but here was the message...
-(*
-[xUnit.net 00:00:07.33]     EnterTests.B_EX005 - Can exit a valid past bucket that was entered [FAIL]
-X EnterTests.B_EX005 - Can exit a valid past bucket that was entered [6s 546ms]
-  Error Message:
-   FsUnit.Xunit+MatchException : Exception of type 'FsUnit.Xunit+MatchException' was thrown.
-Expected: Equals 20588
-Actual:   was 35294
-  Stack Trace:
-     at FsUnit.Xunit.Assert.That.Static[a](a actual, IMatcher`1 matcher)
-   at BucketSaleTestBase.exitBucket[a](String buyer, a bucketEntered, BigInteger valueEntered) in /home/oglog/dev/dapps/foundry/smart-contracts/bucket-sale/tests/BucketSaleTestBase.fs:line 214
-   at EnterTests.B_EX005 - Can exit a valid past bucket that was entered() in /home/oglog/dev/dapps/foundry/smart-contracts/bucket-sale/tests/Tests.fs:line 399
-                                                                                
-Test Run Failed.
-*)
+    
 [<Specification("BucketSale", "exit", 5)>]
 [<Fact>]
 let ``B_EX005 - Can exit a valid past bucket that was entered``() =
@@ -375,23 +362,22 @@ let ``B_EX005 - Can exit a valid past bucket that was entered``() =
     let currentBucketBeforeEntering = bucketSale.Query "currentBucket" [||]
     currentBucketBeforeEntering |> should lessThan bucketCount
     let sender = ethConn.Account.Address
-    let randomBuyer = makeAccount().Address
-    let randomReferrer = makeAccount().Address
+    let randomBuyer() = makeAccount().Address
+    let randomReferrer() = makeAccount().Address
 
     let makeBuy _ =
         let bucketToEnter = 
             currentBucketBeforeEntering 
             + (rnd.Next(0, bucketCount - currentBucketBeforeEntering - BigInteger.One |> int32) |> BigInteger) 
-            // s: this math is confusing to me
         bucketToEnter |> should greaterThanOrEqualTo currentBucketBeforeEntering
         bucketToEnter |> should lessThanOrEqualTo (bucketCount - BigInteger.One) 
 
-        randomBuyer,
+        randomBuyer(),
         bucketToEnter, 
         rnd.Next(1, 100) |> BigInteger,
-        randomReferrer
+        randomReferrer()
         
-    let numberOfBuysToPerform = rnd.Next(5,10)
+    let numberOfBuysToPerform = rnd.Next(10,20)
     let buysToPerform = 
         {1 |> int32 .. numberOfBuysToPerform}
         |> Seq.map makeBuy 
@@ -431,13 +417,9 @@ let ``F_C001 - Can construct a forwarder with an owner``() =
     forwarder.Query "owner" [| |] |> shouldEqualIgnoringCase owner.Address
 
 
-
 [<Specification("Forwarder", "changeOwner", 1)>]
 [<Fact>]
 let ``F_CO001 - Cannot change the owner if not called by the current owner``() =
-    // s: Test is unclear.
-    // Is ethConn.Account.Address the same as debug's address?
-    // Why does the changeOwnerTx succeed, but contain a failed event?
     let testTreasury = makeTreasury ethConn.Account.Address
 
     let newOwner = makeAccount()
@@ -486,7 +468,7 @@ let ``F_F002 - Should succeed when called by a owner and handle a reverting call
     
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should equal 1
-    let forwardEvent = forwardTx |> decodeFirstEvent<ForwardedEventDTO>
+    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
     forwardEvent.Success |> should equal false
     forwardEvent.To |> shouldEqualIgnoringCase bucketSale.Address
     forwardEvent.Wei |> should equal BigInteger.Zero
@@ -506,13 +488,14 @@ let ``F_F003A - Should succeed when called by a owner when making a successful c
     
     forwardTx |> shouldSucceed
     forwardTx.Logs.Count |> should greaterThan 1
-    let forwardEvent = forwardTx |> decodeFirstEvent<ForwardedEventDTO>
+    let forwardEvent = forwardTx |> decodeFirstEvent<Foundry.Contracts.Forwarder.ContractDefinition.ForwardedEventDTO>
     forwardEvent.Success |> should equal true
     forwardEvent.To |> shouldEqualIgnoringCase DAI.Address
     forwardEvent.Wei |> should equal BigInteger.Zero
 
     DAI.Query "balanceOf" [| treasury.Address |] |> should equal (treasuryBalanceBefore - amount)
     DAI.Query "balanceOf" [| recipient.Address |] |> should equal (recipientBalanceBefore + amount)
+
 
 [<Specification("Forwarder", "foward", 3)>]
 [<Fact>]
@@ -536,6 +519,7 @@ let ``F_F003B - Should succeed when called by a owner and sending eth``() =
     ethConn.GetEtherBalance treasury.Address |> should equal (treasuryBalanceBefore - amount)
     ethConn.GetEtherBalance recipient.Address |> should equal (recipientBalanceBefore + amount)
 
+
 [<Specification("Forwarder", "fallback", 1)>]
 [<Fact>]
 let ``F_FB001 - Should be able to receive eth``() =
@@ -548,5 +532,3 @@ let ``F_FB001 - Should be able to receive eth``() =
     sendEtherTx |> shouldSucceed 
     sendEtherTx.Logs |> should be Empty
     ethConn.GetEtherBalance testTreasury.Address |> should equal (balanceBefore + amount)
-
-

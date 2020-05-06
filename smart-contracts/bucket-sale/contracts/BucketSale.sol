@@ -16,8 +16,7 @@ contract BucketSale
 {
     using SafeMath for uint256;
 
-    string public termsAndConditions = "By interacting with this contract, I confirm I am not a US citizen or a citizen of the People's Republic of China. I agree to be bound by the terms found at https://foundrydao.com/sale/terms";
-
+    string public termsAndConditions = "By interacting with this contract, I confirm I am not a US citizen. I agree to be bound by the terms found at https://foundrydao.com/sale/terms";
 
     // When passing around bonuses, we use 3 decimals of precision.
     uint constant HUNDRED_PERC = 100000;
@@ -71,7 +70,6 @@ contract BucketSale
             IERC20 _tokenSoldFor)    // typically DAI
         public
     {
-        // s: have we decided not to enforce _startOfSale >= now?
         require(_treasury != address(0), "treasury cannot be 0x0");
         require(_bucketPeriod > 0, "bucket period cannot be 0");
         require(_bucketSupply > 0, "bucket supply cannot be 0");
