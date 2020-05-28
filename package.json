@@ -8,8 +8,8 @@
     "url": ""
   },
   "scripts": {
-    "dev": "parcel static/index.html static/captureReferral.html",
-    "build": "parcel build static/index.html static/captureReferral.html"
+    "dev": "rm -rf dist && mkdir dist && cp static/captureReferral.html dist/captureReferral.html && parcel static/index.html",
+    "build": "rm -rf dist && mkdir dist && cp static/captureReferral.html dist/captureReferral.html && parcel build static/index.html"
   },
   "devDependencies": {
     "elm": "^0.19.1-3",
