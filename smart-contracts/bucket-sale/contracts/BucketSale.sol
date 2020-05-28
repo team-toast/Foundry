@@ -4,9 +4,19 @@ import "../../common/openzeppelin/math/Math.sol";
 import "../../common/openzeppelin/math/SafeMath.sol";
 import "../../common/openzeppelin/token/ERC20/ERC20Mintable.sol";
 
+contract IDecimals
+{
+    function decimals()
+        public
+        view
+        returns (uint8);
+}
+
 contract BucketSale
 {
     using SafeMath for uint256;
+
+    string public termsAndConditions = "By interacting with this contract, I confirm I am not a US citizen. I agree to be bound by the terms found at https://foundrydao.com/sale/terms";
 
     // When passing around bonuses, we use 3 decimals of precision.
     uint constant HUNDRED_PERC = 100000;
@@ -60,13 +70,12 @@ contract BucketSale
             IERC20 _tokenSoldFor)    // typically DAI
         public
     {
-        require(_treasury != address(0), "Treasury can't be 0x0");
-        require(_startOfSale >= block.timestamp, "Start of sale can't be in the past");
-        require(_bucketPeriod > 0, "Bucket period can't be 0");
-        require(_bucketSupply > 0, "Bucket supply can't be 0");
-        require(_bucketCount > 0, "Bucket count can't be 0");
-        require(address(_tokenOnSale) != address(0), "Token on sale can't be 0x0");
-        require(address(_tokenSoldFor) != address(0), "Token sold for can't be 0x0");
+        require(_treasury != address(0), "treasury cannot be 0x0");
+        require(_bucketPeriod > 0, "bucket period cannot be 0");
+        require(_bucketSupply > 0, "bucket supply cannot be 0");
+        require(_bucketCount > 0, "bucket count cannot be 0");
+        require(address(_tokenOnSale) != address(0), "token on sale cannot be 0x0");
+        require(address(_tokenSoldFor) != address(0), "token sold for cannot be 0x0");
 
         treasury = _treasury;
         startOfSale = _startOfSale;
@@ -93,17 +102,20 @@ contract BucketSale
         uint _buyerReferralReward,
         address indexed _referrer,
         uint _referrerReferralReward);
-    function enter(
+    function agreeToTermsAndConditionsListedInThisContractAndEnterSale(
             address _buyer,
             uint _bucketId,
             uint _amount,
             address _referrer)
         public
     {
-        registerEnter(_bucketId, _buyer, _amount);
-        referredTotal[_referrer] = referredTotal[_referrer].add(_amount); // referredTotal[0x0] will track buys with no referral
+        require(_amount > 0, "no funds provided");
+
         bool transferSuccess = tokenSoldFor.transferFrom(msg.sender, treasury, _amount);
         require(transferSuccess, "enter transfer failed");
+
+        registerEnter(_bucketId, _buyer, _amount);
+        referredTotal[_referrer] = referredTotal[_referrer].add(_amount); // referredTotal[0x0] will track buys with no referral
 
         if (_referrer != address(0)) // If there is a referrer
         {
@@ -175,8 +187,8 @@ contract BucketSale
         buyToWithdraw.buyerTokensExited = calculateExitableTokens(_bucketId, _buyer);
         totalExitedTokens = totalExitedTokens.add(buyToWithdraw.buyerTokensExited);
 
-        bool transferSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
-        require(transferSuccess, "exit mint/transfer failed");
+        bool mintSuccess = tokenOnSale.mint(_buyer, buyToWithdraw.buyerTokensExited);
+        require(mintSuccess, "exit mint/transfer failed");
 
         emit Exited(
             _bucketId,
@@ -204,7 +216,7 @@ contract BucketSale
         else
         {
             // integer number of dai contributed
-            uint daiContributed = referredTotal[_referrerAddress].div(10 ** 18);
+            uint daiContributed = referredTotal[_referrerAddress].div(10 ** uint(IDecimals(address(tokenSoldFor)).decimals()));
 
             /*
             A more explicit way to do the following 'uint multiplier' line would be something like:
@@ -216,8 +228,8 @@ contract BucketSale
             the integer amount of Dai happens to exactly equal the bonusPercent value we want
             (i.e. 10,000 Dai == 10000 == 10*ONE_PERC)
 
-            So, if multiplier = daiContributed + (10*ONE_PERC), this increases the multiplier
-            by 10% for every 10k Dai, which is what we want.
+            So below, `multiplier = daiContributed + (10*ONE_PERC)`
+            increases the multiplier by 1% for every 1k Dai, which is what we want.
             */
             uint multiplier = daiContributed.add(ONE_PERC.mul(10)); // this guarentees every referrer gets at least 10% of what the buyer is buying
 

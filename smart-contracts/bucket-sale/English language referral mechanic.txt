@@ -1,0 +1,26 @@
+How the referral program works.
+
+We believe in the exchange of value for value, therefore the Foundry referral program is set up to incentivize the
+inclusion of participants motivated to see the project succeed as token holders. The Foundry sale referral program
+rewards people who market the sale by giving them a percentage of the value that the person they referred, entered
+into the sale. It rewards the person who was referred by giving them extra FRY tokens.
+
+What is the referral reward for a buyer?
+For someone entering the sale with someone else's referral code, they get 10% extra. This 10% is allocated to them
+as a seperate purchase in the next bucket from the bucket they are entering. 
+
+What is the referral reward for the referrer?
+Referral rewards are calculated for the referrer based on amount of DAI the referred buyer is spending to purchase
+FRY. This amount scales from 10% to 100% based on the total amount of DAI the referrer's code has already 
+generated for the sale. The percentage starts at 10% and gains 1% for every $1,000 the referrer code brings to the
+sale. So if someone purchases $5,000 with your referral code, that means you will get 10% + 5% of the value they 
+purchased in the next sale bucket. So in this example it would be similar to you buying $160 in the next bucket.
+Your reward percentage keeps growing to a maximimum of 100% once your referral code reaches $100,000 brought into
+the sale. 
+
+Can I use my own referral code?
+Yes, you can buy FRY by using your own referral code. This will give you both the 10% buyer reward and the
+referral code in the next sale bucket. 
+
+Why are you being so cool to us?
+We're givers, what can I say!

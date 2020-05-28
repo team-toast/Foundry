@@ -1,19 +1,19 @@
-pragma solidiy ^0.5.11;
+pragma solidity ^0.6.4;
 
 // general notes:
 // * this contract should own a forwarder
 // * should there be a withdrawal time delay?
-// * should there be "voting rewards"? 
+// * should there be "voting rewards"?
 // * should there be "delegation rewards"?
 // * rewards could be purely time based, but pay out every time you take an action, IE to vote or even change a vote
-//   paying out the amount due since the previous action was taken. 
+//   paying out the amount due since the previous action was taken.
 // * rewards could have 2 tiers, one for delegation and a higher one for actual voting
 // * there needs to be a burn of some sort when submitting proposals
-//      * 1/10^6th of the total supply? 
+//      * 1/10^6th of the total supply?
 //      * maybe it needn't burn the funds, maybe it can simply go to the treasury contract
-// * proposals that succeed or fail outright, as opposed to succeeding or failing after timeout, should yield a 
+// * proposals that succeed or fail outright, as opposed to succeeding or failing after timeout, should yield a
 //   higher reward because they represent an active interest in the vote.
-// * should there be a veto key list? a set of users who may stop a vote. 
+// * should there be a veto key list? a set of users who may stop a vote.
 
 interface ILiquidDemocracy // ironic name
 {
