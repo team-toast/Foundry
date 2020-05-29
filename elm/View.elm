@@ -17,11 +17,11 @@ import UserNotice as UN exposing (UserNotice)
 
 root : Model -> Browser.Document Msg
 root model =
-    { title = "Foundry"
+    { title = "Foundry Sale"
     , body =
         [ let
             ( pageEl, modalEls ) =
-                pageElementAndModal model.dProfile model
+                pageElementAndModal model
 
             mainElementAttributes =
                 [ Element.width Element.fill
@@ -49,122 +49,138 @@ root model =
     }
 
 
-pageElementAndModal : DisplayProfile -> Model -> ( Element Msg, List (Element Msg) )
-pageElementAndModal dProfile model =
+pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
+pageElementAndModal model =
     let
         ( submodelEl, modalEls ) =
-            submodelElementAndModal dProfile model
+            submodelElementAndModal model
 
         maybeTestnetIndicator =
-            if model.testMode then
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size (24 |> changeForMobile 16 dProfile)
-                    , Element.Font.bold
-                    , Element.Font.italic
-                    , Element.Font.color EH.softRed
-                    ]
-                    (Element.text "In Test (Kovan) mode")
+            Element.el
+                [ Element.centerX
+                , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
+                , Element.Font.bold
+                , Element.Font.italic
+                , Element.Font.color EH.softRed
+                ]
+            <|
+                case model.testMode of
+                    None ->
+                        Element.none
 
-            else
-                Element.none
+                    TestMainnet ->
+                        Element.text "In Test (Mainnet) mode"
+
+                    TestKovan ->
+                        Element.text "In Test (Kovan) mode"
+
+                    TestGanache ->
+                        Element.text "In Test (Local) mode"
     in
     ( Element.column
-        [ Element.behindContent <| headerBackground dProfile
-        , Element.inFront <| headerContent dProfile model
-        , Element.width Element.fill
+        [ Element.width Element.fill
         , Element.height Element.fill
-        , Element.padding (30 |> changeForMobile 10 dProfile)
-        , Element.spacing (20 |> changeForMobile 10 dProfile)
+        , Element.spacing (20 |> changeForMobile 10 model.dProfile)
+        , Element.behindContent <| headerBackground model.dProfile
         ]
-        [ Element.el
-            [ Element.height (Element.px (60 |> changeForMobile 110 dProfile)) ]
-            Element.none
+        [ header model.dProfile
         , maybeTestnetIndicator
-        , submodelEl
+        , Element.el
+            [ Element.width Element.fill
+            , Element.paddingXY 20 0
+            ]
+            submodelEl
         ]
-    , modalEls ++ userNoticeEls dProfile model.userNotices
+    , modalEls ++ userNoticeEls model.dProfile model.userNotices
     )
 
 
 headerBackground : DisplayProfile -> Element Msg
 headerBackground dProfile =
-    let
-        bottomBackgroundColor =
-            Element.rgb255 10 33 108
-
-        headerColor =
-            Element.rgb255 7 27 92
-    in
     Element.el
         [ Element.width Element.fill
         , Element.height <| Element.px 600
-        , Element.Background.color bottomBackgroundColor
-        , Element.inFront <|
-            Element.el
-                [ Element.width Element.fill
-                , Element.height <| Element.px (80 |> changeForMobile 120 dProfile)
-                , Element.Background.color headerColor
-                ]
-                Element.none
+        , Element.Background.color <| Element.rgb255 20 53 138
         ]
         Element.none
 
 
-headerContent : DisplayProfile -> Model -> Element Msg
-headerContent dProfile model =
+header : DisplayProfile -> Element Msg
+header dProfile =
     Element.row
-        [ Element.width Element.fill
-        , Element.spacing (30 |> changeForMobile 10 dProfile)
-        , Element.paddingXY 30 17 |> changeForMobile (Element.padding 10) dProfile
+        [ Element.height <| Element.px 100
+        , Element.width Element.fill
+        , Element.Background.color <| Element.rgb255 10 33 108
         ]
-        [ --     let
-          --     smLinks =
-          --         [ Element.el
-          --             [ Element.centerY
-          --             , Element.alignRight
-          --             ]
-          --           <|
-          --             headerExternalLink dProfile "Blog" "https://medium.com/daihard-buidlers"
-          --         , Element.el
-          --             [ Element.centerY
-          --             , Element.alignRight
-          --             ]
-          --           <|
-          --             headerExternalLink dProfile "Reddit" "https://reddit.com/r/DAIHard"
-          --         , Element.el
-          --             [ Element.centerY
-          --             , Element.alignRight
-          --             ]
-          --           <|
-          --             headerExternalLink dProfile "Telegram" "https://t.me/daihardexchange_group"
-          --         ]
-          --   in
-          case dProfile of
-            Desktop ->
-                Element.column
-                    [ Element.spacing 5
-                    , Element.alignRight
-                    , Element.alignTop
-                    ]
-                    [ Element.el [ Element.alignRight ] <| logoElement dProfile
-                    , Element.row
-                        [ Element.spacing 10
-                        ]
-                        []
-
-                    -- smLinks
-                    ]
-
-            Mobile ->
-                Element.column
-                    [ Element.spacing 10
-                    , Element.alignTop
-                    , Element.alignRight
-                    ]
-                    -- ([ logoElement dProfile ] ++ smLinks)
-                    [ logoElement dProfile ]
+        [ Element.el
+            [ Element.alignLeft
+            , Element.centerY
+            ]
+            (brandAndLogo dProfile)
+        , Element.el
+            [ Element.alignRight
+            , Element.centerY
+            ]
+            (smLinks dProfile)
         ]
+
+
+brandAndLogo : DisplayProfile -> Element Msg
+brandAndLogo dProfile =
+    Element.row
+        [ Element.height Element.fill
+        , Element.padding (20 |> changeForMobile 10 dProfile)
+        , Element.spacing 10
+        ]
+        [ Images.toElement
+            [ Element.centerY ]
+            Images.fryIcon
+        , Element.column
+            [ Element.spacing 5 ]
+            [ Element.el
+                [ Element.Font.color EH.white
+                , Element.Font.size 35
+                , Element.Font.bold
+                , Element.centerY
+                ]
+              <|
+                Element.text "Foundry"
+            , Element.newTabLink
+                [ Element.centerX
+                , Element.Background.color EH.lightBlue
+                , Element.paddingXY 10 3
+                , Element.Border.rounded 4
+                , Element.Font.color EH.white
+                , Element.Font.size 18
+                ]
+                { url = "https://foundrydao.com"
+                , label =
+                    Element.text "More Info"
+                }
+            ]
+        ]
+
+
+smLinks : DisplayProfile -> Element Msg
+smLinks dProfile =
+    [ ( Images.twitter, "https://twitter.com/FoundryDAO" )
+    , ( Images.github, "https://github.com/burnable-tech/foundry/" )
+    ]
+        |> List.map
+            (\( image, url ) ->
+                Element.newTabLink
+                    []
+                    { url = url
+                    , label =
+                        Images.toElement
+                            [ Element.height <| Element.px 40 ]
+                            image
+                    }
+            )
+        |> Element.row
+            [ Element.padding 10
+            , Element.spacing 20
+            ]
 
 
 type HeaderLinkStyle
@@ -280,30 +296,60 @@ headerMenuAttributes =
     ]
 
 
-submodelElementAndModal : DisplayProfile -> Model -> ( Element Msg, List (Element Msg) )
-submodelElementAndModal dProfile model =
-    let
-        ( submodelEl, modalEls ) =
-            case model.submodel of
-                NullSubmodel ->
-                    ( Element.none
-                    , []
-                    )
+submodelElementAndModal : Model -> ( Element Msg, List (Element Msg) )
+submodelElementAndModal model =
+    case model.testMode of
+        None ->
+            let
+                submodelEl =
+                    Element.el
+                        [ Element.paddingXY 0 100
+                        , Element.centerX
+                        ]
+                    <|
+                        Element.column
+                            [ Element.Background.color EH.lightBlue
+                            , Element.Border.rounded 10
+                            , Element.padding 20
+                            , Element.spacing 10
+                            ]
+                        <|
+                            List.map
+                                (Element.paragraph
+                                    [ Element.Font.size 40
+                                    , Element.Font.color EH.white
+                                    , Element.Font.center
+                                    ]
+                                )
+                                [ [ Element.text "The sale hasn't started yet." ]
+                                , [ Element.text "We'll announce a launch date soon!" ]
+                                ]
+            in
+            ( submodelEl, [] )
 
-                BucketSaleModel bucketSaleModel ->
-                    BucketSale.View.root bucketSaleModel
-                        |> Tuple.mapBoth
-                            (Element.map BucketSaleMsg)
-                            (List.map (Element.map BucketSaleMsg))
-    in
-    ( Element.el
-        [ Element.width Element.fill
-        , Element.height Element.fill
-        , Element.Border.rounded 10
-        ]
-        submodelEl
-    , modalEls
-    )
+        _ ->
+            let
+                ( submodelEl, modalEls ) =
+                    case model.submodel of
+                        NullSubmodel ->
+                            ( Element.none
+                            , []
+                            )
+
+                        BucketSaleModel bucketSaleModel ->
+                            BucketSale.View.root bucketSaleModel
+                                |> Tuple.mapBoth
+                                    (Element.map BucketSaleMsg)
+                                    (List.map (Element.map BucketSaleMsg))
+            in
+            ( Element.el
+                [ Element.width Element.fill
+                , Element.height Element.fill
+                , Element.Border.rounded 10
+                ]
+                submodelEl
+            , modalEls
+            )
 
 
 userNoticeEls : DisplayProfile -> List (UserNotice Msg) -> List (Element Msg)

@@ -1,5 +1,6 @@
 module Routing exposing (FullRoute, PageRoute(..), routeToString, urlToFullRoute)
 
+import CommonTypes exposing (..)
 import Eth.Types exposing (Address)
 import Eth.Utils
 import Url exposing (Url)
@@ -9,7 +10,7 @@ import Url.Parser.Query
 
 
 type alias FullRoute =
-    { testing : Bool
+    { testing : TestMode
     , pageRoute : PageRoute
     , maybeReferrer : Maybe Address
     }
@@ -23,8 +24,10 @@ type PageRoute
 fullRouteParser : Parser (FullRoute -> a) a
 fullRouteParser =
     Url.Parser.oneOf
-        [ Url.Parser.s "test" </> Url.Parser.map (FullRoute True) (pageRouteParser <?> refQueryParser)
-        , Url.Parser.map (FullRoute False) (pageRouteParser <?> refQueryParser)
+        [ Url.Parser.s "testmain" </> Url.Parser.map (FullRoute TestMainnet) (pageRouteParser <?> refQueryParser)
+        , Url.Parser.s "testkovan" </> Url.Parser.map (FullRoute TestKovan) (pageRouteParser <?> refQueryParser)
+        , Url.Parser.s "testlocal" </> Url.Parser.map (FullRoute TestGanache) (pageRouteParser <?> refQueryParser)
+        , Url.Parser.map (FullRoute None) (pageRouteParser <?> refQueryParser)
         ]
 
 
@@ -38,11 +41,18 @@ pageRouteParser =
 routeToString : FullRoute -> String
 routeToString fullRoute =
     Url.Builder.absolute
-        ((if fullRoute.testing then
-            [ "#", "test" ]
+        ((case fullRoute.testing of
+            TestMainnet ->
+                [ "#", "testmain" ]
 
-          else
-            [ "#" ]
+            TestKovan ->
+                [ "#", "testkovan" ]
+
+            TestGanache ->
+                [ "#", "testlocal" ]
+
+            _ ->
+                [ "#" ]
          )
             ++ (case fullRoute.pageRoute of
                     Sale ->
@@ -76,4 +86,4 @@ refQueryParser =
 
 urlToFullRoute : Url -> FullRoute
 urlToFullRoute url =
-    Maybe.withDefault (FullRoute False NotFound Nothing) (Url.Parser.parse fullRouteParser url)
+    Maybe.withDefault (FullRoute None NotFound Nothing) (Url.Parser.parse fullRouteParser url)

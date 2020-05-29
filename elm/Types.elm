@@ -8,9 +8,10 @@ import CommonTypes exposing (..)
 import Eth.Sentry.Tx as TxSentry exposing (TxSentry)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (Address)
+import Http
 import Routing
 import Time
-import Url
+import Url exposing (Url)
 import UserNotice as UN exposing (UserNotice)
 import Wallet
 
@@ -26,7 +27,7 @@ type alias Flags =
 
 type alias Model =
     { key : Browser.Navigation.Key
-    , testMode : Bool
+    , testMode : TestMode
     , pageRoute : Routing.PageRoute
     , userAddress : Maybe Address -- `wallet` will store this but only after commPubkey has been generated
     , wallet : Wallet.State

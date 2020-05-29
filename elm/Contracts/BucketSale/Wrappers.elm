@@ -1,7 +1,7 @@
 module Contracts.BucketSale.Wrappers exposing (..)
 
 import BigInt exposing (BigInt)
-import CommonTypes
+import CommonTypes exposing (..)
 import Config
 import Contracts.BucketSale.Generated.BucketSale as BucketSaleBindings
 import Contracts.BucketSale.Generated.BucketSaleScripts as BucketSaleBindings
@@ -16,14 +16,14 @@ import Task
 import TokenValue exposing (TokenValue)
 
 
-getSaleStartTimestampCmd : Bool -> (Result Http.Error BigInt -> msg) -> Cmd msg
+getSaleStartTimestampCmd : TestMode -> (Result Http.Error BigInt -> msg) -> Cmd msg
 getSaleStartTimestampCmd testMode msgConstructor =
     BucketSaleBindings.startOfSale (Config.bucketSaleAddress testMode)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
         |> Task.attempt msgConstructor
 
 
-getTotalValueEnteredForBucket : Bool -> Int -> (Result Http.Error TokenValue -> msg) -> Cmd msg
+getTotalValueEnteredForBucket : TestMode -> Int -> (Result Http.Error TokenValue -> msg) -> Cmd msg
 getTotalValueEnteredForBucket testMode bucketId msgConstructor =
     BucketSaleBindings.buckets (Config.bucketSaleAddress testMode) (BigInt.fromInt bucketId)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
@@ -31,14 +31,14 @@ getTotalValueEnteredForBucket testMode bucketId msgConstructor =
         |> Task.attempt msgConstructor
 
 
-getUserBuyForBucket : Bool -> Address -> Int -> (Result Http.Error BucketSaleBindings.Buy -> msg) -> Cmd msg
+getUserBuyForBucket : TestMode -> Address -> Int -> (Result Http.Error BucketSaleBindings.Buy -> msg) -> Cmd msg
 getUserBuyForBucket testMode userAddress bucketId msgConstructor =
     BucketSaleBindings.buys (Config.bucketSaleAddress testMode) (BigInt.fromInt bucketId) userAddress
         |> Eth.call (EthHelpers.appHttpProvider testMode)
         |> Task.attempt msgConstructor
 
 
-getTotalExitedTokens : Bool -> (Result Http.Error TokenValue -> msg) -> Cmd msg
+getTotalExitedTokens : TestMode -> (Result Http.Error TokenValue -> msg) -> Cmd msg
 getTotalExitedTokens testMode msgConstructor =
     BucketSaleBindings.totalExitedTokens (Config.bucketSaleAddress testMode)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
@@ -46,7 +46,7 @@ getTotalExitedTokens testMode msgConstructor =
         |> Task.attempt msgConstructor
 
 
-getFryBalance : Bool -> Address -> (Result Http.Error TokenValue -> msg) -> Cmd msg
+getFryBalance : TestMode -> Address -> (Result Http.Error TokenValue -> msg) -> Cmd msg
 getFryBalance testMode userAddress msgConstructor =
     Token.balanceOf
         (Config.fryAddress testMode)
@@ -62,7 +62,7 @@ type alias ExitInfo =
     }
 
 
-getUserExitInfo : Bool -> Address -> (Result Http.Error (Maybe ExitInfo) -> msg) -> Cmd msg
+getUserExitInfo : TestMode -> Address -> (Result Http.Error (Maybe ExitInfo) -> msg) -> Cmd msg
 getUserExitInfo testMode userAddress msgConstructor =
     BucketSaleBindings.getExitInfo
         (Config.bucketSaleScriptsAddress testMode)
@@ -73,7 +73,7 @@ getUserExitInfo testMode userAddress msgConstructor =
         |> Task.attempt msgConstructor
 
 
-unlockDai : Bool -> Call Bool
+unlockDai : TestMode -> Call Bool
 unlockDai testMode =
     Token.approve
         (Config.daiContractAddress testMode)
@@ -81,7 +81,7 @@ unlockDai testMode =
         EthHelpers.maxUintValue
 
 
-enter : Address -> Int -> TokenValue -> Maybe Address -> Bool -> Call ()
+enter : Address -> Int -> TokenValue -> Maybe Address -> TestMode -> Call ()
 enter userAddress bucketId amount maybeReferrer testMode =
     BucketSaleBindings.enter
         (Config.bucketSaleAddress testMode)
@@ -91,7 +91,7 @@ enter userAddress bucketId amount maybeReferrer testMode =
         (maybeReferrer |> Maybe.withDefault EthHelpers.zeroAddress)
 
 
-exit : Address -> Int -> Bool -> Call ()
+exit : Address -> Int -> TestMode -> Call ()
 exit userAddress bucketId testMode =
     BucketSaleBindings.exit
         (Config.bucketSaleAddress testMode)
@@ -99,7 +99,7 @@ exit userAddress bucketId testMode =
         userAddress
 
 
-exitMany : Address -> List Int -> Bool -> Call ()
+exitMany : Address -> List Int -> TestMode -> Call ()
 exitMany userAddress bucketIds testMode =
     BucketSaleBindings.exitMany
         (Config.bucketSaleScriptsAddress testMode)

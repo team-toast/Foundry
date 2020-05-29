@@ -64,7 +64,7 @@ blue =
 
 
 lightBlue =
-    Element.rgb 0.8 0.8 1
+    Element.rgb255 25 169 214
 
 
 yellow =
@@ -622,7 +622,7 @@ lightBlueButton : DisplayProfile -> List (Attribute msg) -> List String -> msg -
 lightBlueButton dProfile attributes text msg =
     let
         color =
-            Element.rgb255 25 169 214
+            lightBlue
     in
     button dProfile
         attributes

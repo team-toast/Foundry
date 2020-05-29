@@ -10,13 +10,20 @@ import Eth.Types exposing (Address, HttpProvider, TxHash, WebsocketProvider)
 import Eth.Utils
 
 
-appHttpProvider : Bool -> HttpProvider
+appHttpProvider : TestMode -> HttpProvider
 appHttpProvider testMode =
-    if testMode then
-        Config.kovanHttpProviderUrl
+    case testMode of
+        None ->
+            Config.mainnetHttpProviderUrl
 
-    else
-        Config.mainnetHttpProviderUrl
+        TestMainnet ->
+            Config.mainnetHttpProviderUrl
+
+        TestKovan ->
+            Config.kovanHttpProviderUrl
+
+        TestGanache ->
+            Config.ganacheProviderUrl
 
 
 networkToHttpProvider : Eth.Net.NetworkId -> Maybe HttpProvider
@@ -27,6 +34,9 @@ networkToHttpProvider networkId =
 
         Eth.Net.Kovan ->
             Just Config.kovanHttpProviderUrl
+        
+        Eth.Net.Private 123456 ->
+            Just Config.ganacheProviderUrl
 
         _ ->
             Nothing

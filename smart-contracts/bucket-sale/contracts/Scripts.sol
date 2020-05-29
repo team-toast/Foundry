@@ -15,7 +15,9 @@ contract Scripts {
     function getExitInfo(BucketSale _bucketSale, address _buyer)
         public
         view
-        returns (uint[1201] memory) // Assume 1200 max buckets. Add 1 for the first element, which will be the total exitable tokens.
+        returns (uint[1201] memory)
+        // The structure here is that the first element contains the sum of exitable tokens and the rest are the indices of the
+        // buckets the buyer can exit from
     {
         // goal:
         // 1. return the total FRY the buyer can extract
@@ -28,14 +30,22 @@ contract Scripts {
         //      *add buy amount to the first array element
         //      *append the bucketId to the array
 
-        uint[1201] memory results;
+        uint[1201] memory results; // some gas to allocate this memory * 1201
         uint pointer = 0;
-        for (uint bucketId = 0; bucketId < _bucketSale.currentBucket(); bucketId = bucketId.add(1))
+
+        // mutlipy the loop gas by at least _bucketSale.currentBucket()
+        for (uint bucketId = 0; bucketId < Math.min(_bucketSale.currentBucket(), _bucketSale.bucketCount()); bucketId = bucketId.add(1))
         {
+            // mapping lookup cost
+            // does this differ for empty and non-empty values?
             (uint valueEntered, uint buyerTokensExited) = _bucketSale.buys(bucketId, _buyer);
 
             if (valueEntered > 0 && buyerTokensExited == 0) {
+                // some basic set of gas, all memory related.
+                // is there any sort of optimization which may play a role here?
+
                 // update the running total for this buyer
+                // this involves 2 mapping lookups again.
                 results[0] = results[0]
                     .add(_bucketSale.calculateExitableTokens(bucketId, _buyer));
 

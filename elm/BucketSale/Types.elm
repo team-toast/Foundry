@@ -1,4 +1,4 @@
-module BucketSale.Types exposing (AllowanceState(..), BucketData, BucketSale, BucketState(..), BucketView(..), Buy, EnterInfo, EnterUXModel, FetchedBucketInfo(..), Model, Msg(..), RelevantTimingInfo, TrackedTx, TxStatus(..), TxType(..), UpdateResult, ValidBucketInfo, buyFromBindingBuy, calcClaimableTokens, calcEffectivePricePerToken, currentBucketTimeLeft, getBucketEndTime, getBucketInfo, getCurrentBucket, getCurrentBucketId, getFocusedBucketId, getRelevantTimingInfo, justModelUpdate, makeBlankBucket, updateAllBuckets, updateBucketAt)
+module BucketSale.Types exposing (..)
 
 import BigInt exposing (BigInt)
 import ChainCmd exposing (ChainCmd)
@@ -12,6 +12,7 @@ import Eth.Types exposing (Address, Tx, TxHash, TxReceipt)
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
+import Json.Decode
 import List.Extra
 import Time
 import TokenValue exposing (TokenValue)
@@ -20,7 +21,7 @@ import Wallet
 
 type alias Model =
     { wallet : Wallet.State
-    , testMode : Bool
+    , testMode : TestMode
     , now : Time.Posix
     , timezone : Maybe Time.Zone
     , saleStartTime : Maybe Time.Posix
@@ -28,6 +29,7 @@ type alias Model =
     , totalTokensExited : Maybe TokenValue
     , userFryBalance : Maybe TokenValue
     , bucketView : BucketView
+    , jurisdictionCheckStatus : JurisdictionCheckStatus
     , enterUXModel : EnterUXModel
     , userExitInfo : Maybe BucketSaleWrappers.ExitInfo
     , trackedTxs : List TrackedTx
@@ -40,7 +42,7 @@ type alias EnterUXModel =
     { daiInput : String
     , daiAmount : Maybe (Result String TokenValue)
     , referrer : Maybe Address
-    , allowanceState : AllowanceState
+    , allowance : Maybe TokenValue
     }
 
 
@@ -50,6 +52,8 @@ type Msg
     | TimezoneGot Time.Zone
     | Refresh
     | UpdateNow Time.Posix
+    | VerifyJurisdictionClicked
+    | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)
     | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
     | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
@@ -67,9 +71,9 @@ type Msg
     | CancelClicked
     | EnterButtonClicked EnterInfo
     | ConfirmClicked EnterInfo
-    | TxSigned Int TxType (Result String TxHash)
-    | TxBroadcast Int TxType (Result String Tx)
-    | TxMined Int TxType (Result String TxReceipt)
+    | TxSigned Int ActionData (Result String TxHash)
+    | TxBroadcast Int ActionData (Result String Tx)
+    | TxMined Int ActionData (Result String TxReceipt)
 
 
 type alias UpdateResult =
@@ -89,6 +93,9 @@ justModelUpdate model =
     }
 
 
+
+
+
 type alias EnterInfo =
     { userInfo : UserInfo
     , bucketId : Int
@@ -99,16 +106,14 @@ type alias EnterInfo =
 
 type alias TrackedTx =
     { hash : Maybe TxHash
-
-    --, txType : TxType
-    , description : String
+    , action : ActionData
     , status : TxStatus
     }
 
 
-type TxType
+type ActionData
     = Unlock
-    | Enter
+    | Enter EnterInfo
     | Exit
 
 
@@ -119,12 +124,6 @@ type TxStatus
     | Mined
     | Rejected
     | Failed
-
-
-type AllowanceState
-    = Loading
-    | Loaded TokenValue
-    | UnlockMining
 
 
 type BucketView
@@ -192,7 +191,7 @@ updateBucketAt id func bucketSale =
         Nothing
 
 
-getBucketInfo : BucketSale -> Int -> Time.Posix -> Bool -> FetchedBucketInfo
+getBucketInfo : BucketSale -> Int -> Time.Posix -> TestMode -> FetchedBucketInfo
 getBucketInfo bucketSale bucketId now testMode =
     List.Extra.getAt bucketId bucketSale.buckets
         |> Maybe.map
@@ -214,14 +213,14 @@ getBucketInfo bucketSale bucketId now testMode =
         |> Maybe.withDefault InvalidBucket
 
 
-getBucketEndTime : BucketData -> Bool -> Time.Posix
+getBucketEndTime : BucketData -> TestMode -> Time.Posix
 getBucketEndTime bucket testMode =
     TimeHelpers.add
         bucket.startTime
         (Config.bucketSaleBucketInterval testMode)
 
 
-getFocusedBucketId : BucketSale -> BucketView -> Time.Posix -> Bool -> Int
+getFocusedBucketId : BucketSale -> BucketView -> Time.Posix -> TestMode -> Int
 getFocusedBucketId bucketSale bucketView now testMode =
     case bucketView of
         ViewCurrent ->
@@ -231,7 +230,7 @@ getFocusedBucketId bucketSale bucketView now testMode =
             id
 
 
-getCurrentBucketId : BucketSale -> Time.Posix -> Bool -> Int
+getCurrentBucketId : BucketSale -> Time.Posix -> TestMode -> Int
 getCurrentBucketId bucketSale now testMode =
     (TimeHelpers.sub now bucketSale.startTime
         |> TimeHelpers.posixToSeconds
@@ -241,7 +240,7 @@ getCurrentBucketId bucketSale now testMode =
            )
 
 
-getCurrentBucket : BucketSale -> Time.Posix -> Bool -> FetchedBucketInfo
+getCurrentBucket : BucketSale -> Time.Posix -> TestMode -> FetchedBucketInfo
 getCurrentBucket bucketSale now testMode =
     getBucketInfo
         bucketSale
@@ -250,7 +249,7 @@ getCurrentBucket bucketSale now testMode =
         testMode
 
 
-currentBucketTimeLeft : BucketSale -> Time.Posix -> Bool -> Maybe Time.Posix
+currentBucketTimeLeft : BucketSale -> Time.Posix -> TestMode -> Maybe Time.Posix
 currentBucketTimeLeft bucketSale now testMode =
     case getCurrentBucket bucketSale now testMode of
         InvalidBucket ->
@@ -263,7 +262,7 @@ currentBucketTimeLeft bucketSale now testMode =
                     now
 
 
-makeBlankBucket : Bool -> Time.Posix -> Int -> BucketData
+makeBlankBucket : TestMode -> Time.Posix -> Int -> BucketData
 makeBlankBucket testMode bucketSaleStartTime bucketId =
     BucketData
         (TimeHelpers.posixToSeconds bucketSaleStartTime
@@ -283,7 +282,7 @@ buyFromBindingBuy bindingBuy =
         (BigInt.compare bindingBuy.buyerTokensExited (BigInt.fromInt 0) /= EQ)
 
 
-calcClaimableTokens : TokenValue -> TokenValue -> Bool -> TokenValue
+calcClaimableTokens : TokenValue -> TokenValue -> TestMode -> TokenValue
 calcClaimableTokens totalValueEntered daiIn testMode =
     if TokenValue.isZero daiIn then
         TokenValue.zero
@@ -302,7 +301,7 @@ calcClaimableTokens totalValueEntered daiIn testMode =
             claimableRatio
 
 
-calcEffectivePricePerToken : TokenValue -> Bool -> TokenValue
+calcEffectivePricePerToken : TokenValue -> TestMode -> TokenValue
 calcEffectivePricePerToken totalValueEntered testMode =
     TokenValue.toFloatWithWarning totalValueEntered
         / (TokenValue.toFloatWithWarning <| Config.bucketSaleTokensPerBucket testMode)
@@ -315,7 +314,7 @@ type alias RelevantTimingInfo =
     }
 
 
-getRelevantTimingInfo : ValidBucketInfo -> Time.Posix -> Bool -> RelevantTimingInfo
+getRelevantTimingInfo : ValidBucketInfo -> Time.Posix -> TestMode -> RelevantTimingInfo
 getRelevantTimingInfo bucketInfo now testMode =
     RelevantTimingInfo
         bucketInfo.state
@@ -338,3 +337,25 @@ getRelevantTimingInfo bucketInfo now testMode =
                     bucketInfo.bucketData.startTime
                     now
         )
+
+
+type alias LocationInfo =
+    { countryInfo : CountryInfo
+    , distanceKm : Float
+    }
+
+
+type CountryInfo
+    = Matching String
+    | NotMatching
+
+
+type Jurisdiction
+    = ChinaOrUSA
+    | JurisdictionsWeArentIntimidatedIntoExcluding
+
+type JurisdictionCheckStatus
+    = WaitingForClick
+    | Checking
+    | Checked Jurisdiction
+    | Error String

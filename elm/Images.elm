@@ -29,6 +29,7 @@ none =
 image =
     JustImage
 
+
 daiSymbol : Image
 daiSymbol =
     JustImage
@@ -61,7 +62,12 @@ qmarkCircle =
         }
 
 
-
+fryIcon : Image
+fryIcon =
+    JustImage
+        { src = "img/fry-icon.svg"
+        , description = "Foundry"
+        }
 
 
 loadingArrows : Image
@@ -96,7 +102,6 @@ flame =
         }
 
 
-
 navigateLeft : Image
 navigateLeft =
     JustImage
@@ -120,9 +125,42 @@ searchIcon =
         , description = "search"
         }
 
+
 foundrySchematic : Image
 foundrySchematic =
     JustImage
-        {src = "img/foundry-schematic.png"
+        { src = "img/foundry-schematic.png"
         , description = "foundry schematic"
+        }
+
+
+twitter : Image
+twitter =
+    JustImage
+        { src = "img/social-media/twitter.svg"
+        , description = "twitter"
+        }
+
+
+github : Image
+github =
+    JustImage
+        { src = "img/social-media/github.svg"
+        , description = "github"
+        }
+
+
+telegram : Image
+telegram =
+    JustImage
+        { src = "img/social-media/telegram.svg"
+        , description = "telegram"
+        }
+
+
+keybase : Image
+keybase =
+    JustImage
+        { src = "img/social-media/keybase.svg"
+        , description = "keybase"
         }

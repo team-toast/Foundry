@@ -17,14 +17,13 @@ module Contracts.BucketSale.Generated.BucketSale exposing
     , exit
     , exitedDecoder
     , exitedEvent
-    , owner
     , referredTotal
     , referrerReferralRewardPerc
     , startOfSale
-    , timestamp
     , tokenOnSale
     , tokenSoldFor
     , totalExitedTokens
+    , treasury
     )
 
 import Abi.Decode as AbiDecode exposing (abiDecode, andMap, data, toElmDecoder, topic)
@@ -208,21 +207,6 @@ exit contractAddress bucketId buyer =
     }
 
 
-{-| "owner()" function
--}
-owner : Address -> Call Address
-owner contractAddress =
-    { to = Just contractAddress
-    , from = Nothing
-    , gas = Nothing
-    , gasPrice = Nothing
-    , value = Nothing
-    , data = Just <| AbiEncode.functionCall "owner()" []
-    , nonce = Nothing
-    , decoder = toElmDecoder AbiDecode.address
-    }
-
-
 {-| "referredTotal(address)" function
 -}
 referredTotal : Address -> Address -> Call BigInt
@@ -263,21 +247,6 @@ startOfSale contractAddress =
     , gasPrice = Nothing
     , value = Nothing
     , data = Just <| AbiEncode.functionCall "startOfSale()" []
-    , nonce = Nothing
-    , decoder = toElmDecoder AbiDecode.uint
-    }
-
-
-{-| "timestamp()" function
--}
-timestamp : Address -> Call BigInt
-timestamp contractAddress =
-    { to = Just contractAddress
-    , from = Nothing
-    , gas = Nothing
-    , gasPrice = Nothing
-    , value = Nothing
-    , data = Just <| AbiEncode.functionCall "timestamp()" []
     , nonce = Nothing
     , decoder = toElmDecoder AbiDecode.uint
     }
@@ -325,6 +294,21 @@ totalExitedTokens contractAddress =
     , data = Just <| AbiEncode.functionCall "totalExitedTokens()" []
     , nonce = Nothing
     , decoder = toElmDecoder AbiDecode.uint
+    }
+
+
+{-| "treasury()" function
+-}
+treasury : Address -> Call Address
+treasury contractAddress =
+    { to = Just contractAddress
+    , from = Nothing
+    , gas = Nothing
+    , gasPrice = Nothing
+    , value = Nothing
+    , data = Just <| AbiEncode.functionCall "treasury()" []
+    , nonce = Nothing
+    , decoder = toElmDecoder AbiDecode.address
     }
 
 

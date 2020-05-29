@@ -81,6 +81,17 @@ noWeb3Provider =
     }
 
 
+noWeb3Account : UserNotice msg
+noWeb3Account =
+    { label = "noWeb3Account"
+    , noticeType = Caution
+    , mainParagraphs =
+        [ [ Element.text "I can't detect a web3 account. Your wallet may be locked." ]
+        ]
+    , align = BottomRight
+    }
+
+
 cantConnectNoWeb3 : UserNotice msg
 cantConnectNoWeb3 =
     { label = "cantConnectNoWeb3"

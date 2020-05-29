@@ -74,6 +74,8 @@ root model =
                         )
                         model.wallet
                         model.enterUXModel
+                        model.jurisdictionCheckStatus
+                        model.trackedTxs
                         model.showReferralModal
                         model.now
                         model.testMode
@@ -109,7 +111,7 @@ closedBucketsPane : Model -> Element Msg
 closedBucketsPane model =
     Element.column
         (commonPaneAttributes
-            ++ [ Element.width <| Element.px 450
+            ++ [ Element.width <| Element.fillPortion 1
                , Element.paddingXY 32 25
                ]
         )
@@ -130,14 +132,14 @@ closedBucketsPane model =
         ]
 
 
-focusedBucketPane : BucketSale -> Int -> Wallet.State -> EnterUXModel -> Bool -> Time.Posix -> Bool -> Element Msg
-focusedBucketPane bucketSale bucketId wallet enterUXModel referralModalActive now testMode =
+focusedBucketPane : BucketSale -> Int -> Wallet.State -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
+focusedBucketPane bucketSale bucketId wallet enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
-            ++ [ Element.width <| Element.px 780
+            ++ [ Element.width <| Element.fillPortion 2
                , Element.paddingXY 35 31
                , Element.spacing 7
-               , Element.height <| Element.px 800
+               , Element.height Element.shrink
                ]
         )
         ([ focusedBucketHeaderEl
@@ -161,7 +163,7 @@ focusedBucketPane bucketSale bucketId wallet enterUXModel referralModalActive no
                         , focusedBucketTimeLeftEl
                             (getRelevantTimingInfo bucketInfo now testMode)
                             testMode
-                        , enterBidUX wallet enterUXModel bucketInfo testMode
+                        , enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
                         ]
                )
         )
@@ -189,7 +191,7 @@ futureBucketsPane model bucketSale =
         ValidBucket nextBucketInfo ->
             Element.column
                 (commonPaneAttributes
-                    ++ [ Element.width <| Element.px 450
+                    ++ [ Element.width <| Element.fillPortion 1
                        , Element.paddingXY 32 25
                        ]
                 )
@@ -309,7 +311,7 @@ totalExitedBlock maybeTotalExited =
                 ]
 
 
-focusedBucketHeaderEl : Int -> Maybe UserInfo -> Maybe Address -> Bool -> Bool -> Element Msg
+focusedBucketHeaderEl : Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
 focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
         [ Element.spacing 8
@@ -338,7 +340,7 @@ focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive t
         ]
 
 
-maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> Bool -> Element Msg
+maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
 maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive testMode =
     case maybeUserInfo of
         Nothing ->
@@ -379,8 +381,8 @@ maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive t
 
 focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
 focusedBucketSubheaderEl bucketInfo =
-    case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
-        ( Just totalValueEntered, Just userBuy ) ->
+    case bucketInfo.bucketData.totalValueEntered of
+        Just totalValueEntered ->
             Element.paragraph
                 [ Element.Font.color grayTextColor
                 , Element.Font.size 15
@@ -416,7 +418,7 @@ prevBucketArrow currentBucketId =
         (Element.text "<")
 
 
-focusedBucketTimeLeftEl : RelevantTimingInfo -> Bool -> Element Msg
+focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> Element Msg
 focusedBucketTimeLeftEl timingInfo testMode =
     Element.row
         [ Element.width Element.fill
@@ -456,22 +458,48 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
-enterBidUX wallet enterUXModel bucketInfo testMode =
+enterBidUX : Wallet.State -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
+enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
+    let
+        miningEnters =
+            trackedTxs
+                |> List.filterMap
+                    (\trackedTx ->
+                        case ( trackedTx.action, trackedTx.status ) of
+                            ( Enter enterInfo, Mining ) ->
+                                Just enterInfo
+
+                            _ ->
+                                Nothing
+                    )
+
+        unlockMining =
+            trackedTxs
+                |> List.any
+                    (\trackedTx ->
+                        case trackedTx.action of
+                            Unlock ->
+                                trackedTx.status == Mining
+
+                            _ ->
+                                False
+                    )
+    in
     Element.column
         [ Element.width Element.fill
         , Element.spacing 20
         ]
         [ bidInputBlock enterUXModel bucketInfo testMode
-        , bidImpactBlock enterUXModel bucketInfo testMode
+        , bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode
         , otherBidsImpactMsg
-        , actionButton wallet enterUXModel bucketInfo testMode
+        , actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode
         ]
 
 
-bidInputBlock : EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
+bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> Element Msg
 bidInputBlock enterUXModel bucketInfo testMode =
     centerpaneBlockContainer ActiveStyle
+        []
         [ emphasizedText ActiveStyle "I want to bid:"
         , Element.row
             [ Element.Background.color <| Element.rgba 1 1 1 0.08
@@ -522,7 +550,7 @@ bidInputBlock enterUXModel bucketInfo testMode =
         ]
 
 
-pricePerTokenMsg : TokenValue -> Maybe TokenValue -> Bool -> Element Msg
+pricePerTokenMsg : TokenValue -> Maybe TokenValue -> TestMode -> Element Msg
 pricePerTokenMsg totalValueEntered maybeDaiAmount testMode =
     Element.paragraph
         [ Element.Font.size 14
@@ -558,80 +586,176 @@ pricePerTokenMsg totalValueEntered maybeDaiAmount testMode =
         )
 
 
-bidImpactBlock : EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
-bidImpactBlock enterUXModel bucketInfo testMode =
-    centerpaneBlockContainer PassiveStyle <|
-        [ emphasizedText PassiveStyle "Your current bid standing:" ]
-            ++ (case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
-                    ( Just totalValueEntered, Just userBuy ) ->
-                        let
-                            existingBidAmount =
-                                userBuy.valueEntered
-
-                            extraBidAmount =
-                                enterUXModel.daiAmount
-                                    |> Maybe.map Result.toMaybe
-                                    |> Maybe.Extra.join
-                                    |> Maybe.withDefault TokenValue.zero
-
-                            totalBidAmount =
-                                TokenValue.add
-                                    extraBidAmount
-                                    existingBidAmount
-                        in
-                        [ bidImpactParagraphEl totalValueEntered extraBidAmount totalBidAmount testMode
-                        , bidBarEl totalValueEntered existingBidAmount extraBidAmount testMode
-                        ]
-
-                    _ ->
-                        [ loadingElement ]
-               )
-
-
-bidImpactParagraphEl : TokenValue -> TokenValue -> TokenValue -> Bool -> Element Msg
-bidImpactParagraphEl totalValueEntered extraBidAmount totalBidAmount testMode =
-    Element.paragraph
-        [ Element.width Element.fill
-        , Element.Font.color grayTextColor
-        ]
+bidImpactBlock : EnterUXModel -> ValidBucketInfo -> Wallet.State -> List EnterInfo -> TestMode -> Element Msg
+bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode =
+    centerpaneBlockContainer PassiveStyle
+        [ Element.height <| Element.px 310 ]
     <|
-        if TokenValue.isZero totalBidAmount then
-            [ Element.text "You haven't entered any bids into this bucket." ]
-
-        else
-            (if TokenValue.isZero extraBidAmount then
-                [ Element.text "If no other bids are made before this bucket ends, you will be able to claim " ]
-
-             else
-                [ Element.text <|
-                    "After entering this "
-                        ++ TokenValue.toConciseString extraBidAmount
-                        ++ " DAI bid, if no other bids are made before this bucket ends, you will be able to claim "
+        case Wallet.userInfo wallet of
+            Nothing ->
+                [ Element.el
+                    [ Element.Font.italic
+                    , Element.Font.color grayTextColor
+                    , Element.centerX
+                    , Element.centerY
+                    ]
+                  <|
+                    Element.text "Wallet not connected."
                 ]
-            )
-                ++ [ emphasizedText PassiveStyle <|
+
+            Just _ ->
+                [ emphasizedText PassiveStyle "Your current bid standing:" ]
+                    ++ (case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
+                            ( Just totalValueEntered, Just userBuy ) ->
+                                let
+                                    existingUserBidAmount =
+                                        userBuy.valueEntered
+
+                                    miningUserBidAmount =
+                                        miningEnters
+                                            |> List.map .amount
+                                            |> List.foldl TokenValue.add TokenValue.zero
+
+                                    extraUserBidAmount =
+                                        enterUXModel.daiAmount
+                                            |> Maybe.map Result.toMaybe
+                                            |> Maybe.Extra.join
+                                            |> Maybe.withDefault TokenValue.zero
+                                in
+                                [ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
+                                , bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
+                                ]
+
+                            _ ->
+                                [ loadingElement ]
+                       )
+
+
+bidImpactParagraphEl : TokenValue -> ( TokenValue, TokenValue, TokenValue ) -> TestMode -> Element Msg
+bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode =
+    let
+        totalUserBidAmount =
+            existingUserBidAmount
+                |> TokenValue.add miningUserBidAmount
+                |> TokenValue.add extraUserBidAmount
+
+        para =
+            Element.paragraph
+                [ Element.width Element.fill
+                , Element.Font.color grayTextColor
+                ]
+
+        existingUserBidsPara =
+            para <|
+                if TokenValue.isZero existingUserBidAmount then
+                    [ Element.text "You haven't entered any bids into this bucket." ]
+
+                else
+                    [ Element.text "You have entered "
+                    , emphasizedText PassiveStyle <|
+                        TokenValue.toConciseString existingUserBidAmount
+                            ++ " DAI"
+                    , Element.text " into this bucket."
+                    ]
+
+        assumptionsBlock =
+            let
+                assumptionParasList =
+                    [ if TokenValue.isZero miningUserBidAmount then
+                        Nothing
+
+                      else
+                        Just <|
+                            para <|
+                                [ Element.text "your submitted bid of "
+                                , emphasizedText PassiveStyle <|
+                                    TokenValue.toConciseString miningUserBidAmount
+                                        ++ " DAI"
+                                , Element.text " is mined before this bucket ends"
+                                ]
+                    , if TokenValue.isZero extraUserBidAmount then
+                        Nothing
+
+                      else
+                        Just <|
+                            para <|
+                                [ Element.text "you submit a further bid of "
+                                , emphasizedText PassiveStyle <|
+                                    TokenValue.toConciseString extraUserBidAmount
+                                        ++ " DAI"
+                                ]
+                    ]
+                        |> Maybe.Extra.values
+            in
+            if assumptionParasList == [] then
+                Element.none
+
+            else
+                Element.column
+                    [ Element.width Element.fill
+                    , Element.spacing 5
+                    ]
+                    ([ para <|
+                        [ Element.text "Assuming:" ]
+                     ]
+                        ++ (assumptionParasList
+                                |> List.map
+                                    (\p ->
+                                        Element.row
+                                            [ Element.width Element.fill
+                                            , Element.spacing 10
+                                            ]
+                                            [ Element.text EH.bulletPointString
+                                            , p
+                                            ]
+                                    )
+                           )
+                    )
+
+        claimablePara =
+            if TokenValue.isZero totalUserBidAmount then
+                Element.none
+
+            else
+                para <|
+                    [ Element.text "If no one else bids on this bucket before it ends, you will be able to claim "
+                    , emphasizedText PassiveStyle <|
                         (calcClaimableTokens
-                            (TokenValue.add totalValueEntered extraBidAmount)
-                            totalBidAmount
+                            (totalValueEntered
+                                |> TokenValue.add miningUserBidAmount
+                                |> TokenValue.add extraUserBidAmount
+                            )
+                            totalUserBidAmount
                             testMode
                             |> TokenValue.toConciseString
                         )
                             ++ " FRY"
-                   , Element.text <|
+                    , Element.text <|
                         " out of "
                             ++ TokenValue.toConciseString (Config.bucketSaleTokensPerBucket testMode)
                             ++ " FRY available."
-                   ]
-
-
-bidBarEl : TokenValue -> TokenValue -> TokenValue -> Bool -> Element Msg
-bidBarEl totalValueEntered existingBidAmount extraBidAmount testMode =
-    let
-        totalValueEnteredAfterBid =
-            totalValueEntered
-                |> TokenValue.add extraBidAmount
+                    ]
     in
-    if TokenValue.isZero totalValueEnteredAfterBid then
+    Element.column
+        [ Element.width Element.fill
+        , Element.spacing 10
+        ]
+    <|
+        [ existingUserBidsPara
+        , assumptionsBlock
+        , claimablePara
+        ]
+
+
+bidBarEl : TokenValue -> ( TokenValue, TokenValue, TokenValue ) -> TestMode -> Element Msg
+bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode =
+    let
+        totalValueEnteredAfterBidAndMining =
+            totalValueEntered
+                |> TokenValue.add miningUserBidAmount
+                |> TokenValue.add extraUserBidAmount
+    in
+    if TokenValue.isZero totalValueEnteredAfterBidAndMining then
         Element.paragraph
             [ Element.width Element.fill
             , Element.Font.color grayTextColor
@@ -639,6 +763,16 @@ bidBarEl totalValueEntered existingBidAmount extraBidAmount testMode =
             [ Element.text "No one has entered any bids into this bucket yet." ]
 
     else
+        let
+            existingUserBidColor =
+                deepBlue
+
+            miningUserBidColor =
+                purple
+
+            extraUserBidColor =
+                lightBlue
+        in
         Element.column
             [ Element.width Element.fill
             , Element.spacing 10
@@ -652,7 +786,10 @@ bidBarEl totalValueEntered existingBidAmount extraBidAmount testMode =
                     ]
                     [ Element.el [ Element.Font.color grayTextColor ] <| Element.text "Your bid"
                     , Element.row []
-                        (([ ( existingBidAmount, deepBlue ), ( extraBidAmount, lightBlue ) ]
+                        (([ ( existingUserBidAmount, existingUserBidColor )
+                          , ( miningUserBidAmount, miningUserBidColor )
+                          , ( extraUserBidAmount, extraUserBidColor )
+                          ]
                             |> List.map
                                 (\( t, color ) ->
                                     if TokenValue.isZero t then
@@ -682,23 +819,32 @@ bidBarEl totalValueEntered existingBidAmount extraBidAmount testMode =
                         , Element.alignRight
                         ]
                       <|
-                        Element.text "Total bids in bucket"
+                        Element.text <|
+                            if totalValueEntered /= totalValueEnteredAfterBidAndMining then
+                                "Resulting total bids in bucket"
+
+                            else
+                                "Total bids in bucket"
                     , Element.el
                         [ Element.alignRight ]
                         (Element.text <|
-                            TokenValue.toConciseString totalValueEnteredAfterBid
+                            TokenValue.toConciseString totalValueEnteredAfterBidAndMining
                                 ++ " DAI"
                         )
                     ]
                 ]
             , progressBarElement (Element.rgba 0 0 0 0.1)
-                [ ( TokenValue.toFloatWithWarning existingBidAmount
-                        / TokenValue.toFloatWithWarning totalValueEnteredAfterBid
-                  , deepBlue
+                [ ( TokenValue.toFloatWithWarning existingUserBidAmount
+                        / TokenValue.toFloatWithWarning totalValueEnteredAfterBidAndMining
+                  , existingUserBidColor
                   )
-                , ( TokenValue.toFloatWithWarning extraBidAmount
-                        / TokenValue.toFloatWithWarning totalValueEnteredAfterBid
-                  , lightBlue
+                , ( TokenValue.toFloatWithWarning miningUserBidAmount
+                        / TokenValue.toFloatWithWarning totalValueEnteredAfterBidAndMining
+                  , miningUserBidColor
+                  )
+                , ( TokenValue.toFloatWithWarning extraUserBidAmount
+                        / TokenValue.toFloatWithWarning totalValueEnteredAfterBidAndMining
+                  , extraUserBidColor
                   )
                 ]
             ]
@@ -707,82 +853,117 @@ bidBarEl totalValueEntered existingBidAmount extraBidAmount testMode =
 otherBidsImpactMsg : Element Msg
 otherBidsImpactMsg =
     centerpaneBlockContainer PassiveStyle
-        [ emphasizedText PassiveStyle "If other bids ARE made:"
+        []
+        [ emphasizedText PassiveStyle "If other bids are made:"
         , Element.paragraph
             [ Element.width Element.fill
             , Element.Font.color grayTextColor
             ]
-            [ Element.text "The price per token will increase further, and the amount of FRY you can claim from the bucket will decrease proportionally. (For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve.)" ]
+            [ Element.text "The price per token will increase further, and the amount of FRY you can claim from the bucket will decrease proportionally. For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve." ]
         ]
 
 
-actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> Element Msg
-actionButton wallet enterUXModel bucketInfo testMode =
-    case Wallet.userInfo wallet of
-        Nothing ->
-            connectToWeb3Button wallet
+actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
+actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
+    let
+        msgInstead text color =
+            Element.el
+                [ Element.centerX
+                , Element.Font.size 22
+                , Element.Font.italic
+                , Element.Font.color color
+                ]
+                (Element.text text)
+    in
+    case jurisdictionCheckStatus of
+        WaitingForClick ->
+            EH.redButton
+                Desktop
+                [ Element.width Element.fill ]
+                [ "Verify Jurisdiction" ]
+                VerifyJurisdictionClicked
 
-        Just userInfo ->
-            let
-                unlockDaiButton =
-                    EH.redButton
-                        Desktop
-                        [ Element.width Element.fill ]
-                        [ "Unlock Dai" ]
-                        UnlockDaiButtonClicked
+        Checking ->
+            EH.disabledButton
+                Desktop
+                [ Element.width Element.fill ]
+                "Verifying Jurisdiction..."
+                Nothing
 
-                continueButton daiAmount =
-                    EH.redButton
-                        Desktop
-                        [ Element.width Element.fill ]
-                        [ "Continue" ]
-                        (EnterButtonClicked <|
-                            EnterInfo
-                                userInfo
-                                bucketInfo.id
-                                daiAmount
-                                enterUXModel.referrer
-                        )
+        Error errStr ->
+            Element.column
+                [ Element.spacing 10
+                , Element.width Element.fill
+                ]
+                [ msgInstead "Error verifying jurisdiction." red
+                , Element.paragraph
+                    [ Element.Font.color grayTextColor ]
+                    [ Element.text errStr ]
+                , Element.paragraph
+                    [ Element.Font.color grayTextColor ]
+                    [ Element.text "There may be more info in the console." ]
+                ]
 
-                disabledContinueButton =
-                    EH.disabledButton
-                        Desktop
-                        [ Element.width Element.fill ]
-                        "Continue"
-                        Nothing
+        Checked ChinaOrUSA ->
+            msgInstead "Sorry, US and Chinese citizens are excluded." red
 
-                inProgressMsg text =
-                    Element.el
-                        [ Element.centerX
-                        , Element.Font.size 22
-                        , Element.Font.italic
-                        , Element.Font.color grayTextColor
-                        ]
-                        (Element.text text)
-            in
-            if enterUXModel.allowanceState == Loaded TokenValue.zero then
-                unlockDaiButton
+        Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
+            case Wallet.userInfo wallet of
+                Nothing ->
+                    connectToWeb3Button wallet
 
-            else
-                case ( enterUXModel.daiAmount, enterUXModel.allowanceState ) of
-                    ( _, Loading ) ->
-                        inProgressMsg "Fetching Dai unlock status..."
+                Just userInfo ->
+                    let
+                        unlockDaiButton =
+                            EH.redButton
+                                Desktop
+                                [ Element.width Element.fill ]
+                                [ "Unlock Dai" ]
+                                UnlockDaiButtonClicked
 
-                    ( _, UnlockMining ) ->
-                        inProgressMsg "Mining Dai unlock..."
+                        continueButton daiAmount =
+                            EH.redButton
+                                Desktop
+                                [ Element.width Element.fill ]
+                                [ "Continue" ]
+                                (EnterButtonClicked <|
+                                    EnterInfo
+                                        userInfo
+                                        bucketInfo.id
+                                        daiAmount
+                                        enterUXModel.referrer
+                                )
 
-                    ( Nothing, _ ) ->
-                        disabledContinueButton
+                        disabledContinueButton =
+                            EH.disabledButton
+                                Desktop
+                                [ Element.width Element.fill ]
+                                "Continue"
+                                Nothing
+                    in
+                    case enterUXModel.allowance of
+                        Nothing ->
+                            msgInstead "Fetching Dai unlock status..." grayTextColor
 
-                    ( Just (Err errStr), _ ) ->
-                        disabledContinueButton
+                        Just allowance ->
+                            if enterUXModel.allowance == Just TokenValue.zero then
+                                unlockDaiButton
 
-                    ( Just (Ok daiAmount), Loaded allowance ) ->
-                        if TokenValue.compare daiAmount allowance /= GT then
-                            continueButton daiAmount
+                            else if unlockMining then
+                                msgInstead "Mining Dai unlock..." grayTextColor
 
-                        else
-                            unlockDaiButton
+                            else
+                                -- Allowance is loaded and nonzero, and we are not mining an Unlock
+                                case enterUXModel.daiAmount of
+                                    Just (Ok daiAmount) ->
+                                        if TokenValue.compare daiAmount allowance /= GT then
+                                            continueButton daiAmount
+
+                                        else
+                                            unlockDaiButton
+
+                                    _ ->
+                                        disabledContinueButton
 
 
 noBucketsLeftBlock : Element Msg
@@ -790,7 +971,7 @@ noBucketsLeftBlock =
     Element.text "There are no more future blocks."
 
 
-maybeBucketsLeftBlock : BucketSale -> Time.Posix -> Bool -> Element Msg
+maybeBucketsLeftBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
 maybeBucketsLeftBlock bucketSale now testMode =
     let
         currentBucketId =
@@ -817,7 +998,7 @@ maybeBucketsLeftBlock bucketSale now testMode =
         ]
 
 
-maybeFryInFutureBucketsBlock : BucketSale -> Time.Posix -> Bool -> Element Msg
+maybeFryInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
 maybeFryInFutureBucketsBlock bucketSale now testMode =
     let
         currentBucketId =
@@ -952,8 +1133,26 @@ trackedTxRow trackedTx =
             , Element.clip
             ]
           <|
-            Element.text trackedTx.description
+            Element.text <|
+                makeDescription trackedTx.action
         ]
+
+
+makeDescription : ActionData -> String
+makeDescription action =
+    case action of
+        Unlock ->
+            "Unlock DAI"
+
+        Enter enterInfo ->
+            "Bid on bucket "
+                ++ String.fromInt enterInfo.bucketId
+                ++ " with "
+                ++ TokenValue.toConciseString enterInfo.amount
+                ++ " DAI"
+
+        Exit ->
+            "Claim FRY"
 
 
 viewModals : Model -> List (Element Msg)
@@ -1073,7 +1272,7 @@ referralBonusIndicator hasReferral focusedStyle =
         )
 
 
-referralModal : UserInfo -> Maybe Address -> Bool -> Element Msg
+referralModal : UserInfo -> Maybe Address -> TestMode -> Element Msg
 referralModal userInfo maybeReferrer testMode =
     let
         highlightedText text =
@@ -1196,7 +1395,7 @@ referralModal userInfo maybeReferrer testMode =
         ]
 
 
-referralLinkElement : Address -> Bool -> Element Msg
+referralLinkElement : Address -> TestMode -> Element Msg
 referralLinkElement referrerAddress testMode =
     Element.el
         [ Element.width Element.fill
@@ -1294,8 +1493,8 @@ type CommonBlockStyle
     | PassiveStyle
 
 
-centerpaneBlockContainer : CommonBlockStyle -> List (Element Msg) -> Element Msg
-centerpaneBlockContainer styleType =
+centerpaneBlockContainer : CommonBlockStyle -> List (Attribute Msg) -> List (Element Msg) -> Element Msg
+centerpaneBlockContainer styleType attributes =
     Element.column
         ([ Element.width Element.fill
          , Element.Border.rounded 4
@@ -1303,6 +1502,7 @@ centerpaneBlockContainer styleType =
          , Element.spacing 13
          , Element.Font.size 16
          ]
+            ++ attributes
             ++ (case styleType of
                     ActiveStyle ->
                         [ Element.Background.color deepBlue
@@ -1405,6 +1605,11 @@ lightBlue =
     Element.rgb255 25 169 214
 
 
+purple : Element.Color
+purple =
+    Element.rgb255 212 0 255
+
+
 deepBlueWithAlpha : Float -> Element.Color
 deepBlueWithAlpha a =
     deepBlue
@@ -1447,6 +1652,7 @@ connectToWeb3Button wallet =
             , Element.Font.size 20
             , Element.Font.center
             , Element.padding 17
+            , Element.centerX
             ]
     in
     case wallet of
@@ -1469,7 +1675,7 @@ connectToWeb3Button wallet =
                 (commonTextStyles
                     ++ [ Element.Font.color EH.softRed ]
                 )
-                (Element.text "Wrong network. Switch to ETH Mainnet.")
+                (Element.text "Wrong network.")
 
         Wallet.Active _ ->
             Element.el
