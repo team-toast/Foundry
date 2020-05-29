@@ -12,6 +12,7 @@ struct Proposal
 {
     uint id;
 
+    address bondReturnAddress;
     uint bondAmount;
     uint votesInFavour;
     uint votesOpposed;
@@ -28,10 +29,8 @@ struct ProposalVote
 {
     uint proposalId;
     address voter;
-    uint votes;
-    bool inFavour;
-    bool opposed;
-    bool burn;
+    uint votingPower;
+    VoteType vote;
 }
 
 struct DepositRecord
@@ -44,34 +43,55 @@ struct DepositRecord
     uint delegatedBalance;
     uint votingPower;
 
-    uint lastInterestClaimDate;
+    uint lastRewardClaimDate;
     
     uint withdrawalRequestDate;
 }
+
+enum VoteType { Support, Oppose, OpposeAndBurn }
 
 interface ILiquidDemocracy // ironic name
 {
     // deposits and delegates, _treeDepth indicates the treedepth any representative must be less than to delegate to
     function Deposit(uint _tokens, uint _treeDepth, address _representative) external;
+    event LogDeposit(address indexed _depositor, uint _tokens, uint _treeDepth);
 
     // delegates tokens already deposited to a new represetative
     function Delegate(address _representative) external;
+    event LogDelegation(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative);    
+
+    // change you tree depth if no one on a higher depth is not already delegating to you 
+    // and you aren't delegating to anyone on a lower depth
+    function ChangeTreeDepth(uint _newDepth) external;
+    event LogTreeDepthChanged(address indexed _depositor, uint _tokens, uint _treeDepth);
+
+    // claim spendable governance rewards based on when last you pulled rewards 
+    function ClaimReward(address _depositAddress) external;
+    event LogRewardClaimed(address _depositAddress, uint _rewardTokens);
 
     // dedelgate that number of tokens and start the withdrawal times
     function ScheduleWithdrawal(uint _tokens) external;
+    event LogWithdrawalRequested(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative);
 
     // once the withdrawal timer has cooled down, execute the withdrawal
     function ExecuteWithdrawal() external;
+    event LogWithdrawalExecuted(address indexed _depositor, uint _tokens);
 
     // propose an action for the governance contract to take, sending a predetermined amount of tokens to the treasury
     function Propose(uint _proposalId, bool _isDelegateCall, address _to, uint _wei, bytes calldata _data) external;
+    event LogProposalCreated(uint _proposalId, bool _isDelegateCall, address _to, uint _wei);
 
     // vote for a proposal if you have deposited tokens and not delegated them
     function Vote(uint _proposalId, bool supportOrOppose) external;
+    event LogVoted(address indexed _voter, uint _votingPower, uint _proposalId, VoteType _voteType);
 
     // execute a successful proposal
     function Execute(uint _proposalId) external;
+    event LogProposalExecuted(uint _proposalId, bool _wasDelegateCall, bool _wasSuccessful);
+    event LogBondReturned(uint _proposalId, address _bondReturnAddress, uint _tokens);
 
     // remove an unsuccessful proposal
     function RemoveProposal(uint _proposalId) external;
+    event LogProposalRemoved(uint _proposalId);
+    event LogBondBurned(uint _proposalId, address _bondReturnAddress, uint _tokens);
 }
