@@ -27,7 +27,7 @@ daiContractAddress : TestMode -> Address
 daiContractAddress testMode =
     case testMode of
         None ->
-            Debug.todo ""
+            Eth.Utils.unsafeToAddress "0x0"
 
         TestKovan ->
             Debug.todo ""
@@ -43,7 +43,7 @@ fryAddress : TestMode -> Address
 fryAddress testMode =
     case testMode of
         None ->
-            Debug.todo ""
+            Eth.Utils.unsafeToAddress "0x0"
 
         TestKovan ->
             Debug.todo ""
@@ -59,7 +59,7 @@ bucketSaleAddress : TestMode -> Address
 bucketSaleAddress testMode =
     case testMode of
         None ->
-            Debug.todo ""
+            Eth.Utils.unsafeToAddress "0x0"
 
         TestKovan ->
             Debug.todo ""
@@ -75,7 +75,7 @@ bucketSaleScriptsAddress : TestMode -> Address
 bucketSaleScriptsAddress testMode =
     case testMode of
         None ->
-            Debug.todo ""
+            Eth.Utils.unsafeToAddress "0x0"
 
         TestKovan ->
             Debug.todo ""
