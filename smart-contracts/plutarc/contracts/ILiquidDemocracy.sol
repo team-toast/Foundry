@@ -27,15 +27,15 @@ struct Proposal
 
 struct ProposalVote
 {
-    uint proposalId;
-    address voter;
+    uint proposalId;    // key
+    address voter;      // key
     uint votingPower;
     VoteType vote;
 }
 
 struct DepositRecord
 {
-    address owner;
+    address owner;      // key
     uint treeDepth;
     address representative;
     
@@ -54,11 +54,11 @@ interface ILiquidDemocracy // ironic name
 {
     // deposits and delegates, _treeDepth indicates the treedepth any representative must be less than to delegate to
     function Deposit(uint _tokens, uint _treeDepth, address _representative) external;
-    event LogDeposit(address indexed _depositor, uint _tokens, uint _treeDepth);
+    event LogDeposit(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
 
     // delegates tokens already deposited to a new represetative
     function Delegate(address _representative) external;
-    event LogDelegation(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative);    
+    event LogDelegation(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
 
     // change you tree depth if no one on a higher depth is not already delegating to you 
     // and you aren't delegating to anyone on a lower depth
