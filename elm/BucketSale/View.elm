@@ -1287,6 +1287,7 @@ referralModal userInfo maybeReferrer testMode =
                         , Element.Border.rounded 2
                         ]
                         (Element.text text)
+                , Element.Font.color EH.white
                 ]
                 (Element.text text)
 
@@ -1305,12 +1306,22 @@ referralModal userInfo maybeReferrer testMode =
                             , Element.Font.size 18
                             ]
                             [ Element.paragraph []
-                                [ Element.text "You're missing out on some nice bonuses! The referred user gets a "
+                                [ Element.text "You're missing out. Help us market the sale and your friends get an extra "
                                 , highlightedText "10% bonus"
-                                , Element.text " bid into the next bucket, and the referrer is rewarded as well!"
+                                , Element.text " on their purchase. You can earn from "
+                                , highlightedText "10%-100%"
+                                , Element.text " extra FRY tokens based on what others purchase with your referral code."
                                 ]
                             , Element.paragraph []
-                                [ Element.text "If you haven’t been given a referral link you can generate one for yourself below." ]
+                                [ Element.text "You can also use your own reference code and get both benefits." ]
+                            , Element.paragraph []
+                                [ Element.newTabLink [ Element.Font.color <| EH.lightBlue ]
+                                    { url = "https://foundrydao.com/faq/#about-referrals"
+                                    , label = Element.text "More info on how this works"
+                                    }
+                                ]
+                            , Element.paragraph []
+                                [ Element.text "If you haven’t been given a referral link you can generate one for yourself below!" ]
                             ]
                       ]
                     , Just <|
@@ -1339,7 +1350,13 @@ referralModal userInfo maybeReferrer testMode =
                                 ]
                                 [ Element.text "Nice! You're using your own referral link." ]
                           , Element.paragraph []
-                                [ Element.text "This means you'll get both bonuses!" ]
+                                [ Element.text "This means you'll get both bonuses! More info "
+                                , Element.newTabLink [Element.Font.color EH.lightBlue ]
+                                    { url = "https://foundrydao.com/faq/#about-referrals"
+                                    , label = Element.text "here"
+                                    }
+                                , Element.text "."
+                                ]
                           ]
                         , Just <|
                             [ Element.paragraph
@@ -1360,6 +1377,8 @@ referralModal userInfo maybeReferrer testMode =
                                 , Element.Font.color green
                                 ]
                                 [ Element.text "Nice! You’ve got a referral bonus." ]
+                          , Element.paragraph []
+                                [ Element.text "Every bid you make will result in a bonus bid into the next bucket, at 10% of the first bid amount. Check the next bucket after you enter your bid!" ]
                           ]
                         , Nothing
                         )
@@ -1372,7 +1391,12 @@ referralModal userInfo maybeReferrer testMode =
         [ Element.column
             [ Element.width Element.fill
             , Element.Border.widthEach
-                { bottom = 1
+                { bottom =
+                    if maybeSecondElsChunk == Nothing then
+                        0
+
+                    else
+                        1
                 , top = 0
                 , right = 0
                 , left = 0
