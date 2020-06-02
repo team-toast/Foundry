@@ -1675,7 +1675,7 @@ connectToWeb3Button wallet =
                 (commonTextStyles
                     ++ [ Element.Font.color EH.softRed ]
                 )
-                (Element.text "Wrong network.")
+                (Element.text "Your web3 wallet is on the wrong network.")
 
         Wallet.Active _ ->
             Element.el
