@@ -115,8 +115,7 @@ wrongWeb3Network =
     { label = "wrongWeb3Network"
     , noticeType = Error
     , mainParagraphs =
-        [ [ Element.text "Make sure your wallet is set to a compatible network." ]
-        , [ Element.text " At the moment DAIHard works on: xDai, the Kovan Ethereum Test Net, or Ethereum Main Net." ]
+        [ [ Element.text "Make sure your wallet is set to Ethereum mainnet." ]
         ]
     , align = BottomRight
     }
