@@ -81,14 +81,20 @@ unlockDai testMode =
         EthHelpers.maxUintValue
 
 
-enter : Address -> Int -> TokenValue -> Maybe Address -> TestMode -> Call ()
-enter userAddress bucketId amount maybeReferrer testMode =
+enter : Address -> Int -> TokenValue -> Maybe Address -> Maybe BigInt -> TestMode -> Call ()
+enter userAddress bucketId amount maybeReferrer maybeGasPrice testMode =
     BucketSaleBindings.enter
         (Config.bucketSaleAddress testMode)
         userAddress
         (BigInt.fromInt bucketId)
         (TokenValue.getEvmValue amount)
         (maybeReferrer |> Maybe.withDefault EthHelpers.zeroAddress)
+        |> (\call ->
+                { call
+                    | gasPrice =
+                        maybeGasPrice
+                }
+           )
 
 
 exit : Address -> Int -> TestMode -> Call ()

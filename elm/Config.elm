@@ -10,7 +10,7 @@ import TokenValue exposing (TokenValue)
 
 mainnetHttpProviderUrl : String
 mainnetHttpProviderUrl =
-    "https://mainnet.infura.io/v3/e3eef0e2435349bf9164e6f465bd7cf9"
+    "https://07a14c9f5130471d81dbe1488f0c22f5.eth.rpc.rivet.cloud/"
 
 
 kovanHttpProviderUrl : String
@@ -85,6 +85,11 @@ bucketSaleScriptsAddress testMode =
 
         TestGanache ->
             Eth.Utils.unsafeToAddress "0xA57B8a5584442B467b4689F1144D269d096A3daF"
+
+
+gasstationApiEndpoint : String
+gasstationApiEndpoint =
+    "https://ethgasstation.info/api/ethgasAPI.json?api-key=ebca374685809a499c4513455cb6867c6112269da20bda9ae64d491a02cf"
 
 
 bucketSaleBucketInterval : TestMode -> Time.Posix

@@ -24,6 +24,7 @@ type alias Model =
     , testMode : TestMode
     , now : Time.Posix
     , timezone : Maybe Time.Zone
+    , fastGasPrice : Maybe BigInt
     , saleStartTime : Maybe Time.Posix
     , bucketSale : Maybe (Result String BucketSale)
     , totalTokensExited : Maybe TokenValue
@@ -52,6 +53,8 @@ type Msg
     | TimezoneGot Time.Zone
     | Refresh
     | UpdateNow Time.Posix
+    | FetchFastGasPrice
+    | FetchedFastGasPrice (Result Http.Error BigInt)
     | VerifyJurisdictionClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)

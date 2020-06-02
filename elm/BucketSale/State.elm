@@ -35,6 +35,7 @@ init maybeReferrer testMode wallet now =
       , testMode = testMode
       , now = now
       , timezone = Nothing
+      , fastGasPrice = Nothing
       , saleStartTime = Nothing
       , bucketSale = Nothing
       , totalTokensExited = Nothing
@@ -50,6 +51,7 @@ init maybeReferrer testMode wallet now =
     , Cmd.batch
         ([ fetchSaleStartTimestampCmd testMode
          , fetchTotalTokensExitedCmd testMode
+         , fetchFastGasPriceCmd
          , Task.perform TimezoneGot Time.here
          ]
             ++ (case Wallet.userInfo wallet of
@@ -188,6 +190,29 @@ update msg prevModel =
                 cmd
                 ChainCmd.none
                 []
+
+        FetchFastGasPrice ->
+            UpdateResult
+                prevModel
+                fetchFastGasPriceCmd
+                ChainCmd.none
+                []
+
+        FetchedFastGasPrice fetchResult ->
+            case fetchResult of
+                Err httpErr ->
+                    -- Just ignore it
+                    let
+                        _ =
+                            Debug.log "error fetching gasstation info" httpErr
+                    in
+                    justModelUpdate prevModel
+
+                Ok fastGasPrice ->
+                    justModelUpdate
+                        { prevModel
+                            | fastGasPrice = Just fastGasPrice
+                        }
 
         VerifyJurisdictionClicked ->
             UpdateResult
@@ -611,6 +636,7 @@ update msg prevModel =
                                 enterInfo.bucketId
                                 enterInfo.amount
                                 enterInfo.maybeReferrer
+                                prevModel.fastGasPrice
                                 prevModel.testMode
                                 |> Eth.toSend
                     in
@@ -884,6 +910,28 @@ fetchUserFryBalanceCmd userInfo testMode =
         (UserFryBalanceFetched userInfo.address)
 
 
+fetchFastGasPriceCmd : Cmd Msg
+fetchFastGasPriceCmd =
+    Http.get
+        { url = Config.gasstationApiEndpoint
+        , expect =
+            Http.expectJson
+                FetchedFastGasPrice
+                fastGasPriceDecoder
+        }
+
+
+fastGasPriceDecoder : Json.Decode.Decoder BigInt
+fastGasPriceDecoder =
+    Json.Decode.field "fast" Json.Decode.float
+        |> Json.Decode.map
+            (\gweiTimes10 -> -- idk why, but ethgasstation returns units of gwei*10
+                gweiTimes10 * 100000000 -- multiply by (1 billion / 10) to get wei
+            )
+        |> Json.Decode.map floor
+        |> Json.Decode.map BigInt.fromInt
+
+
 clearBucketSaleExitInfo : BucketSale -> BucketSale
 clearBucketSaleExitInfo =
     updateAllBuckets
@@ -1069,6 +1117,7 @@ subscriptions model =
     Sub.batch
         [ Time.every 3000 <| always Refresh
         , Time.every 500 UpdateNow
+        , Time.every (1000 * 60 * 10) <| always FetchFastGasPrice
         , locationCheckResult
             (Json.Decode.decodeValue locationCheckDecoder >> LocationCheckResult)
         ]
