@@ -65,6 +65,6 @@ contract MrMeseeks
         emit Deployed(governanceTreasury, fryToken, bucketSale);
 
         // I'm Mr Meseeks, look at me!
-        selfdestruct(msg.sender);
+        // selfdestruct(msg.sender); Disabling so we can verify code on Etherscan
     }
 }
