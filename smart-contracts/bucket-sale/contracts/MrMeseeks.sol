@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.11;
 
 import {FRY as FRY} from "../../fry-token/contracts/FRY.sol";
 import "./BucketSale.sol";
@@ -65,6 +65,8 @@ contract MrMeseeks
         emit Deployed(governanceTreasury, fryToken, bucketSale);
 
         // I'm Mr Meseeks, look at me!
-        // selfdestruct(msg.sender); Disabling so we can verify code on Etherscan
+        // selfdestruct(msg.sender);
+        // Disabling so we can verify code on Etherscan.
+        // Don't worry, this is a special variant of Mr Meseeks who doesn't mind sticking around.
     }
 }
