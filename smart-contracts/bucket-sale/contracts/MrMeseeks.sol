@@ -15,6 +15,7 @@ contract MrMeseeks
         BucketSale _bucketSale);
 
     constructor(
+            address _invoiceAddress,
             address _teamToastMultisig,
             uint _startOfSale,
             uint _bucketPeriod,
@@ -40,8 +41,14 @@ contract MrMeseeks
             ERC20Mintable(address(fryToken)),
             _tokenSoldFor);
 
-        // 30% disbursed to Team Toast
-        fryToken.mint(_teamToastMultisig, uint(30000000).mul(10 ** uint256(fryToken.decimals())));
+        // 10,000,000 paid for revenue stream of SmokeSignal and ownership of SmokeSignal.eth
+        fryToken.mint(_invoiceAddress, uint(10000000).mul(10 ** uint256(fryToken.decimals())));
+
+        // 10,000,000 paid for revenue stream of DAIHard
+        fryToken.mint(_invoiceAddress, uint(10000000).mul(10 ** uint256(fryToken.decimals())));
+
+        // 10,000,000 paid for construction of Foundry and ownership of FoundryDAO.eth
+        fryToken.mint(_invoiceAddress, uint(10000000).mul(10 ** uint256(fryToken.decimals())));
 
         // 10% given to the governance treasury
         fryToken.mint(address(governanceTreasury), uint(10000000).mul(10 ** uint256(fryToken.decimals())));
