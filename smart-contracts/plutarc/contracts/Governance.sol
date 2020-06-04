@@ -68,16 +68,35 @@ abstract contract Governance is ILiquidDemocracy
     function decreaseVotes(_representative, _tokens)
         internal
     {
-        
+        for (uint i = 0; i < activeProposals.count(); i++)
+        {
+            Proposal p = activeProposals.get(i);
+            p.
+        }
     }
 
     function increaseVotes(_representative, _tokens)
         internal
     {
-
+        for (uint i = 0; i < activeProposals.count(); i++)
+        {
+            Proposal prop = activeProposals.get(i);
+            ProposalVote propVote = proposalVotes.get(_representative, p.id);
+            propVote.votingPower = propVote.votingPower.sub(_tokens);
+            if (propVote.VoteType == Support)
+            {
+                prop.votesInFavour = prop.votesInFavour.sub(_tokens); 
+            }
+            else if (propVote.VoteType == Oppose)
+            {
+                prop.votesOpposed = prop.votesOpposed.sub(_tokens);
+            }
+            else if (propVote.VoteType == OpposeAndBurn)
+            {
+                prop.votesToBurn = prop.votesToBurn.sub(_tokens);
+            }
+        }
     }
-
-    
 
     function _setTreeDepth(msg.sender, _treeDepth)
         internal
