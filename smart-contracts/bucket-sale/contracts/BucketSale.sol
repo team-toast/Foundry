@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.17;
 
 import "../../common/openzeppelin/math/Math.sol";
 import "../../common/openzeppelin/math/SafeMath.sol";

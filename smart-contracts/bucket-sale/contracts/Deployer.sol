@@ -1,11 +1,10 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.17;
 
-import {FRY as FRY} from "../../fry-token/contracts/FRY.sol";
+import "../../fry-token/contracts/FRY.sol";
 import "./BucketSale.sol";
 import "./Forwarder.sol";
 
-
-contract MrMeseeks
+contract Deployer
 {
     using SafeMath for uint256;
 
@@ -63,8 +62,5 @@ contract MrMeseeks
         fryToken.renounceMinter();
 
         emit Deployed(governanceTreasury, fryToken, bucketSale);
-
-        // I'm Mr Meseeks, look at me!
-        // selfdestruct(msg.sender); Disabling so we can verify code on Etherscan
     }
 }
