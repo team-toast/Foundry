@@ -20,6 +20,7 @@ contract BucketSale
 
     // When passing around bonuses, we use 3 decimals of precision.
     uint constant HUNDRED_PERC = 100000;
+    uint constant MAX_BONUS = 20000;
     uint constant ONE_PERC = 1000;
 
     /*
@@ -233,7 +234,7 @@ contract BucketSale
             */
             uint multiplier = daiContributed.add(ONE_PERC.mul(10)); // this guarentees every referrer gets at least 10% of what the buyer is buying
 
-            uint result = Math.min(HUNDRED_PERC, multiplier); // Cap it at 100% bonus
+            uint result = Math.min(MAX_BONUS, multiplier); // Cap it at 20% bonus
             return result;
         }
     }
