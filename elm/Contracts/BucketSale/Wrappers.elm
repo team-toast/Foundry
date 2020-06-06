@@ -83,7 +83,7 @@ unlockDai testMode =
 
 enter : Address -> Int -> TokenValue -> Maybe Address -> TestMode -> Call ()
 enter userAddress bucketId amount maybeReferrer testMode =
-    BucketSaleBindings.enter
+    BucketSaleBindings.agreeToTermsAndConditionsListedInThisContractAndEnterSale
         (Config.bucketSaleAddress testMode)
         userAddress
         (BigInt.fromInt bucketId)
