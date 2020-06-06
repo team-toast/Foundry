@@ -10,7 +10,7 @@ import TokenValue exposing (TokenValue)
 
 mainnetHttpProviderUrl : String
 mainnetHttpProviderUrl =
-    "https://mainnet.infura.io/v3/e3eef0e2435349bf9164e6f465bd7cf9"
+    "https://07a14c9f5130471d81dbe1488f0c22f5.eth.rpc.rivet.cloud/"
 
 
 kovanHttpProviderUrl : String
@@ -49,7 +49,7 @@ fryAddress testMode =
             Debug.todo ""
 
         TestMainnet ->
-            Eth.Utils.unsafeToAddress "0x47F99F44b140DF9F0eC89631f4265FeE72321Cb9"
+            Eth.Utils.unsafeToAddress "0xe8c7495870f63DD045ba20E4604Ef3534ffa3724"
 
         TestGanache ->
             Eth.Utils.unsafeToAddress "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e"
@@ -65,7 +65,7 @@ bucketSaleAddress testMode =
             Debug.todo ""
 
         TestMainnet ->
-            Eth.Utils.unsafeToAddress "0x1D86DaA6CAeD0913F273E37791D00dc54EAaFc0D"
+            Eth.Utils.unsafeToAddress "0xEB997be36d9a3168e548f058FF6E76Ba16bd8d13"
 
         TestGanache ->
             Eth.Utils.unsafeToAddress "0x26b4AFb60d6C903165150C6F0AA14F8016bE4aec"
