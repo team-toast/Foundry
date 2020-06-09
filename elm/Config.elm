@@ -27,7 +27,7 @@ daiContractAddress : TestMode -> Address
 daiContractAddress testMode =
     case testMode of
         None ->
-            Eth.Utils.unsafeToAddress "0x0"
+            Eth.Utils.unsafeToAddress "0x6B175474E89094C44Da98b954EedeAC495271d0F"
 
         TestKovan ->
             Debug.todo ""
@@ -43,7 +43,7 @@ fryAddress : TestMode -> Address
 fryAddress testMode =
     case testMode of
         None ->
-            Eth.Utils.unsafeToAddress "0x0"
+            Eth.Utils.unsafeToAddress "0x6c972b70c533E2E045F333Ee28b9fFb8D717bE69"
 
         TestKovan ->
             Debug.todo ""
@@ -59,7 +59,7 @@ bucketSaleAddress : TestMode -> Address
 bucketSaleAddress testMode =
     case testMode of
         None ->
-            Eth.Utils.unsafeToAddress "0x0"
+            Eth.Utils.unsafeToAddress "0x30076fF7436aE82207b9c03AbdF7CB056310A95A"
 
         TestKovan ->
             Debug.todo ""
@@ -75,7 +75,7 @@ bucketSaleScriptsAddress : TestMode -> Address
 bucketSaleScriptsAddress testMode =
     case testMode of
         None ->
-            Eth.Utils.unsafeToAddress "0x0"
+            Eth.Utils.unsafeToAddress "0x487Ac5423555B1D83F5b8BA13F260B296E9D0777"
 
         TestKovan ->
             Debug.todo ""
@@ -94,9 +94,9 @@ bucketSaleBucketInterval testMode =
 
 bucketSaleTokensPerBucket : TestMode -> TokenValue
 bucketSaleTokensPerBucket testMode =
-    TokenValue.fromIntTokenValue 50000
+    TokenValue.fromIntTokenValue 30000
 
 
 bucketSaleNumBuckets : Int
 bucketSaleNumBuckets =
-    1200
+    2000
