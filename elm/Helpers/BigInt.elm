@@ -60,7 +60,7 @@ decoder =
     Json.Decode.string
         |> Json.Decode.andThen
             (\string ->
-                case BigInt.fromString string of
+                case BigInt.fromIntString string of
                     Just val ->
                         Json.Decode.succeed val
 

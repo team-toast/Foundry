@@ -27,8 +27,8 @@ module Contracts.BucketSale.Generated.BucketSale exposing
     , treasury
     )
 
-import Abi.Decode as D exposing (abiDecode, andMap, data, toElmDecoder, topic)
-import Abi.Encode as E exposing (Encoding(..), abiEncode)
+import Eth.Abi.Decode as D exposing (abiDecode, andMap, data, toElmDecoder, topic)
+import Eth.Abi.Encode as E exposing (Encoding(..), abiEncode)
 import BigInt exposing (BigInt)
 import Eth.Types exposing (..)
 import Eth.Utils as U
