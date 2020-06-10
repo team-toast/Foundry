@@ -812,13 +812,7 @@ initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result String BucketSal
 initBucketSale testMode saleStartTime now =
     if TimeHelpers.compare saleStartTime now == GT then
         Err <|
-            "Sale hasn't started yet. You are "
-                ++ (TimeHelpers.sub
-                        saleStartTime
-                        now
-                        |> TimeHelpers.toConciseIntervalString
-                   )
-                ++ " too early!"
+            "You're a little to early! The sale will start at noon UTC, June 19th."
 
     else
         Ok <|

@@ -298,58 +298,28 @@ headerMenuAttributes =
 
 submodelElementAndModal : Model -> ( Element Msg, List (Element Msg) )
 submodelElementAndModal model =
-    case model.testMode of
-        None ->
-            let
-                submodelEl =
-                    Element.el
-                        [ Element.paddingXY 0 100
-                        , Element.centerX
-                        ]
-                    <|
-                        Element.column
-                            [ Element.Background.color EH.lightBlue
-                            , Element.Border.rounded 10
-                            , Element.padding 20
-                            , Element.spacing 10
-                            ]
-                        <|
-                            List.map
-                                (Element.paragraph
-                                    [ Element.Font.size 40
-                                    , Element.Font.color EH.white
-                                    , Element.Font.center
-                                    ]
-                                )
-                                [ [ Element.text "The sale hasn't started yet." ]
-                                , [ Element.text "We'll announce a launch date soon!" ]
-                                ]
-            in
-            ( submodelEl, [] )
+    let
+        ( submodelEl, modalEls ) =
+            case model.submodel of
+                NullSubmodel ->
+                    ( Element.none
+                    , []
+                    )
 
-        _ ->
-            let
-                ( submodelEl, modalEls ) =
-                    case model.submodel of
-                        NullSubmodel ->
-                            ( Element.none
-                            , []
-                            )
-
-                        BucketSaleModel bucketSaleModel ->
-                            BucketSale.View.root bucketSaleModel
-                                |> Tuple.mapBoth
-                                    (Element.map BucketSaleMsg)
-                                    (List.map (Element.map BucketSaleMsg))
-            in
-            ( Element.el
-                [ Element.width Element.fill
-                , Element.height Element.fill
-                , Element.Border.rounded 10
-                ]
-                submodelEl
-            , modalEls
-            )
+                BucketSaleModel bucketSaleModel ->
+                    BucketSale.View.root bucketSaleModel
+                        |> Tuple.mapBoth
+                            (Element.map BucketSaleMsg)
+                            (List.map (Element.map BucketSaleMsg))
+    in
+    ( Element.el
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        , Element.Border.rounded 10
+        ]
+        submodelEl
+    , modalEls
+    )
 
 
 userNoticeEls : DisplayProfile -> List (UserNotice Msg) -> List (Element Msg)
