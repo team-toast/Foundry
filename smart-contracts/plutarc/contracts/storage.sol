@@ -57,6 +57,44 @@ contract StructStore
     }
 }
 
+contract BoolStore
+{
+    mapping (address => mapping(bytes32=>bool)) public store;
+
+    function set(bytes32 _key, bool _value)
+        public
+    {
+        store[msg.sender][_key] = _value;
+    }
+
+    function get(bytes32 _key)
+        public
+        view
+        returns (bool)
+    {
+        store[msg.sender][_key];
+    }
+}
+
+contract Bytes32Store
+{
+    mapping (address => mapping(bytes32=>bytes32)) public store;
+
+    function set(bytes32 _key, bytes32 _value)
+        public
+    {
+        store[msg.sender][_key] = _value;
+    }
+
+    function get(bytes32 _key)
+        public
+        view
+        returns (bytes32)
+    {
+        store[msg.sender][_key];
+    }
+}
+
 contract UseStorage
 {
     StringStore public stringStore;
