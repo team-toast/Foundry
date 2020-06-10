@@ -28,7 +28,7 @@ root model =
                 , Element.height Element.fill
                 , Element.Events.onClick ClickHappened
                 , Element.Font.family
-                    [ Element.Font.typeface "Soleil"
+                    [ Element.Font.typeface "DM Sans"
                     , Element.Font.sansSerif
                     ]
                 ]
@@ -155,7 +155,7 @@ brandAndLogo dProfile =
                 ]
                 { url = "https://foundrydao.com"
                 , label =
-                    Element.text "More Info"
+                    Element.text "What is Foundry?"
                 }
             ]
         ]
