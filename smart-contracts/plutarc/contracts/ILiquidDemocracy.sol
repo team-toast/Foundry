@@ -54,15 +54,18 @@ enum DelegationType { Delegate, Dedelegate }
 interface ILiquidDemocracy // ironic name
 {
     // deposits and delegates, _treeDepth indicates the treedepth any representative must be less than to delegate to
-    function deposit(uint _tokens, uint _treeDepth, address _representative) external;
-    event logDeposit(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
+    function deposit(uint _tokens, uint _treeDepth) external;
+    event logDeposit(address indexed _depositor, uint _tokens, uint _treeDepth);
 
     // delegates tokens already deposited to a new represetative
     function delegate(address _representative) external;
     event logDelegation(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
 
-    // change you tree depth if no one on a higher depth is not already delegating to you 
-    // and you aren't delegating to anyone on a lower depth
+    // deposits and delegates, _treeDepth indicates the treedepth any representative must be less than to delegate to
+    function depositAndDelegate(uint _tokens, uint _treeDepth, address _representative) external;
+
+    // change you tree depth if no one on a lower depth is not already delegating to you 
+    // and you aren't delegating to anyone on a higher depth
     function changeTreeDepth(uint _newDepth) external;
     event logTreeDepthChanged(address indexed _depositor, uint _tokens, uint _treeDepth);
 
