@@ -49,49 +49,50 @@ struct DepositRecord
 }
 
 enum VoteType { Support, Oppose, OpposeAndBurn }
+enum DelegationType { Delegate, Dedelegate }
 
 interface ILiquidDemocracy // ironic name
 {
     // deposits and delegates, _treeDepth indicates the treedepth any representative must be less than to delegate to
-    function Deposit(uint _tokens, uint _treeDepth, address _representative) external;
-    event LogDeposit(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
+    function deposit(uint _tokens, uint _treeDepth, address _representative) external;
+    event logDeposit(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
 
     // delegates tokens already deposited to a new represetative
-    function Delegate(address _representative) external;
-    event LogDelegation(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
+    function delegate(address _representative) external;
+    event logDelegation(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
 
     // change you tree depth if no one on a higher depth is not already delegating to you 
     // and you aren't delegating to anyone on a lower depth
-    function ChangeTreeDepth(uint _newDepth) external;
-    event LogTreeDepthChanged(address indexed _depositor, uint _tokens, uint _treeDepth);
+    function changeTreeDepth(uint _newDepth) external;
+    event logTreeDepthChanged(address indexed _depositor, uint _tokens, uint _treeDepth);
 
     // claim spendable governance rewards based on when last you pulled rewards 
-    function ClaimReward(address _depositAddress) external;
-    event LogRewardClaimed(address _depositAddress, uint _rewardTokens);
+    function claimReward(address _depositAddress) external;
+    event logRewardClaimed(address _depositAddress, uint _rewardTokens);
 
     // dedelgate that number of tokens and start the withdrawal times
-    function ScheduleWithdrawal(uint _tokens) external;
-    event LogWithdrawalRequested(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative);
+    function scheduleWithdrawal(uint _tokens) external;
+    event logWithdrawalRequested(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative);
 
     // once the withdrawal timer has cooled down, execute the withdrawal
-    function ExecuteWithdrawal() external;
-    event LogWithdrawalExecuted(address indexed _depositor, uint _tokens);
+    function executeWithdrawal() external;
+    event logWithdrawalExecuted(address indexed _depositor, uint _tokens);
 
     // propose an action for the governance contract to take, sending a predetermined amount of tokens to the treasury
-    function Propose(uint _proposalId, bool _isDelegateCall, address _to, uint _wei, bytes calldata _data) external;
+    function propose(uint _proposalId, bool _isDelegateCall, address _to, uint _wei, bytes calldata _data) external;
     event LogProposalCreated(uint _proposalId, bool _isDelegateCall, address _to, uint _wei);
 
     // vote for a proposal if you have deposited tokens and not delegated them
-    function Vote(uint _proposalId, bool supportOrOppose) external;
-    event LogVoted(address indexed _voter, uint _votingPower, uint _proposalId, VoteType _voteType);
+    function vote(uint _proposalId, bool supportOrOppose) external;
+    event logVoted(address indexed _voter, uint _votingPower, uint _proposalId, VoteType _voteType);
 
     // execute a successful proposal
-    function Execute(uint _proposalId) external;
-    event LogProposalExecuted(uint _proposalId, bool _wasDelegateCall, bool _wasSuccessful);
-    event LogBondReturned(uint _proposalId, address _bondReturnAddress, uint _tokens);
+    function execute(uint _proposalId) external;
+    event logProposalExecuted(uint _proposalId, bool _wasDelegateCall, bool _wasSuccessful);
+    event logBondReturned(uint _proposalId, address _bondReturnAddress, uint _tokens);
 
     // remove an unsuccessful proposal
-    function RemoveProposal(uint _proposalId) external;
-    event LogProposalRemoved(uint _proposalId);
-    event LogBondBurned(uint _proposalId, address _bondReturnAddress, uint _tokens);
+    function removeProposal(uint _proposalId) external;
+    event logProposalRemoved(uint _proposalId);
+    event logBondBurned(uint _proposalId, address _bondReturnAddress, uint _tokens);
 }
