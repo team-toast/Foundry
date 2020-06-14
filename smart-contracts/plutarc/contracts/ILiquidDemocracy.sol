@@ -71,7 +71,7 @@ interface ILiquidDemocracy // ironic name
 
     // delegates tokens already deposited to a new represetative
     function delegate(address _representative) external;
-    event logDelegation(address indexed _depositor, uint _tokens, uint _treeDepth, address indexed _representative, uint _representativeVotingPower);
+    event logDelegation(address indexed _depositor, int _sign, uint _tokens, address indexed _representative, uint _representativeVotingPower);
 
     // deposits and delegates, _treeDepth indicates the treedepth any representative must be less than to delegate to
     function depositAndDelegate(uint _tokens, uint _treeDepth, address _representative) external;

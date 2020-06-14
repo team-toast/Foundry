@@ -23,23 +23,46 @@ abstract contract Governance is ILiquidDemocracy
         override
     {
         // Ensure that the tree depth is not too deep.
-        require(_treeDepth <= 32, "tree depth must be 32 or less");
         Deposit memory depositRecord = deposits.get(msg.sender);
-        // If check that, if there is an existing deposit, the tree depth is not changed
+        // Check that, if there is an existing depositRecord, the tree depth is not changed
         require(depositRecord.treeDepth == 0 || depositRecord.treeDepth == _treeDepth, "incorrect tree depth");
         
-        // If there is no existing deposit, register msg.sender, else update the delegation
-        if (depositRecord.owner == address(0))
-            depositRecord.owner = msg.sender;
-        // else
-        //     delegate(depositRecord.representative);
-
+        depositRecord.owner = depositRecord.owner == address(0) ? msg.sender : depositRecord.owner;
         depositRecord.treeDepth = _treeDepth;
         depositRecord.ownBalance = depositRecord.ownBalance.add(_tokens);
         depositRecord.votingPower = depositRecord.votingPower.add(_tokens);
         depositRecord.lastRewardClaimDate = Math.max(0, depositRecord.lastRewardClaimDate);
         depositRecord.withdrawalRequestDate = 0;
         deposits.set(msg.sender, depositRecord);
+
         emit logDeposit(msg.sender, _tokens, _treeDepth);
+
+        if (depositRecord.representative != address(0))
+            _delegate(1, depositRecord.owner, depositRecord.representative, _tokens);
+    }
+
+    function _delegate(int _sign, address _delegator, address _representative, uint _tokens)
+        internal
+    {
+        require(_sign == -1 || _sign == 1, "not a valid sign");
+        Deposit memory repDeposit = deposits.get(_representative);
+
+        repDeposit.votingPower = 
+            (_sign == 1) ? 
+                repDeposit.votingPower.add(_tokens) : 
+                repDeposit.votingPower.sub(_tokens);
+        deposits.set(repDeposit.owner, repDeposit);
+
+        emit logDelegation(_delegator, _sign, _tokens, _representative, repDeposit.votingPower);
+
+        if (repDeposit.representative != address(0))
+            _delegate(_sign, repDeposit.owner, repDeposit.representative, _tokens);
+        else
+            _adjustVotes(_sign, repDeposit.owner, _tokens);
+    }
+
+    function _adjustVotes(int _sign, address _voter, uint tokens)
+        internal
+    {
     }
 }
