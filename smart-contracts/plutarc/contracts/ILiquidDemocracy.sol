@@ -1,3 +1,5 @@
+// "SPDX-License-Identifier: UNLICENSED"
+
 pragma solidity ^0.6.4;
 
 // general notes:
@@ -8,9 +10,24 @@ pragma solidity ^0.6.4;
 // * higher reward because they represent an active interest in the vote.
 // * should there be a veto key list? a set of users who may stop a vote.
 
+struct Deposit
+{
+    address owner;      // key
+    uint treeDepth;
+    address representative;
+    
+    uint ownBalance;
+    uint delegatedBalance;
+    uint votingPower;
+
+    uint lastRewardClaimDate;
+    
+    uint withdrawalRequestDate;
+}
+
 struct Proposal
 {
-    uint id;
+    uint id;            // key
 
     address bondReturnAddress;
     uint bondAmount;
@@ -33,23 +50,18 @@ struct ProposalVote
     VoteType vote;
 }
 
-struct DepositRecord
-{
-    address owner;      // key
-    uint treeDepth;
-    address representative;
-    
-    uint ownBalance;
-    uint delegatedBalance;
-    uint votingPower;
-
-    uint lastRewardClaimDate;
-    
-    uint withdrawalRequestDate;
+enum DelegationType 
+{ 
+    Delegate,
+    Dedelegate 
 }
 
-enum VoteType { Support, Oppose, OpposeAndBurn }
-enum DelegationType { Delegate, Dedelegate }
+enum VoteType 
+{
+    Support,
+    Oppose,
+    OpposeAndBurn
+}
 
 interface ILiquidDemocracy // ironic name
 {

@@ -1,12 +1,22 @@
-pragma solidity ^0.6.0;
+// "SPDX-License-Identifier: UNLICENSED"
 
-import "./ILiquidDemocracy.sol";
+pragma solidity ^0.6.0;
+pragma experimental ABIEncoderV2;
+
 import "../../common.6/openzeppelin/contracts/math/SafeMath.sol";
 import "../../common.6/openzeppelin/contracts/math/Math.sol";
+
+import "./ILiquidDemocracy.sol";
+import "./LiquidDemocracyStorage.sol";
 
 abstract contract Governance is ILiquidDemocracy
 {
     using SafeMath for uint256;
+
+    DepositStore deposits;
+    ProposalStore proposals;
+    ProposalVoteStore proposalVotes;
+    Proposal[] activeProposals;
 
     function deposit(uint _tokens, uint _treeDepth)
         external
@@ -14,22 +24,22 @@ abstract contract Governance is ILiquidDemocracy
     {
         // Ensure that the tree depth is not too deep.
         require(_treeDepth <= 32, "tree depth must be 32 or less");
-        DepositRecord deposit = deposits.get(msg.sender);
+        Deposit memory depositRecord = deposits.get(msg.sender);
         // If check that, if there is an existing deposit, the tree depth is not changed
-        require(deposit.treeDepth == 0 || deposit.treeDepth == _treeDepth, "incorrect tree depth");
+        require(depositRecord.treeDepth == 0 || depositRecord.treeDepth == _treeDepth, "incorrect tree depth");
         
         // If there is no existing deposit, register msg.sender, else update the delegation
-        if (deposit.owner == address(0))
-            deposit.owner = msg.sender;
-        else
-            delegate(deposit.representative);
+        if (depositRecord.owner == address(0))
+            depositRecord.owner = msg.sender;
+        // else
+        //     delegate(depositRecord.representative);
 
-        deposit.treeDepth = _treeDepth;
-        deposit.ownBalance = deposit.ownBalance.add(_tokens);
-        deposit.votingPower = deposit.votingPower.add(_tokens);
-        deposit.lastRewardClaimDate = Math.max(0, deposit.lastRewardClaimDate);
-        deposit.withdrawalRequestDate = 0;
-        deposits.set(msg.sender, deposit);
+        depositRecord.treeDepth = _treeDepth;
+        depositRecord.ownBalance = depositRecord.ownBalance.add(_tokens);
+        depositRecord.votingPower = depositRecord.votingPower.add(_tokens);
+        depositRecord.lastRewardClaimDate = Math.max(0, depositRecord.lastRewardClaimDate);
+        depositRecord.withdrawalRequestDate = 0;
+        deposits.set(msg.sender, depositRecord);
         emit logDeposit(msg.sender, _tokens, _treeDepth);
     }
 }

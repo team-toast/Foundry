@@ -14,7 +14,7 @@ contract DebugBase
         payable
         returns (bool, bytes memory)
     {
-        (bool success, bytes memory resultData) = _to.call.value(msg.value)(_data);
+        (bool success, bytes memory resultData) = _to.call{ value: msg.value }(_data);
         emit Forwarded(msg.sender, _to, _data, msg.value, success, resultData);
         return (success, resultData);
     }
