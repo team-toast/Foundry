@@ -9,6 +9,12 @@ import "../../common.6/openzeppelin/contracts/math/Math.sol";
 import "./ILiquidDemocracy.sol";
 import "./LiquidDemocracyStorage.sol";
 
+struct LinkedListNode
+{
+    uint value;
+    uint next;
+}
+
 abstract contract Governance is ILiquidDemocracy
 {
     using SafeMath for uint256;
@@ -16,7 +22,7 @@ abstract contract Governance is ILiquidDemocracy
     DepositStore deposits;
     ProposalStore proposals;
     ProposalVoteStore proposalVotes;
-    Proposal[] activeProposals;
+    uint[] activeProposalIds;
 
     function deposit(uint _tokens, uint _treeDepth)
         external
@@ -61,8 +67,59 @@ abstract contract Governance is ILiquidDemocracy
             _adjustVotes(_sign, repDeposit.owner, _tokens);
     }
 
-    function _adjustVotes(int _sign, address _voter, uint tokens)
+    function _adjustVotes(int _sign, address _voter, uint _tokens)
         internal
     {
+        for (uint i = 0; i < activeProposalIds.length; i++)
+        {
+            _adjustVote(_sign, _voter, _tokens, activeProposalIds[i]);
+        }
+    }
+
+    function _adjustVote(int _sign, address _voter, uint _tokens, uint _proposalId)
+        internal
+    {
+        ProposalVote memory proposalVote = proposalVotes.get(_proposalId, _voter);
+        if (proposalVote.vote != VoteType.Abstained)
+        {
+            proposalVote.votingPower = 
+                (_sign == 1) ?
+                    proposalVote.votingPower.add(_tokens) :
+                    proposalVote.votingPower.sub(_tokens);
+
+            proposalVotes.set(_proposalId, _voter, proposalVote);
+
+            Proposal memory proposal = proposals.get(_proposalId);
+            if (proposalVote.vote == VoteType.Support)
+                proposal.votesInSupport = 
+                    (_sign == 1) ?
+                        proposal.votesInSupport.add(_tokens) :
+                        proposal.votesInSupport.sub(_tokens);
+            else if (proposalVote.vote == VoteType.Oppose)
+                proposal.votesInOpposition = 
+                    (_sign == 1) ?
+                        proposal.votesInOpposition.add(_tokens) :
+                        proposal.votesInOpposition.sub(_tokens);
+            else if (proposalVote.vote == VoteType.OpposeAndBurn)
+                proposal.votesToBurn = 
+                    (_sign == 1) ?
+                        proposal.votesToBurn.add(_tokens) :
+                        proposal.votesToBurn.sub(_tokens);
+            else
+                revert("invalid state reached");
+
+            uint totalVotes = proposal.votesInSupport + proposal.votesInOpposition + proposal.votesToBurn;
+            bool thresholdCrossed = proposal.votesInSupport * 1000 / totalVotes > 600;
+            if (proposal.acceptedCoolingDown && !thresholdCrossed)
+            {
+                proposal.acceptedCoolingDown = false;
+                proposal.thresholdCrossDate = block.timestamp;
+            }
+            else if (!proposal.acceptedCoolingDown && thresholdCrossed)
+            {
+                proposal.acceptedCoolingDown = true;
+                proposal.thresholdCrossDate = block.timestamp;
+            }
+        }
     }
 }

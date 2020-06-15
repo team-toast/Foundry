@@ -45,19 +45,19 @@ contract ProposalStore
 
 contract ProposalVoteStore
 {
-    mapping (address => mapping (bytes32 => ProposalVote)) public store;
+    mapping (address => mapping (uint => mapping (address => ProposalVote))) public store;
 
-    function set(bytes32 _key, ProposalVote memory _value)
+    function set(uint _proposalId, address _voter, ProposalVote memory _value)
         public
     {
-        store[msg.sender][_key] = _value;
+        store[msg.sender][_proposalId][_voter] = _value;
     }
 
-    function get(bytes32 _key)
+    function get(uint _proposalId, address _voter)
         public
         view
         returns (ProposalVote memory)
     {
-        return store[msg.sender][_key];
+        return store[msg.sender][_proposalId][_voter];
     }
 }

@@ -31,9 +31,10 @@ struct Proposal
 
     address bondReturnAddress;
     uint bondAmount;
-    uint votesInFavour;
-    uint votesOpposed;
+    uint votesInSupport;
+    uint votesInOpposition;
     uint votesToBurn;
+    bool acceptedCoolingDown;
     uint thresholdCrossDate;
 
     bool isDelegateCall;
@@ -58,6 +59,7 @@ enum DelegationType
 
 enum VoteType 
 {
+    Abstained,
     Support,
     Oppose,
     OpposeAndBurn
