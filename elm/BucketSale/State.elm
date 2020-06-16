@@ -1068,8 +1068,8 @@ locationCheckResultToJurisdictionStatus decodeResult =
 
 countryCodeToJurisdiction : String -> Jurisdiction
 countryCodeToJurisdiction code =
-    if code == "US" || code == "CN" then
-        ChinaOrUSA
+    if code == "US" then
+        USA
 
     else
         JurisdictionsWeArentIntimidatedIntoExcluding

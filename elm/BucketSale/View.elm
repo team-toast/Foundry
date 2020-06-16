@@ -904,8 +904,8 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
                     [ Element.text "There may be more info in the console." ]
                 ]
 
-        Checked ChinaOrUSA ->
-            msgInstead "Sorry, US and Chinese citizens are excluded." red
+        Checked USA ->
+            msgInstead "Sorry, US citizens are excluded." red
 
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of

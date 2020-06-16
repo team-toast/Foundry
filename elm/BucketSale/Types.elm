@@ -354,7 +354,7 @@ type CountryInfo
 
 
 type Jurisdiction
-    = ChinaOrUSA
+    = USA
     | JurisdictionsWeArentIntimidatedIntoExcluding
 
 type JurisdictionCheckStatus
