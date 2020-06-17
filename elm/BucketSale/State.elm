@@ -42,6 +42,7 @@ init maybeReferrer testMode wallet now =
       , userFryBalance = Nothing
       , bucketView = ViewCurrent
       , jurisdictionCheckStatus = WaitingForClick
+      , agreeToTosModel = initAgreeToTosModel
       , enterUXModel = initEnterUXModel maybeReferrer
       , userExitInfo = Nothing
       , trackedTxs = []
@@ -66,6 +67,67 @@ init maybeReferrer testMode wallet now =
                )
         )
     )
+
+
+initAgreeToTosModel : AgreeToTosModel
+initAgreeToTosModel =
+    { points =
+        tosLines
+            |> (List.map >> List.map)
+                (\( text, maybeAgreeText ) ->
+                    TosCheckbox
+                        text
+                        (maybeAgreeText
+                            |> Maybe.map
+                                (\agreeText -> ( agreeText, False ))
+                        )
+                )
+    , page = 0
+    }
+
+
+tosLines =
+    [ [ ( "Foundry and FRY are extremely experimental and can enter into several failure modes."
+        , Nothing
+        )
+      , ( "Foundry and FRY could fail technically through a software vulnerability."
+        , Just "I understand"
+        )
+      , ( "While Foundry and FRY have been audited, bugs may have nonetheless snuck through."
+        , Just "I understand"
+        )
+      , ( "Foundry and FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch."
+        , Just "I understand"
+        )
+      ]
+    , [ ( "The projects that Foundry funds may turn out to be flawed technically or have economic attack vectors that make them infeasible."
+        , Just "I understand"
+        )
+      , ( "FRY, and the projects funded by Foundry, might never find profitable returns."
+        , Just "I understand"
+        )
+      ]
+    , [ ( "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
+        , Just "I understand"
+        )
+      , ( "You will not hold the creators of this project liable for damages or losses."
+        , Just "I agree"
+        )
+      , ( "Even if you did, the creators will be unlikely to have the resources to settle."
+        , Just "I understand"
+        )
+      , ( "The DAI deposited into this sale is put into sets of smart contracts, which the creators of Foundry and FRY may not have complete or significant control over."
+        , Just "I understand"
+        )
+      ]
+    , [ ( "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
+        , Just "I agree"
+        )
+      , ( "You are not a citizen of the United States of America"
+        , Just "I am not a citizen of the USA"
+        )
+      ]
+    ]
 
 
 verifyWalletCorrectNetwork : Wallet.State -> TestMode -> Wallet.State
@@ -213,6 +275,46 @@ update msg prevModel =
                         { prevModel
                             | fastGasPrice = Just fastGasPrice
                         }
+
+        TosPreviousPageClicked ->
+            justModelUpdate
+                { prevModel
+                    | agreeToTosModel =
+                        let
+                            prevTosModel =
+                                prevModel.agreeToTosModel
+                        in
+                        { prevTosModel
+                            | page =
+                                max
+                                    (prevTosModel.page - 1)
+                                    0
+                        }
+                }
+
+        TosNextPageClicked ->
+            justModelUpdate
+                { prevModel
+                    | agreeToTosModel =
+                        let
+                            prevTosModel =
+                                prevModel.agreeToTosModel
+                        in
+                        { prevTosModel
+                            | page =
+                                min
+                                    (prevTosModel.page + 1)
+                                    (List.length prevTosModel.points)
+                        }
+                }
+
+        TosCheckboxClicked pointRef ->
+            justModelUpdate
+                { prevModel
+                    | agreeToTosModel =
+                        prevModel.agreeToTosModel
+                            |> toggleAssentForPoint pointRef
+                }
 
         VerifyJurisdictionClicked ->
             UpdateResult
@@ -808,6 +910,29 @@ update msg prevModel =
                         []
 
 
+toggleAssentForPoint : ( Int, Int ) -> AgreeToTosModel -> AgreeToTosModel
+toggleAssentForPoint ( pageNum, pointNum ) prevTosModel =
+    { prevTosModel
+        | points =
+            prevTosModel.points
+                |> List.Extra.updateAt pageNum
+                    (List.Extra.updateAt pointNum
+                        (\point ->
+                            { point
+                                | maybeCheckedString =
+                                    point.maybeCheckedString
+                                        |> Maybe.map
+                                            (\( checkboxText, isChecked ) ->
+                                                ( checkboxText
+                                                , not isChecked
+                                                )
+                                            )
+                            }
+                        )
+                    )
+    }
+
+
 initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result String BucketSale
 initBucketSale testMode saleStartTime now =
     if TimeHelpers.compare saleStartTime now == GT then
@@ -919,8 +1044,10 @@ fastGasPriceDecoder : Json.Decode.Decoder BigInt
 fastGasPriceDecoder =
     Json.Decode.field "fast" Json.Decode.float
         |> Json.Decode.map
-            (\gweiTimes10 -> -- idk why, but ethgasstation returns units of gwei*10
-                gweiTimes10 * 100000000 -- multiply by (1 billion / 10) to get wei
+            (\gweiTimes10 ->
+                -- idk why, but ethgasstation returns units of gwei*10
+                gweiTimes10 * 100000000
+             -- multiply by (1 billion / 10) to get wei
             )
         |> Json.Decode.map floor
         |> Json.Decode.map BigInt.fromInt

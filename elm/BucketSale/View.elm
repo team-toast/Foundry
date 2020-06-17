@@ -863,18 +863,19 @@ otherBidsImpactMsg =
         ]
 
 
-actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
-actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
-    let
-        msgInstead text color =
-            Element.el
-                [ Element.centerX
-                , Element.Font.size 22
-                , Element.Font.italic
-                , Element.Font.color color
-                ]
-                (Element.text text)
-    in
+msgInsteadOfButton : String -> Element.Color -> Element Msg
+msgInsteadOfButton text color =
+    Element.el
+        [ Element.centerX
+        , Element.Font.size 22
+        , Element.Font.italic
+        , Element.Font.color color
+        ]
+        (Element.text text)
+
+
+verifyJurisdictionButtonOrResult : JurisdictionCheckStatus -> Element Msg
+verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
     case jurisdictionCheckStatus of
         WaitingForClick ->
             EH.redButton
@@ -895,7 +896,7 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
                 [ Element.spacing 10
                 , Element.width Element.fill
                 ]
-                [ msgInstead "Error verifying jurisdiction." red
+                [ msgInsteadOfButton "Error verifying jurisdiction." red
                 , Element.paragraph
                     [ Element.Font.color grayTextColor ]
                     [ Element.text errStr ]
@@ -905,8 +906,15 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
                 ]
 
         Checked USA ->
-            msgInstead "Sorry, US citizens are excluded." red
+            msgInsteadOfButton "Sorry, US citizens are excluded." red
 
+        Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
+            msgInsteadOfButton "Jurisdiction Verified." green
+
+
+actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
+actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
+    case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
                 Nothing ->
@@ -943,14 +951,14 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
                     in
                     case enterUXModel.allowance of
                         Nothing ->
-                            msgInstead "Fetching Dai unlock status..." grayTextColor
+                            msgInsteadOfButton "Fetching Dai unlock status..." grayTextColor
 
                         Just allowance ->
                             if enterUXModel.allowance == Just TokenValue.zero then
                                 unlockDaiButton
 
                             else if unlockMining then
-                                msgInstead "Mining Dai unlock..." grayTextColor
+                                msgInsteadOfButton "Mining Dai unlock..." grayTextColor
 
                             else
                                 -- Allowance is loaded and nonzero, and we are not mining an Unlock
@@ -964,6 +972,9 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
 
                                     _ ->
                                         disabledContinueButton
+
+        _ ->
+            verifyJurisdictionButtonOrResult jurisdictionCheckStatus
 
 
 noBucketsLeftBlock : Element Msg
@@ -1157,23 +1168,211 @@ makeDescription action =
 
 viewModals : Model -> List (Element Msg)
 viewModals model =
-    [ case model.confirmModal of
-        Just exitInfo ->
-            continueConfirmModal exitInfo
+    Maybe.Extra.values
+        [ maybeViewAgreeToTosModal model.agreeToTosModel model.jurisdictionCheckStatus
+        , Maybe.map continueConfirmModal model.confirmModal
+        , if model.showReferralModal then
+            Just <|
+                EH.modal
+                    (Element.rgba 0 0 0 0.25)
+                    False
+                    CloseReferralModal
+                    CloseReferralModal
+                    Element.none
 
-        Nothing ->
-            Element.none
-    , if model.showReferralModal then
-        EH.modal
-            (Element.rgba 0 0 0 0.25)
-            False
-            CloseReferralModal
-            CloseReferralModal
-            Element.none
+          else
+            Nothing
+        ]
 
-      else
-        Element.none
-    ]
+
+maybeViewAgreeToTosModal : AgreeToTosModel -> JurisdictionCheckStatus -> Maybe (Element Msg)
+maybeViewAgreeToTosModal agreeToTosModel jurisdictionCheckStatus =
+    let
+        isAllChecked =
+            List.all
+                (List.all
+                    (\tosPoint ->
+                        case tosPoint.maybeCheckedString of
+                            Nothing ->
+                                True
+
+                            Just ( _, isChecked ) ->
+                                isChecked
+                    )
+                )
+                agreeToTosModel.points
+    in
+    if isAllChecked then
+        Nothing
+
+    else
+        Just <|
+            Element.el
+                [ Element.centerX
+                , Element.centerY
+                , Element.width <| Element.px 700
+                , Element.Border.rounded 10
+                , Element.Border.glow
+                    (Element.rgba 0 0 0 0.2)
+                    5
+                , Element.Background.color EH.white
+                , Element.padding 20
+                ]
+            <|
+                Element.column
+                    [ Element.width Element.fill
+                    , Element.spacing 10
+                    ]
+                    [ verifyJurisdictionButtonOrResult jurisdictionCheckStatus
+                    , viewTosPage agreeToTosModel
+                    , viewTosPageNavigationButtons agreeToTosModel
+                    ]
+
+
+viewTosPage : AgreeToTosModel -> Element Msg
+viewTosPage agreeToTosModel =
+    let
+        ( boundedPageNum, pagePoints ) =
+            case List.Extra.getAt agreeToTosModel.page agreeToTosModel.points of
+                Just points ->
+                    ( agreeToTosModel.page
+                    , points
+                    )
+
+                Nothing ->
+                    ( 0
+                    , List.head agreeToTosModel.points
+                        |> Maybe.withDefault []
+                    )
+    in
+    Element.column
+        [ Element.width Element.fill
+        , Element.spacing 30
+        , Element.padding 20
+        ]
+        (pagePoints
+            |> List.indexedMap
+                (\pointNum point ->
+                    viewTosPoint ( boundedPageNum, pointNum ) point
+                )
+        )
+
+
+viewTosPoint : ( Int, Int ) -> TosCheckbox -> Element Msg
+viewTosPoint pointRef point =
+    Element.row
+        [ Element.width Element.fill
+        , Element.spacing 15
+        ]
+        [ Element.el
+            [ Element.Font.size 40
+            , Element.alignTop
+            ]
+          <|
+            Element.text EH.bulletPointString
+        , Element.column
+            [ Element.width Element.fill
+            , Element.spacing 10
+            ]
+            [ Element.paragraph []
+                [ Element.text point.text ]
+            , case point.maybeCheckedString of
+                Just checkedString ->
+                    viewTosCheckbox checkedString pointRef
+
+                Nothing ->
+                    Element.none
+            ]
+        ]
+
+
+viewTosCheckbox : ( String, Bool ) -> ( Int, Int ) -> Element Msg
+viewTosCheckbox ( checkboxText, checked ) pointRef =
+    Element.row
+        [ Element.Border.rounded 5
+        , Element.Background.color <|
+            if checked then
+                EH.green
+
+            else
+                Element.rgba 1 0 0 0.3
+        , Element.padding 10
+        , Element.spacing 15
+        , Element.Font.size 26
+        , Element.Font.color <|
+            if checked then
+                EH.white
+            else
+                EH.black
+        , Element.pointer
+        , Element.Events.onClick <|
+            TosCheckboxClicked pointRef
+        ]
+        [ Element.el
+            [ Element.width <| Element.px 40
+            , Element.height <| Element.px 40
+            , Element.Border.rounded 3
+            , Element.Border.width 2
+            , Element.Border.color <|
+                Element.rgba 0 0 0 0.8
+            , Element.Background.color <|
+                Element.rgba 1 1 1 0.8
+            , Element.padding 3
+            ]
+          <|
+            if checked then
+                Images.toElement
+                    [ Element.height Element.fill
+                    , Element.width Element.fill
+                    ]
+                    Images.checkmark
+
+            else
+                Element.none
+        , Element.text checkboxText
+        ]
+
+
+viewTosPageNavigationButtons : AgreeToTosModel -> Element Msg
+viewTosPageNavigationButtons agreeToTosModel =
+    let
+        navigationButton text msg =
+            Element.el
+                [ Element.Border.rounded 5
+                , Element.Background.color EH.blue
+                , Element.Font.color EH.white
+                , Element.Font.size 36
+                , Element.padding 5
+                , Element.pointer
+                , Element.Events.onClick msg
+                ]
+                (Element.text text)
+    in
+    Element.row
+        [ Element.width Element.fill
+        , Element.padding 10
+        ]
+        [ Element.el
+            [ Element.width <| Element.fillPortion 1 ]
+          <|
+            if agreeToTosModel.page /= 0 then
+                navigationButton
+                    "Previous"
+                    TosPreviousPageClicked
+
+            else
+                Element.none
+        , Element.el
+            [ Element.width <| Element.fillPortion 1 ]
+          <|
+            if agreeToTosModel.page < (List.length agreeToTosModel.points - 1) then
+                navigationButton
+                    "Next"
+                    TosNextPageClicked
+
+            else
+                Element.none
+        ]
 
 
 continueConfirmModal : EnterInfo -> Element Msg
@@ -1351,7 +1550,7 @@ referralModal userInfo maybeReferrer testMode =
                                 [ Element.text "Nice! You're using your own referral link." ]
                           , Element.paragraph []
                                 [ Element.text "This means you'll get both bonuses! More info "
-                                , Element.newTabLink [Element.Font.color EH.lightBlue ]
+                                , Element.newTabLink [ Element.Font.color EH.lightBlue ]
                                     { url = "https://foundrydao.com/faq/#about-referrals"
                                     , label = Element.text "here"
                                     }

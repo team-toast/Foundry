@@ -31,6 +31,7 @@ type alias Model =
     , userFryBalance : Maybe TokenValue
     , bucketView : BucketView
     , jurisdictionCheckStatus : JurisdictionCheckStatus
+    , agreeToTosModel : AgreeToTosModel
     , enterUXModel : EnterUXModel
     , userExitInfo : Maybe BucketSaleWrappers.ExitInfo
     , trackedTxs : List TrackedTx
@@ -47,6 +48,18 @@ type alias EnterUXModel =
     }
 
 
+type alias AgreeToTosModel =
+    { points : List (List TosCheckbox) -- List of lists, where each list is another page
+    , page : Int
+    }
+
+
+type alias TosCheckbox =
+    { text : String
+    , maybeCheckedString : Maybe ( String, Bool )
+    }
+
+
 type Msg
     = NoOp
     | CmdUp (CmdUp Msg)
@@ -55,6 +68,9 @@ type Msg
     | UpdateNow Time.Posix
     | FetchFastGasPrice
     | FetchedFastGasPrice (Result Http.Error BigInt)
+    | TosPreviousPageClicked
+    | TosNextPageClicked
+    | TosCheckboxClicked (Int, Int)
     | VerifyJurisdictionClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)
@@ -94,9 +110,6 @@ justModelUpdate model =
     , chainCmd = ChainCmd.none
     , cmdUps = []
     }
-
-
-
 
 
 type alias EnterInfo =
@@ -356,6 +369,7 @@ type CountryInfo
 type Jurisdiction
     = USA
     | JurisdictionsWeArentIntimidatedIntoExcluding
+
 
 type JurisdictionCheckStatus
     = WaitingForClick
