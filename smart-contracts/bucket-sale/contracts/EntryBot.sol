@@ -1,9 +1,11 @@
 pragma solidity ^0.5.17;
 
 import "./BucketSale.sol";
+import "../../common.5/openzeppelin/math/Math.sol";
 
 contract EntryBot
 {
+    using SafeMath for uint256;
     BucketSale bucketSale;
 
     constructor(BucketSale _bucketSale)
@@ -27,7 +29,7 @@ contract EntryBot
         {
             bucketSale.agreeToTermsAndConditionsListedInThisContractAndEnterSale(
                 _buyer,
-                _bucketId,
+                _bucketId.add(i),
                 _amountPerBucket,
                 _referrer
             );
