@@ -8,7 +8,7 @@ contract ERC20
 
 contract BurnBot
 {
-    function burnTotalBalance(ERC20Burnable erc20)
+    function burnTotalBalance(ERC20 erc20)
         public
     {
         uint balance = erc20.balanceOf(address(this));

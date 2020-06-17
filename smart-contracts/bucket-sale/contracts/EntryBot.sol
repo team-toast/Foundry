@@ -1,8 +1,14 @@
 pragma solidity ^0.5.17;
 
-//import "./BucketSale.sol";
-import "../../common.5/openzeppelin/token/ERC20/IERC20.sol";
-import "../../common.5/openzeppelin/math/SafeMath.sol";
+
+contract IERC20
+{
+    function approve(address _spender, uint _amount) 
+        public;
+    function transferFrom(address _sender, address _receiver, uint _amount)
+        public
+        returns (bool);
+}
 
 contract BucketSale
 {
@@ -20,7 +26,6 @@ contract BucketSale
 
 contract EntryBot
 {
-    using SafeMath for uint256;
     BucketSale bucketSale;
 
     constructor(BucketSale _bucketSale)
@@ -38,13 +43,13 @@ contract EntryBot
             address _referrer)
         public
     {
-        bucketSale.tokenSoldFor().transferFrom(msg.sender, address(this), _amountPerBucket.mul(_numberOfBuckets));
+        bucketSale.tokenSoldFor().transferFrom(msg.sender, address(this), _amountPerBucket * _numberOfBuckets);
 
         for(uint i = 0; i <= _numberOfBuckets; i++)
         {
             bucketSale.agreeToTermsAndConditionsListedInThisContractAndEnterSale(
                 _buyer,
-                _bucketId.add(i),
+                _bucketId + 1,
                 _amountPerBucket,
                 _referrer
             );
