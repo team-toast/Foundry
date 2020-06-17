@@ -51,7 +51,24 @@ type alias EnterUXModel =
 type alias AgreeToTosModel =
     { points : List (List TosCheckbox) -- List of lists, where each list is another page
     , page : Int
+    , dismissed : Bool
     }
+
+
+isAllPointsChecked : AgreeToTosModel -> Bool
+isAllPointsChecked agreeToTosModel =
+    List.all
+        (List.all
+            (\tosPoint ->
+                case tosPoint.maybeCheckedString of
+                    Nothing ->
+                        True
+
+                    Just ( _, isChecked ) ->
+                        isChecked
+            )
+        )
+        agreeToTosModel.points
 
 
 type alias TosCheckbox =
@@ -70,7 +87,8 @@ type Msg
     | FetchedFastGasPrice (Result Http.Error BigInt)
     | TosPreviousPageClicked
     | TosNextPageClicked
-    | TosCheckboxClicked (Int, Int)
+    | TosCheckboxClicked ( Int, Int )
+    | TosContinueClicked
     | VerifyJurisdictionClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)

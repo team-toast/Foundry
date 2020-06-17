@@ -1169,7 +1169,12 @@ makeDescription action =
 viewModals : Model -> List (Element Msg)
 viewModals model =
     Maybe.Extra.values
-        [ maybeViewAgreeToTosModal model.agreeToTosModel model.jurisdictionCheckStatus
+        [ case model.bucketSale of
+            Just (Ok _) ->
+                maybeViewAgreeToTosModal model.agreeToTosModel
+
+            _ ->
+                Nothing
         , Maybe.map continueConfirmModal model.confirmModal
         , if model.showReferralModal then
             Just <|
@@ -1185,48 +1190,79 @@ viewModals model =
         ]
 
 
-maybeViewAgreeToTosModal : AgreeToTosModel -> JurisdictionCheckStatus -> Maybe (Element Msg)
-maybeViewAgreeToTosModal agreeToTosModel jurisdictionCheckStatus =
-    let
-        isAllChecked =
-            List.all
-                (List.all
-                    (\tosPoint ->
-                        case tosPoint.maybeCheckedString of
-                            Nothing ->
-                                True
-
-                            Just ( _, isChecked ) ->
-                                isChecked
-                    )
-                )
-                agreeToTosModel.points
-    in
-    if isAllChecked then
+maybeViewAgreeToTosModal : AgreeToTosModel -> Maybe (Element Msg)
+maybeViewAgreeToTosModal agreeToTosModel =
+    if isAllPointsChecked agreeToTosModel && agreeToTosModel.dismissed then
         Nothing
 
     else
         Just <|
             Element.el
-                [ Element.centerX
-                , Element.centerY
-                , Element.width <| Element.px 700
-                , Element.Border.rounded 10
-                , Element.Border.glow
-                    (Element.rgba 0 0 0 0.2)
-                    5
-                , Element.Background.color EH.white
-                , Element.padding 20
+                [ Element.width Element.fill
+                , Element.height Element.fill
+                , Element.Background.color <| Element.rgba 0 0 0 0.3
+                , Element.inFront <|
+                    Element.el
+                        [ Element.centerX
+                        , Element.paddingEach
+                            { top = 100
+                            , bottom = 0
+                            , right = 0
+                            , left = 0
+                            }
+                        ]
+                    <|
+                        Element.el
+                            [ Element.centerX
+                            , Element.alignTop
+                            , Element.width <| Element.px 700
+                            , Element.height <| Element.px 800
+                            , Element.Border.rounded 10
+                            , Element.Border.glow
+                                (Element.rgba 0 0 0 0.2)
+                                5
+                            , Element.Background.color <| Element.rgb 0.7 0.8 1
+                            , Element.padding 20
+                            ]
+                        <|
+                            Element.column
+                                [ Element.width Element.fill
+                                , Element.height Element.fill
+                                , Element.spacing 10
+                                , Element.padding 20
+                                ]
+                                [ viewTosTitle agreeToTosModel.page (List.length agreeToTosModel.points)
+                                , Element.el
+                                    [ Element.centerY
+                                    , Element.width Element.fill
+                                    ]
+                                  <|
+                                    viewTosPage agreeToTosModel
+                                , Element.el
+                                    [ Element.alignBottom
+                                    , Element.width Element.fill
+                                    ]
+                                  <|
+                                    viewTosPageNavigationButtons agreeToTosModel
+                                ]
                 ]
-            <|
-                Element.column
-                    [ Element.width Element.fill
-                    , Element.spacing 10
-                    ]
-                    [ verifyJurisdictionButtonOrResult jurisdictionCheckStatus
-                    , viewTosPage agreeToTosModel
-                    , viewTosPageNavigationButtons agreeToTosModel
-                    ]
+                Element.none
+
+
+viewTosTitle : Int -> Int -> Element Msg
+viewTosTitle pageNum totalPages =
+    Element.el
+        [ Element.Font.size 40
+        , Element.Font.bold
+        , Element.centerX
+        ]
+    <|
+        Element.text <|
+            "Terms of Service ("
+                ++ String.fromInt (pageNum + 1)
+                ++ " of "
+                ++ String.fromInt totalPages
+                ++ ")"
 
 
 viewTosPage : AgreeToTosModel -> Element Msg
@@ -1295,22 +1331,18 @@ viewTosCheckbox ( checkboxText, checked ) pointRef =
                 EH.green
 
             else
-                Element.rgba 1 0 0 0.3
+                Element.rgb 1 0.3 0.3
         , Element.padding 10
         , Element.spacing 15
         , Element.Font.size 26
-        , Element.Font.color <|
-            if checked then
-                EH.white
-            else
-                EH.black
+        , Element.Font.color EH.white
         , Element.pointer
         , Element.Events.onClick <|
             TosCheckboxClicked pointRef
         ]
         [ Element.el
-            [ Element.width <| Element.px 40
-            , Element.height <| Element.px 40
+            [ Element.width <| Element.px 30
+            , Element.height <| Element.px 30
             , Element.Border.rounded 3
             , Element.Border.width 2
             , Element.Border.color <|
@@ -1338,13 +1370,15 @@ viewTosPageNavigationButtons agreeToTosModel =
     let
         navigationButton text msg =
             Element.el
-                [ Element.Border.rounded 5
+                [ Element.centerX
+                , Element.Border.rounded 5
                 , Element.Background.color EH.blue
                 , Element.Font.color EH.white
-                , Element.Font.size 36
-                , Element.padding 5
+                , Element.Font.size 30
+                , Element.paddingXY 20 10
                 , Element.pointer
                 , Element.Events.onClick msg
+                , EH.noSelectText
                 ]
                 (Element.text text)
     in
@@ -1369,6 +1403,11 @@ viewTosPageNavigationButtons agreeToTosModel =
                 navigationButton
                     "Next"
                     TosNextPageClicked
+
+            else if isAllPointsChecked agreeToTosModel then
+                navigationButton
+                    "Continue"
+                    TosContinueClicked
 
             else
                 Element.none

@@ -83,6 +83,7 @@ initAgreeToTosModel =
                         )
                 )
     , page = 0
+    , dismissed = False
     }
 
 
@@ -107,23 +108,23 @@ tosLines =
         , Just "I understand"
         )
       ]
-    , [ ( "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
-        , Just "I understand"
-        )
-      , ( "You will not hold the creators of this project liable for damages or losses."
+    , [ ( "You will not hold the creators of this project liable for damages or losses."
         , Just "I agree"
         )
       , ( "Even if you did, the creators will be unlikely to have the resources to settle."
         , Just "I understand"
         )
-      , ( "The DAI deposited into this sale is put into sets of smart contracts, which the creators of Foundry and FRY may not have complete or significant control over."
+      , ( "DAI deposited into this will be held in smart contracts, which the creators of Foundry and FRY may not have complete or significant control over."
         , Just "I understand"
         )
       ]
-    , [ ( "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
+    , [ ( "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
+        , Just "I understand"
+        )
+      , ( "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
         , Just "I agree"
         )
-      , ( "You are not a citizen of the United States of America"
+      , ( "US citizens are strictly prohibited from this sale."
         , Just "I am not a citizen of the USA"
         )
       ]
@@ -314,6 +315,19 @@ update msg prevModel =
                     | agreeToTosModel =
                         prevModel.agreeToTosModel
                             |> toggleAssentForPoint pointRef
+                }
+
+        TosContinueClicked ->
+            justModelUpdate
+                { prevModel
+                    | agreeToTosModel =
+                        let
+                            prevTosModel =
+                                prevModel.agreeToTosModel
+                        in
+                        { prevTosModel
+                            | dismissed = True
+                        }
                 }
 
         VerifyJurisdictionClicked ->
