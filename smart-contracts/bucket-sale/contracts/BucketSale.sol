@@ -1,8 +1,8 @@
 pragma solidity ^0.5.17;
 
-import "../../common/openzeppelin/math/Math.sol";
-import "../../common/openzeppelin/math/SafeMath.sol";
-import "../../common/openzeppelin/token/ERC20/ERC20Mintable.sol";
+import "../../common.5/openzeppelin/math/Math.sol";
+import "../../common.5/openzeppelin/math/SafeMath.sol";
+import "../../common.5/openzeppelin/token/ERC20/ERC20Mintable.sol";
 
 contract IDecimals
 {

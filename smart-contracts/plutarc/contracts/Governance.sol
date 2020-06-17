@@ -87,8 +87,6 @@ abstract contract Governance is ILiquidDemocracy
                     proposalVote.votingPower.add(_tokens) :
                     proposalVote.votingPower.sub(_tokens);
 
-            proposalVotes.set(_proposalId, _voter, proposalVote);
-
             Proposal memory proposal = proposals.get(_proposalId);
             if (proposalVote.vote == VoteType.Support)
                 proposal.votesInSupport = 
@@ -120,6 +118,9 @@ abstract contract Governance is ILiquidDemocracy
                 proposal.acceptedCoolingDown = true;
                 proposal.thresholdCrossDate = block.timestamp;
             }
+
+            proposalVotes.set(_proposalId, _voter, proposalVote);
+            proposals.set(proposal.id, proposal);
         }
     }
 }

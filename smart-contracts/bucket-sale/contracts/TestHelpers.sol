@@ -1,11 +1,11 @@
 pragma solidity ^0.5.17;
 
-import "../../common/DebugBase.sol";
+import "../../common.5/DebugBase.sol";
 
-import "../../common/openzeppelin/token/ERC20/ERC20Detailed.sol";
-import "../../common/openzeppelin/token/ERC20/ERC20Mintable.sol";
-import "../../common/openzeppelin/token/ERC20/ERC20Burnable.sol";
-import "../../common/openzeppelin/GSN/Context.sol";
+import "../../common.5/openzeppelin/token/ERC20/ERC20Detailed.sol";
+import "../../common.5/openzeppelin/token/ERC20/ERC20Mintable.sol";
+import "../../common.5/openzeppelin/token/ERC20/ERC20Burnable.sol";
+import "../../common.5/openzeppelin/GSN/Context.sol";
 
 contract TestToken is Context, ERC20Detailed, ERC20Mintable, ERC20Burnable
 {
