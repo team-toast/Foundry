@@ -1,7 +1,10 @@
 pragma solidity ^0.5.17;
 
-import "../../common.5/openzeppelin/token/ERC20/IERC20.sol";
-import "../../common.5/openzeppelin/token/ERC20/ERC20Burnable.sol";
+contract ERC20
+{
+    function balanceOf(address _holder) public returns (uint);
+    function burn(uint _balanceToBurn) public;
+}
 
 contract BurnBot
 {
