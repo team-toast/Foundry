@@ -31,11 +31,11 @@ type alias Model =
     , userFryBalance : Maybe TokenValue
     , bucketView : BucketView
     , jurisdictionCheckStatus : JurisdictionCheckStatus
-    , agreeToTosModel : AgreeToTosModel
     , enterUXModel : EnterUXModel
     , userExitInfo : Maybe BucketSaleWrappers.ExitInfo
     , trackedTxs : List TrackedTx
-    , confirmModal : Maybe EnterInfo
+    , confirmTosModel : ConfirmTosModel
+    , enterInfoToConfirm : Maybe EnterInfo
     , showReferralModal : Bool
     }
 
@@ -48,14 +48,13 @@ type alias EnterUXModel =
     }
 
 
-type alias AgreeToTosModel =
+type alias ConfirmTosModel =
     { points : List (List TosCheckbox) -- List of lists, where each list is another page
     , page : Int
-    , dismissed : Bool
     }
 
 
-isAllPointsChecked : AgreeToTosModel -> Bool
+isAllPointsChecked : ConfirmTosModel -> Bool
 isAllPointsChecked agreeToTosModel =
     List.all
         (List.all
@@ -88,7 +87,6 @@ type Msg
     | TosPreviousPageClicked
     | TosNextPageClicked
     | TosCheckboxClicked ( Int, Int )
-    | TosContinueClicked
     | VerifyJurisdictionClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)

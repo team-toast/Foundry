@@ -42,11 +42,11 @@ init maybeReferrer testMode wallet now =
       , userFryBalance = Nothing
       , bucketView = ViewCurrent
       , jurisdictionCheckStatus = WaitingForClick
-      , agreeToTosModel = initAgreeToTosModel
       , enterUXModel = initEnterUXModel maybeReferrer
       , userExitInfo = Nothing
       , trackedTxs = []
-      , confirmModal = Nothing
+      , confirmTosModel = initConfirmTosModel
+      , enterInfoToConfirm = Nothing
       , showReferralModal = False
       }
     , Cmd.batch
@@ -69,8 +69,8 @@ init maybeReferrer testMode wallet now =
     )
 
 
-initAgreeToTosModel : AgreeToTosModel
-initAgreeToTosModel =
+initConfirmTosModel : ConfirmTosModel
+initConfirmTosModel =
     { points =
         tosLines
             |> (List.map >> List.map)
@@ -83,7 +83,6 @@ initAgreeToTosModel =
                         )
                 )
     , page = 0
-    , dismissed = False
     }
 
 
@@ -280,10 +279,10 @@ update msg prevModel =
         TosPreviousPageClicked ->
             justModelUpdate
                 { prevModel
-                    | agreeToTosModel =
+                    | confirmTosModel =
                         let
                             prevTosModel =
-                                prevModel.agreeToTosModel
+                                prevModel.confirmTosModel
                         in
                         { prevTosModel
                             | page =
@@ -296,10 +295,10 @@ update msg prevModel =
         TosNextPageClicked ->
             justModelUpdate
                 { prevModel
-                    | agreeToTosModel =
+                    | confirmTosModel =
                         let
                             prevTosModel =
-                                prevModel.agreeToTosModel
+                                prevModel.confirmTosModel
                         in
                         { prevTosModel
                             | page =
@@ -312,22 +311,9 @@ update msg prevModel =
         TosCheckboxClicked pointRef ->
             justModelUpdate
                 { prevModel
-                    | agreeToTosModel =
-                        prevModel.agreeToTosModel
+                    | confirmTosModel =
+                        prevModel.confirmTosModel
                             |> toggleAssentForPoint pointRef
-                }
-
-        TosContinueClicked ->
-            justModelUpdate
-                { prevModel
-                    | agreeToTosModel =
-                        let
-                            prevTosModel =
-                                prevModel.agreeToTosModel
-                        in
-                        { prevTosModel
-                            | dismissed = True
-                        }
                 }
 
         VerifyJurisdictionClicked ->
@@ -715,13 +701,13 @@ update msg prevModel =
         EnterButtonClicked enterInfo ->
             justModelUpdate
                 { prevModel
-                    | confirmModal = Just enterInfo
+                    | enterInfoToConfirm = Just enterInfo
                 }
 
         CancelClicked ->
             justModelUpdate
                 { prevModel
-                    | confirmModal = Nothing
+                    | enterInfoToConfirm = Nothing
                 }
 
         ConfirmClicked enterInfo ->
@@ -761,7 +747,7 @@ update msg prevModel =
             UpdateResult
                 { prevModel
                     | trackedTxs = newTrackedTxs
-                    , confirmModal = Nothing
+                    , enterInfoToConfirm = Nothing
                 }
                 Cmd.none
                 chainCmd
@@ -924,7 +910,7 @@ update msg prevModel =
                         []
 
 
-toggleAssentForPoint : ( Int, Int ) -> AgreeToTosModel -> AgreeToTosModel
+toggleAssentForPoint : ( Int, Int ) -> ConfirmTosModel -> ConfirmTosModel
 toggleAssentForPoint ( pageNum, pointNum ) prevTosModel =
     { prevTosModel
         | points =
@@ -1174,7 +1160,8 @@ runCmdDown cmdDown prevModel =
                 []
 
         CmdDown.CloseAnyDropdownsOrModals ->
-            justModelUpdate prevModel
+            justModelUpdate
+                prevModel
 
 
 locationCheckResultToJurisdictionStatus : Result Json.Decode.Error (Result String LocationInfo) -> JurisdictionCheckStatus

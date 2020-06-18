@@ -1169,13 +1169,12 @@ makeDescription action =
 viewModals : Model -> List (Element Msg)
 viewModals model =
     Maybe.Extra.values
-        [ case model.bucketSale of
-            Just (Ok _) ->
-                maybeViewAgreeToTosModal model.agreeToTosModel
+        [ case model.enterInfoToConfirm of
+            Just enterInfo ->
+                Just <| viewAgreeToTosModal model.confirmTosModel enterInfo
 
             _ ->
                 Nothing
-        , Maybe.map continueConfirmModal model.confirmModal
         , if model.showReferralModal then
             Just <|
                 EH.modal
@@ -1190,63 +1189,58 @@ viewModals model =
         ]
 
 
-maybeViewAgreeToTosModal : AgreeToTosModel -> Maybe (Element Msg)
-maybeViewAgreeToTosModal agreeToTosModel =
-    if isAllPointsChecked agreeToTosModel && agreeToTosModel.dismissed then
-        Nothing
-
-    else
-        Just <|
+viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> Element Msg
+viewAgreeToTosModal confirmTosModel enterInfo =
+    Element.el
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        , Element.Background.color <| Element.rgba 0 0 0 0.3
+        , Element.inFront <|
             Element.el
-                [ Element.width Element.fill
-                , Element.height Element.fill
-                , Element.Background.color <| Element.rgba 0 0 0 0.3
-                , Element.inFront <|
-                    Element.el
-                        [ Element.centerX
-                        , Element.paddingEach
-                            { top = 100
-                            , bottom = 0
-                            , right = 0
-                            , left = 0
-                            }
-                        ]
-                    <|
-                        Element.el
-                            [ Element.centerX
-                            , Element.alignTop
-                            , Element.width <| Element.px 700
-                            , Element.height <| Element.px 800
-                            , Element.Border.rounded 10
-                            , Element.Border.glow
-                                (Element.rgba 0 0 0 0.2)
-                                5
-                            , Element.Background.color <| Element.rgb 0.7 0.8 1
-                            , Element.padding 20
-                            ]
-                        <|
-                            Element.column
-                                [ Element.width Element.fill
-                                , Element.height Element.fill
-                                , Element.spacing 10
-                                , Element.padding 20
-                                ]
-                                [ viewTosTitle agreeToTosModel.page (List.length agreeToTosModel.points)
-                                , Element.el
-                                    [ Element.centerY
-                                    , Element.width Element.fill
-                                    ]
-                                  <|
-                                    viewTosPage agreeToTosModel
-                                , Element.el
-                                    [ Element.alignBottom
-                                    , Element.width Element.fill
-                                    ]
-                                  <|
-                                    viewTosPageNavigationButtons agreeToTosModel
-                                ]
+                [ Element.centerX
+                , Element.paddingEach
+                    { top = 100
+                    , bottom = 0
+                    , right = 0
+                    , left = 0
+                    }
                 ]
-                Element.none
+            <|
+                Element.el
+                    [ Element.centerX
+                    , Element.alignTop
+                    , Element.width <| Element.px 700
+                    , Element.height <| Element.px 800
+                    , Element.Border.rounded 10
+                    , Element.Border.glow
+                        (Element.rgba 0 0 0 0.2)
+                        5
+                    , Element.Background.color <| Element.rgb 0.7 0.8 1
+                    , Element.padding 20
+                    ]
+                <|
+                    Element.column
+                        [ Element.width Element.fill
+                        , Element.height Element.fill
+                        , Element.spacing 10
+                        , Element.padding 20
+                        ]
+                        [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points)
+                        , Element.el
+                            [ Element.centerY
+                            , Element.width Element.fill
+                            ]
+                          <|
+                            viewTosPage confirmTosModel
+                        , Element.el
+                            [ Element.alignBottom
+                            , Element.width Element.fill
+                            ]
+                          <|
+                            viewTosPageNavigationButtons confirmTosModel enterInfo
+                        ]
+        ]
+        Element.none
 
 
 viewTosTitle : Int -> Int -> Element Msg
@@ -1265,7 +1259,7 @@ viewTosTitle pageNum totalPages =
                 ++ ")"
 
 
-viewTosPage : AgreeToTosModel -> Element Msg
+viewTosPage : ConfirmTosModel -> Element Msg
 viewTosPage agreeToTosModel =
     let
         ( boundedPageNum, pagePoints ) =
@@ -1365,8 +1359,8 @@ viewTosCheckbox ( checkboxText, checked ) pointRef =
         ]
 
 
-viewTosPageNavigationButtons : AgreeToTosModel -> Element Msg
-viewTosPageNavigationButtons agreeToTosModel =
+viewTosPageNavigationButtons : ConfirmTosModel -> EnterInfo -> Element Msg
+viewTosPageNavigationButtons confirmTosModel enterInfo =
     let
         navigationButton text msg =
             Element.el
@@ -1389,64 +1383,25 @@ viewTosPageNavigationButtons agreeToTosModel =
         [ Element.el
             [ Element.width <| Element.fillPortion 1 ]
           <|
-            if agreeToTosModel.page /= 0 then
+            if confirmTosModel.page /= 0 then
                 navigationButton
                     "Previous"
                     TosPreviousPageClicked
 
             else
-                Element.none
+                navigationButton
+                    "Back"
+                    CancelClicked
         , Element.el
             [ Element.width <| Element.fillPortion 1 ]
           <|
-            if agreeToTosModel.page < (List.length agreeToTosModel.points - 1) then
+            if confirmTosModel.page < (List.length confirmTosModel.points - 1) then
                 navigationButton
                     "Next"
                     TosNextPageClicked
 
-            else if isAllPointsChecked agreeToTosModel then
-                navigationButton
-                    "Continue"
-                    TosContinueClicked
-
-            else
-                Element.none
-        ]
-
-
-continueConfirmModal : EnterInfo -> Element Msg
-continueConfirmModal enterInfo =
-    EH.closeableModal
-        True
-        [ Element.Border.rounded 6
-        , Element.width <| Element.px 520
-        ]
-        (Element.column
-            [ Element.padding 27
-            , Element.spacing 20
-            , Element.width Element.fill
-            ]
-            [ Element.column
-                [ Element.width Element.fill
-                , Element.spacing 15
-                ]
-                [ Element.el
-                    [ Element.Font.bold
-                    , Element.Font.size 30
-                    , Element.Font.color <| Element.rgb255 1 31 52
-                    ]
-                    (Element.text "Just to Confirm...")
-                , Element.paragraph
-                    [ Element.Font.color grayTextColor
-                    , Element.Font.size 16
-                    ]
-                    [ Element.text "I understand that this bid cannot be refunded, and that if other bids are entered before the bucket ends, the amount of FRY I will be able to claim from this bucket will decrease." ]
-                ]
-            , Element.column
-                [ Element.width Element.fill
-                , Element.spacing 15
-                ]
-                [ EH.redButton
+            else if isAllPointsChecked confirmTosModel then
+                EH.redButton
                     Desktop
                     [ Element.width Element.fill ]
                     [ "Confirm & deposit "
@@ -1454,17 +1409,10 @@ continueConfirmModal enterInfo =
                         ++ " DAI"
                     ]
                     (ConfirmClicked enterInfo)
-                , EH.grayButton
-                    Desktop
-                    [ Element.width Element.fill ]
-                    [ "Cancel" ]
-                    CancelClicked
-                ]
-            ]
-        )
-        NoOp
-        CancelClicked
-        False
+
+            else
+                Element.none
+        ]
 
 
 referralBonusIndicator : Bool -> Bool -> Element Msg
