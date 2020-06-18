@@ -1506,7 +1506,7 @@ referralBonusIndicator hasReferral focusedStyle =
                 "Referral Bonus Active"
 
             else
-                "No Referral Bonus"
+                "Activate Referral Bonus"
         )
 
 
