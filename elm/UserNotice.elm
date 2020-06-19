@@ -104,7 +104,7 @@ cantConnectNoWeb3 =
                 }
           , Element.text ") to Connect."
           ]
-        , [ Element.text "Until you connect, DAIHard will operate in read-only mode." ]
+        , [ Element.text "Until you connect, the sale will operate in read-only mode." ]
         ]
     , align = BottomRight
     }
