@@ -91,7 +91,7 @@ initConfirmTosModel =
 
 tosLines : List (List ( List (Element Msg), Maybe String ))
 tosLines =
-    [ [ ( [ Element.text "This constitutes an agreement between you, the user, and the Decentralized Autonomous Organization Advancement Institute ("
+    [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute ("
           , Element.newTabLink
                 [ Element.Font.color EH.blue ]
                 { url = "https://foundrydao.com/contact"
@@ -103,6 +103,16 @@ tosLines =
         )
       , ( List.singleton <| Element.text "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
         , Just "I agree."
+        )
+      , ( [ Element.text "A text version if this agreement can be found "
+          , Element.newTabLink
+                [ Element.Font.color EH.blue ]
+                { url = "https://foundrydao.com/sale/terms/"
+                , label = Element.text "here"
+                }
+          , Element.text "."
+          ]
+        , Nothing
         )
       ]
     , [ ( List.singleton <| Element.text "Foundry and FRY are extremely experimental and can enter into several failure modes."
@@ -138,7 +148,7 @@ tosLines =
     , [ ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
         , Just "I understand."
         )
-      , ( List.singleton <| Element.text "US citizens are strictly prohibited from this sale."
+      , ( List.singleton <| Element.text "Citizens from the US and US-sanctioned countries are strictly prohibited from this sale."
         , Just "I am not a citizen of the USA."
         )
       ]
