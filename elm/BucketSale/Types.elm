@@ -1,5 +1,6 @@
 module BucketSale.Types exposing (..)
 
+import Element exposing (Element)
 import BigInt exposing (BigInt)
 import ChainCmd exposing (ChainCmd)
 import CmdUp exposing (CmdUp)
@@ -71,7 +72,7 @@ isAllPointsChecked agreeToTosModel =
 
 
 type alias TosCheckbox =
-    { text : String
+    { textEls : List (Element Msg)
     , maybeCheckedString : Maybe ( String, Bool )
     }
 

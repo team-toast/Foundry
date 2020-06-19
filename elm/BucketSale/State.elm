@@ -10,10 +10,13 @@ import Config
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers
 import Contracts.Wrappers
 import Dict exposing (Dict)
+import Element exposing (Element)
+import Element.Font
 import Eth
 import Eth.Net
 import Eth.Types exposing (Address, HttpProvider, Tx, TxHash, TxReceipt)
 import Helpers.BigInt as BigIntHelpers
+import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
@@ -86,45 +89,57 @@ initConfirmTosModel =
     }
 
 
+tosLines : List (List ( List (Element Msg), Maybe String ))
 tosLines =
-    [ [ ( "Foundry and FRY are extremely experimental and can enter into several failure modes."
+    [ [ ( [ Element.text "This constitutes an agreement between you, the user, and the Decentralized Autonomous Organization Advancement Institute ("
+          , Element.newTabLink
+                [ Element.Font.color EH.blue ]
+                { url = "https://foundrydao.com/contact"
+                , label = Element.text "Contact info"
+                }
+          , Element.text ")."
+          ]
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
+        , Just "I agree."
+        )
+      ]
+    , [ ( List.singleton <| Element.text "Foundry and FRY are extremely experimental and can enter into several failure modes."
         , Nothing
         )
-      , ( "Foundry and FRY could fail technically through a software vulnerability."
-        , Just "I understand"
+      , ( List.singleton <| Element.text "Foundry and FRY could fail technically through a software vulnerability."
+        , Just "I understand."
         )
-      , ( "While Foundry and FRY have been audited, bugs may have nonetheless snuck through."
-        , Just "I understand"
+      , ( List.singleton <| Element.text "While Foundry and FRY have been audited, bugs may have nonetheless snuck through."
+        , Just "I understand."
         )
-      , ( "Foundry and FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch."
-        , Just "I understand"
-        )
-      ]
-    , [ ( "The projects that Foundry funds may turn out to be flawed technically or have economic attack vectors that make them infeasible."
-        , Just "I understand"
-        )
-      , ( "FRY, and the projects funded by Foundry, might never find profitable returns."
-        , Just "I understand"
+      , ( List.singleton <| Element.text "Foundry and FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch."
+        , Just "I understand."
         )
       ]
-    , [ ( "You will not hold the creators of this project liable for damages or losses."
-        , Just "I agree"
+    , [ ( List.singleton <| Element.text "The projects that Foundry funds may turn out to be flawed technically or have economic attack vectors that make them infeasible."
+        , Just "I understand."
         )
-      , ( "Even if you did, the creators will be unlikely to have the resources to settle."
-        , Just "I understand"
-        )
-      , ( "DAI deposited into this will be held in smart contracts, which the creators of Foundry and FRY may not have complete or significant control over."
-        , Just "I understand"
+      , ( List.singleton <| Element.text "FRY, and the projects funded by Foundry, might never find profitable returns."
+        , Just "I understand."
         )
       ]
-    , [ ( "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
-        , Just "I understand"
+    , [ ( List.singleton <| Element.text "You will not hold the creators of this project liable for damages or losses."
+        , Just "I agree."
         )
-      , ( "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
-        , Just "I agree"
+      , ( List.singleton <| Element.text "Even if you did, the creators will be unlikely to have the resources to settle."
+        , Just "I understand."
         )
-      , ( "US citizens are strictly prohibited from this sale."
-        , Just "I am not a citizen of the USA"
+      , ( List.singleton <| Element.text "DAI deposited into this will be held in smart contracts, which the creators of Foundry and FRY may not have complete or significant control over."
+        , Just "I understand."
+        )
+      ]
+    , [ ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "US citizens are strictly prohibited from this sale."
+        , Just "I am not a citizen of the USA."
         )
       ]
     ]

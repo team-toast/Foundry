@@ -1305,7 +1305,7 @@ viewTosPoint pointRef point =
             , Element.spacing 10
             ]
             [ Element.paragraph []
-                [ Element.text point.text ]
+                point.textEls
             , case point.maybeCheckedString of
                 Just checkedString ->
                     viewTosCheckbox checkedString pointRef
