@@ -91,7 +91,7 @@ initConfirmTosModel =
 
 tosLines : List (List ( List (Element Msg), Maybe String ))
 tosLines =
-    [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute ("
+    [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
           , Element.newTabLink
                 [ Element.Font.color EH.blue ]
                 { url = "https://foundrydao.com/contact"
@@ -115,16 +115,16 @@ tosLines =
         , Nothing
         )
       ]
-    , [ ( List.singleton <| Element.text "Foundry and FRY are extremely experimental and can enter into several failure modes."
+    , [ ( List.singleton <| Element.text "Foundry and/or FRY are extremely experimental and could enter into several failure modes."
         , Nothing
         )
-      , ( List.singleton <| Element.text "Foundry and FRY could fail technically through a software vulnerability."
+      , ( List.singleton <| Element.text "Foundry and/or FRY could fail technically through a software vulnerability."
         , Just "I understand."
         )
-      , ( List.singleton <| Element.text "While Foundry and FRY have been audited, bugs may have nonetheless snuck through."
+      , ( List.singleton <| Element.text "While Foundry and/or FRY have been audited, bugs may have nonetheless snuck through."
         , Just "I understand."
         )
-      , ( List.singleton <| Element.text "Foundry and FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch."
+      , ( List.singleton <| Element.text "Foundry and/or FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch."
         , Just "I understand."
         )
       ]
@@ -135,20 +135,20 @@ tosLines =
         , Just "I understand."
         )
       ]
-    , [ ( List.singleton <| Element.text "You will not hold the creators of this project liable for damages or losses."
+    , [ ( List.singleton <| Element.text "You will not hold DAOAI liable for damages or losses."
         , Just "I agree."
         )
-      , ( List.singleton <| Element.text "Even if you did, the creators will be unlikely to have the resources to settle."
+      , ( List.singleton <| Element.text "Even if you did, DAOAI will be unlikely to have the resources to settle."
         , Just "I understand."
         )
-      , ( List.singleton <| Element.text "DAI deposited into this will be held in smart contracts, which the creators of Foundry and FRY may not have complete or significant control over."
+      , ( List.singleton <| Element.text "DAI deposited into this will be held in smart contracts, which DAOAI might not have complete or significant control over."
         , Just "I understand."
         )
       ]
     , [ ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
         , Just "I understand."
         )
-      , ( List.singleton <| Element.text "Citizens from the US and US-sanctioned countries are strictly prohibited from this sale."
+      , ( List.singleton <| Element.text "US Citizens are strictly prohibited from this sale."
         , Just "I am not a citizen of the USA."
         )
       ]
