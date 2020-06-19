@@ -49,7 +49,7 @@ contract EntryBot
         {
             bucketSale.agreeToTermsAndConditionsListedInThisContractAndEnterSale(
                 _buyer,
-                _bucketId + 1,
+                _bucketId + i,
                 _amountPerBucket,
                 _referrer
             );
