@@ -38,19 +38,20 @@ contract EntryBot
     function agreeToTermsAndConditionsListedInThisBucketSaleContractAndEnterSale(
             address _buyer,
             uint _bucketId,
-            uint _amountPerBucket,
+            uint _totalBuyAmount,
             uint _numberOfBuckets,
             address _referrer)
         public
     {
-        bucketSale.tokenSoldFor().transferFrom(msg.sender, address(this), _amountPerBucket * _numberOfBuckets);
+        bucketSale.tokenSoldFor().transferFrom(msg.sender, address(this), _totalBuyAmount);
+        uint amountPerBucket = _totalBuyAmount / _numberOfBuckets;
 
-        for(uint i = 0; i <= _numberOfBuckets; i++)
+        for(uint i = 0; i < _numberOfBuckets; i++)
         {
             bucketSale.agreeToTermsAndConditionsListedInThisContractAndEnterSale(
                 _buyer,
                 _bucketId + i,
-                _amountPerBucket,
+                amountPerBucket,
                 _referrer
             );
         }
