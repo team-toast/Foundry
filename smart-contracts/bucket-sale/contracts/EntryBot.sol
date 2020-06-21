@@ -24,21 +24,21 @@ contract BucketSale
     public;
 }
 
-contract KyberNetworkInterface
+interface KyberNetworkInterface
 {
     function swapTokenToToken(
             ERC20 src,
             uint srcAmount,
             ERC20 dest,
             uint minConversionRate)
-        public
+        external
         returns(uint);
     function swapEtherToToken(ERC20 token, uint minConversionRate)
-        public
+        external
         payable
         returns(uint);
-    function getExpectedRate(ERC20 src, ERC20 dest, uint srcQty)
-        public
+    function getExpectedRate(ERC20 src, ERC20 dest, uint _srcQty)
+        external
         view
         returns (uint expectedRate, uint slippageRate);
 }
@@ -60,25 +60,27 @@ contract KyberTrader
     }
 
     function swapTokenToToken(
-            ERC20 srcToken,
-            uint srcQty)
+            ERC20 _srcToken,
+            uint _srcQty)
         public
         returns (uint _receivedAmount)
     {
-        //getExpectedRate returns expected rate and slippage rate
-        //we use the slippage rate as the minRate
-        (, uint minRate) = kyberNetworkProxy.getExpectedRate(srcToken, mcdDai, srcQty);
+        // getExpectedRate returns expected rate and slippage rate
+        // We use the slippage rate as the minRate
+        (, uint minRate) = kyberNetworkProxy.getExpectedRate(_srcToken, mcdDai, _srcQty);
 
         // Check that the token transferFrom has succeeded
-        require(srcToken.transferFrom(msg.sender, address(this), srcQty), "Transfer of incoming ERC20 failed");
+        require(_srcToken.transferFrom(msg.sender, address(this), _srcQty), "Transfer of incoming ERC20 failed");
 
         // Mitigate ERC20 Approve front-running attack, by initially setting
         // allowance to 0
-        require(srcToken.approve(address(kyberNetworkProxy), 0), "Could not reset incoming ERC20 allowance");
+        require(_srcToken.approve(address(kyberNetworkProxy), 0), "Could not reset incoming ERC20 allowance");
 
         // Approve tokens so network can take them during the swap
-        srcToken.approve(address(kyberNetworkProxy), srcQty);
-        uint result = kyberNetworkProxy.swapTokenToToken(srcToken, srcQty, mcdDai, minRate);
+        _srcToken.approve(address(kyberNetworkProxy), _srcQty);
+
+        // Perform the swap
+        uint result = kyberNetworkProxy.swapTokenToToken(_srcToken, _srcQty, mcdDai, minRate);
         return result;
     }
 }
