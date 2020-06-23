@@ -56,7 +56,7 @@ routeToString fullRoute =
          )
             ++ (case fullRoute.pageRoute of
                     Sale ->
-                        [ "sale" ]
+                        []
 
                     NotFound ->
                         []

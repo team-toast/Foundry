@@ -1625,7 +1625,7 @@ referralLinkElement referrerAddress testMode =
                     Routing.Sale
                     (Just referrerAddress)
                     |> Routing.routeToString
-                    |> (\path -> "https://daihard.exchange" ++ path)
+                    |> (\path -> "https://sale.foundrydao.com" ++ path)
                 )
         )
 
