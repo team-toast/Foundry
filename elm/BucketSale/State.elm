@@ -1121,52 +1121,59 @@ runCmdDown : CmdDown -> Model -> UpdateResult
 runCmdDown cmdDown prevModel =
     case cmdDown of
         CmdDown.UpdateWallet newWallet ->
-            let
-                newBucketSale =
-                    (Maybe.map << Result.map)
-                        clearBucketSaleExitInfo
-                        prevModel.bucketSale
-            in
-            UpdateResult
-                { prevModel
-                    | wallet = verifyWalletCorrectNetwork newWallet prevModel.testMode
-                    , bucketSale = newBucketSale
-                    , userFryBalance = Nothing
-                    , userExitInfo = Nothing
-                    , enterUXModel =
-                        let
-                            oldEnterUXModel =
-                                prevModel.enterUXModel
-                        in
-                        { oldEnterUXModel
-                            | allowance = Nothing
-                        }
-                }
-                (case ( Wallet.userInfo newWallet, newBucketSale ) of
-                    ( Just userInfo, Just (Ok bucketSale) ) ->
-                        Cmd.batch
-                            [ fetchUserAllowanceForSaleCmd
-                                userInfo
-                                prevModel.testMode
-                            , fetchUserFryBalanceCmd
-                                userInfo
-                                prevModel.testMode
-                            , fetchBucketDataCmd
-                                (getFocusedBucketId
-                                    bucketSale
-                                    prevModel.bucketView
-                                    prevModel.now
-                                    prevModel.testMode
-                                )
-                                (Just userInfo)
-                                prevModel.testMode
-                            ]
+            if prevModel.wallet == newWallet then
+                justModelUpdate prevModel
 
-                    _ ->
-                        Cmd.none
-                )
-                ChainCmd.none
-                []
+            else
+                let
+                    newBucketSale =
+                        (Maybe.map << Result.map)
+                            clearBucketSaleExitInfo
+                            prevModel.bucketSale
+                in
+                UpdateResult
+                    { prevModel
+                        | wallet = verifyWalletCorrectNetwork newWallet prevModel.testMode
+                        , bucketSale = newBucketSale
+                        , userFryBalance = Nothing
+                        , userExitInfo = Nothing
+                        , enterUXModel =
+                            let
+                                oldEnterUXModel =
+                                    prevModel.enterUXModel
+                            in
+                            { oldEnterUXModel
+                                | allowance = Nothing
+                            }
+                    }
+                    (case ( Wallet.userInfo newWallet, newBucketSale ) of
+                        ( Just userInfo, Just (Ok bucketSale) ) ->
+                            Cmd.batch
+                                [ fetchUserAllowanceForSaleCmd
+                                    userInfo
+                                    prevModel.testMode
+                                , fetchUserFryBalanceCmd
+                                    userInfo
+                                    prevModel.testMode
+                                , fetchBucketDataCmd
+                                    (getFocusedBucketId
+                                        bucketSale
+                                        prevModel.bucketView
+                                        prevModel.now
+                                        prevModel.testMode
+                                    )
+                                    (Just userInfo)
+                                    prevModel.testMode
+                                , fetchUserExitInfoCmd
+                                    userInfo
+                                    prevModel.testMode
+                                ]
+
+                        _ ->
+                            Cmd.none
+                    )
+                    ChainCmd.none
+                    []
 
         CmdDown.UpdateReferral address ->
             UpdateResult
@@ -1262,7 +1269,7 @@ countryInfoDecoder =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Time.every 3000 <| always Refresh
+        [ Time.every 15000 <| always Refresh
         , Time.every 500 UpdateNow
         , Time.every (1000 * 60 * 10) <| always FetchFastGasPrice
         , locationCheckResult
