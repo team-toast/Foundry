@@ -127,6 +127,8 @@ init flags url key =
             , userNotices = []
             , dProfile = dProfile
             , maybeReferrer = maybeReferrer
+            , displayMobileWarning =
+                flags.width < 1024
             }
                 |> updateFromPageRoute fullRoute.pageRoute
                 |> runCmdUps cmdUps
