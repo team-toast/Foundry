@@ -31,14 +31,18 @@ import Wallet
 root : Model -> ( Element Msg, List (Element Msg) )
 root model =
     ( Element.column
-        [ Element.width Element.fill
-        , Element.paddingEach
+        ([ Element.width Element.fill
+         , Element.paddingEach
             { bottom = 40
             , top = 0
             , right = 0
             , left = 0
             }
-        ]
+         ]
+            ++ (List.map Element.inFront <|
+                    viewModals model
+               )
+        )
         [ case model.bucketSale of
             Nothing ->
                 Element.el
@@ -88,7 +92,7 @@ root model =
                         ]
                     ]
         ]
-    , viewModals model
+    , []
     )
 
 
@@ -1171,7 +1175,14 @@ viewModals model =
     Maybe.Extra.values
         [ case model.enterInfoToConfirm of
             Just enterInfo ->
-                Just <| viewAgreeToTosModal model.confirmTosModel enterInfo
+                Just <|
+                    EH.modal
+                        (Element.rgba 0 0 0 0.25)
+                        False
+                        NoOp
+                        CancelClicked
+                    <|
+                        viewAgreeToTosModal model.confirmTosModel enterInfo
 
             _ ->
                 Nothing
@@ -1192,55 +1203,48 @@ viewModals model =
 viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> Element Msg
 viewAgreeToTosModal confirmTosModel enterInfo =
     Element.el
-        [ Element.width Element.fill
-        , Element.height Element.fill
-        , Element.Background.color <| Element.rgba 0 0 0 0.3
-        , Element.inFront <|
-            Element.el
-                [ Element.centerX
-                , Element.paddingEach
-                    { top = 100
-                    , bottom = 0
-                    , right = 0
-                    , left = 0
-                    }
-                ]
-            <|
-                Element.el
-                    [ Element.centerX
-                    , Element.alignTop
-                    , Element.width <| Element.px 700
-                    , Element.height <| Element.px 800
-                    , Element.Border.rounded 10
-                    , Element.Border.glow
-                        (Element.rgba 0 0 0 0.2)
-                        5
-                    , Element.Background.color <| Element.rgb 0.7 0.8 1
-                    , Element.padding 20
-                    ]
-                <|
-                    Element.column
-                        [ Element.width Element.fill
-                        , Element.height Element.fill
-                        , Element.spacing 10
-                        , Element.padding 20
-                        ]
-                        [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points)
-                        , Element.el
-                            [ Element.centerY
-                            , Element.width Element.fill
-                            ]
-                          <|
-                            viewTosPage confirmTosModel
-                        , Element.el
-                            [ Element.alignBottom
-                            , Element.width Element.fill
-                            ]
-                          <|
-                            viewTosPageNavigationButtons confirmTosModel enterInfo
-                        ]
+        [ Element.centerX
+        , Element.paddingEach
+            { top = 100
+            , bottom = 0
+            , right = 0
+            , left = 0
+            }
         ]
-        Element.none
+    <|
+        Element.el
+            [ Element.centerX
+            , Element.alignTop
+            , Element.width <| Element.px 700
+            , Element.height <| Element.px 800
+            , Element.Border.rounded 10
+            , Element.Border.glow
+                (Element.rgba 0 0 0 0.2)
+                5
+            , Element.Background.color <| Element.rgb 0.7 0.8 1
+            , Element.padding 20
+            ]
+        <|
+            Element.column
+                [ Element.width Element.fill
+                , Element.height Element.fill
+                , Element.spacing 10
+                , Element.padding 20
+                ]
+                [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points)
+                , Element.el
+                    [ Element.centerY
+                    , Element.width Element.fill
+                    ]
+                  <|
+                    viewTosPage confirmTosModel
+                , Element.el
+                    [ Element.alignBottom
+                    , Element.width Element.fill
+                    ]
+                  <|
+                    viewTosPageNavigationButtons confirmTosModel enterInfo
+                ]
 
 
 viewTosTitle : Int -> Int -> Element Msg
