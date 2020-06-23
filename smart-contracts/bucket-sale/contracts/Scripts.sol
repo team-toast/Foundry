@@ -58,6 +58,26 @@ contract Scripts {
         return results;
     }
 
+    function getGeneralInfo(BucketSale _bucketSale, address _buyer, uint _bucketId)
+        public
+        view
+        returns (
+            uint _totalExitedTokens,
+            uint _bucket_totalValueEntered,
+            uint _buy_valueEntered,
+            uint _buy_buyerTokensExited,
+            uint _tokenSoldForAllowance,
+            uint _tokenOnSaleBalance,
+            uint[1201] memory _exitInfo)
+    {
+        _totalExitedTokens = _bucketSale.totalExitedTokens();
+        _bucket_totalValueEntered = _bucketSale.buckets(_bucketId);
+        (_buy_valueEntered, _buy_buyerTokensExited) = _bucketSale.buys(_bucketId, _buyer);
+        _tokenSoldForAllowance = _bucketSale.tokenSoldFor().allowance(_buyer, address(_bucketSale));
+        _tokenOnSaleBalance = _bucketSale.tokenOnSale().balanceOf(_buyer);
+        _exitInfo = getExitInfo(_bucketSale, _buyer);
+    }
+
     function exitMany(
             BucketSale _bucketSale,
             address _buyer,
