@@ -148,7 +148,7 @@ tosLines =
     , [ ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
         , Just "I understand."
         )
-      , ( List.singleton <| Element.text "US Citizens are strictly prohibited from this sale."
+      , ( List.singleton <| Element.text "US citizens and residents are strictly prohibited from this sale."
         , Just "I am not a citizen of the USA."
         )
       ]
