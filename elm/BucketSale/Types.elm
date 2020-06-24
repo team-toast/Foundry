@@ -1,6 +1,5 @@
 module BucketSale.Types exposing (..)
 
-import Element exposing (Element)
 import BigInt exposing (BigInt)
 import ChainCmd exposing (ChainCmd)
 import CmdUp exposing (CmdUp)
@@ -9,7 +8,9 @@ import Config
 import Contracts.BucketSale.Generated.BucketSale as BucketSaleBindings
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers exposing (ExitInfo)
 import Dict exposing (Dict)
+import Element exposing (Element)
 import Eth.Types exposing (Address, Tx, TxHash, TxReceipt)
+import Eth.Utils
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
@@ -148,6 +149,19 @@ type ActionData
     = Unlock
     | Enter EnterInfo
     | Exit
+
+
+actionDataToString : ActionData -> String
+actionDataToString actionData =
+    case actionData of
+        Unlock ->
+            "Unlock"
+
+        Enter _ ->
+            "Enter"
+
+        Exit ->
+            "Exit"
 
 
 type TxStatus
@@ -393,3 +407,9 @@ type JurisdictionCheckStatus
     | Checking
     | Checked Jurisdiction
     | Error String
+
+
+maybeReferrerToString : Maybe Address -> String
+maybeReferrerToString =
+    Maybe.map Eth.Utils.addressToString
+        >> Maybe.withDefault "no referrer"

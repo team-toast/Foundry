@@ -15,6 +15,7 @@ import Element.Font
 import Eth
 import Eth.Net
 import Eth.Types exposing (Address, HttpProvider, Tx, TxHash, TxReceipt)
+import Eth.Utils
 import Helpers.BigInt as BigIntHelpers
 import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
@@ -87,72 +88,6 @@ initConfirmTosModel =
                 )
     , page = 0
     }
-
-
-tosLines : List (List ( List (Element Msg), Maybe String ))
-tosLines =
-    [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
-          , Element.newTabLink
-                [ Element.Font.color EH.blue ]
-                { url = "https://foundrydao.com/contact"
-                , label = Element.text "Contact info"
-                }
-          , Element.text ")."
-          ]
-        , Just "I understand."
-        )
-      , ( List.singleton <| Element.text "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
-        , Just "I agree."
-        )
-      , ( [ Element.text "A text version if this agreement can be found "
-          , Element.newTabLink
-                [ Element.Font.color EH.blue ]
-                { url = "https://foundrydao.com/sale/terms/"
-                , label = Element.text "here"
-                }
-          , Element.text "."
-          ]
-        , Nothing
-        )
-      ]
-    , [ ( List.singleton <| Element.text "Foundry and/or FRY are extremely experimental and could enter into several failure modes."
-        , Nothing
-        )
-      , ( List.singleton <| Element.text "Foundry and/or FRY could fail technically through a software vulnerability."
-        , Just "I understand."
-        )
-      , ( List.singleton <| Element.text "While Foundry and/or FRY have been audited, bugs may have nonetheless snuck through."
-        , Just "I understand."
-        )
-      , ( List.singleton <| Element.text "Foundry and/or FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch."
-        , Just "I understand."
-        )
-      ]
-    , [ ( List.singleton <| Element.text "The projects that Foundry funds may turn out to be flawed technically or have economic attack vectors that make them infeasible."
-        , Just "I understand."
-        )
-      , ( List.singleton <| Element.text "FRY, and the projects funded by Foundry, might never find profitable returns."
-        , Just "I understand."
-        )
-      ]
-    , [ ( List.singleton <| Element.text "You will not hold DAOAI liable for damages or losses."
-        , Just "I agree."
-        )
-      , ( List.singleton <| Element.text "Even if you did, DAOAI will be unlikely to have the resources to settle."
-        , Just "I understand."
-        )
-      , ( List.singleton <| Element.text "DAI deposited into this will be held in smart contracts, which DAOAI might not have complete or significant control over."
-        , Just "I understand."
-        )
-      ]
-    , [ ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
-        , Just "I understand."
-        )
-      , ( List.singleton <| Element.text "US citizens and residents are strictly prohibited from this sale."
-        , Just "I am not a citizen of the USA."
-        )
-      ]
-    ]
 
 
 verifyWalletCorrectNetwork : Wallet.State -> TestMode -> Wallet.State
@@ -348,14 +283,46 @@ update msg prevModel =
                 }
                 (beginLocationCheck ())
                 ChainCmd.none
-                []
+                [ CmdUp.gTag "verify jurisdiction" "funnel" "clicked" 0 ]
 
         LocationCheckResult decodeResult ->
-            justModelUpdate
+            let
+                jurisdictionCheckStatus =
+                    locationCheckResultToJurisdictionStatus decodeResult
+            in
+            UpdateResult
                 { prevModel
-                    | jurisdictionCheckStatus =
-                        locationCheckResultToJurisdictionStatus decodeResult
+                    | jurisdictionCheckStatus = jurisdictionCheckStatus
                 }
+                Cmd.none
+                ChainCmd.none
+                [ CmdUp.gTag
+                    "verify jurisdiction"
+                    "funnel"
+                    ("result: "
+                        ++ (case jurisdictionCheckStatus of
+                                WaitingForClick ->
+                                    "WaitingForClick"
+
+                                Checking ->
+                                    "Checking"
+
+                                Checked jurisdiction ->
+                                    "Checked: "
+                                        ++ (case jurisdiction of
+                                                USA ->
+                                                    "USA"
+
+                                                _ ->
+                                                    "Allowed"
+                                           )
+
+                                Error error ->
+                                    "Error: " ++ error
+                           )
+                    )
+                    0
+                ]
 
         SaleStartTimestampFetched fetchResult ->
             case fetchResult of
@@ -638,7 +605,7 @@ update msg prevModel =
                         }
                         maybeFetchBucketDataCmd
                         ChainCmd.none
-                        []
+                        [ CmdUp.gTag "focus to bucket" "navigation" "" bucketId ]
 
                 somethingElse ->
                     let
@@ -648,7 +615,7 @@ update msg prevModel =
                     justModelUpdate prevModel
 
         DaiInputChanged input ->
-            justModelUpdate
+            UpdateResult
                 { prevModel
                     | enterUXModel =
                         let
@@ -665,9 +632,12 @@ update msg prevModel =
                                     Just <| validateDaiInput input
                         }
                 }
+                Cmd.none
+                ChainCmd.none
+                [ CmdUp.gTag "dai input changed" "funnel" input 0 ]
 
         ReferralIndicatorClicked ->
-            justModelUpdate
+            UpdateResult
                 { prevModel
                     | showReferralModal =
                         if prevModel.showReferralModal then
@@ -676,19 +646,27 @@ update msg prevModel =
                         else
                             True
                 }
+                Cmd.none
+                ChainCmd.none
+                [ CmdUp.gTag "modal shown" "referral" (maybeReferrerToString prevModel.enterUXModel.referrer) 0 ]
 
         CloseReferralModal ->
-            justModelUpdate
+            UpdateResult
                 { prevModel
                     | showReferralModal = False
                 }
+                Cmd.none
+                ChainCmd.none
+                [ CmdUp.gTag "modal hidden" "referral" (maybeReferrerToString prevModel.enterUXModel.referrer) 0 ]
 
         GenerateReferralClicked address ->
             UpdateResult
                 prevModel
                 Cmd.none
                 ChainCmd.none
-                [ CmdUp.NewReferralGenerated address ]
+                [ CmdUp.NewReferralGenerated address
+                , CmdUp.gTag "generate referral" "referral" (Eth.Utils.addressToString address) 0
+                ]
 
         UnlockDaiButtonClicked ->
             let
@@ -721,19 +699,25 @@ update msg prevModel =
                 }
                 Cmd.none
                 chainCmd
-                []
+                [ CmdUp.gTag "unlock clicked" "funnel" "" 0 ]
 
         EnterButtonClicked enterInfo ->
-            justModelUpdate
+            UpdateResult
                 { prevModel
                     | enterInfoToConfirm = Just enterInfo
                 }
+                Cmd.none
+                ChainCmd.none
+                [ CmdUp.gTag "enter clicked" "funnel" (TokenValue.toFloatString Nothing enterInfo.amount) 0 ]
 
         CancelClicked ->
-            justModelUpdate
+            UpdateResult
                 { prevModel
                     | enterInfoToConfirm = Nothing
                 }
+                Cmd.none
+                ChainCmd.none
+                [ CmdUp.gTag "tos aborted" "funnel abort" "" 0 ]
 
         ConfirmClicked enterInfo ->
             let
@@ -776,7 +760,7 @@ update msg prevModel =
                 }
                 Cmd.none
                 chainCmd
-                []
+                [ CmdUp.gTag "confirm clicked" "funnel" (TokenValue.toFloatString Nothing enterInfo.amount) 0 ]
 
         ClaimClicked userInfo exitInfo ->
             let
@@ -812,7 +796,14 @@ update msg prevModel =
                 }
                 Cmd.none
                 chainCmd
-                []
+                [ CmdUp.gTag
+                    "claim clicked"
+                    "after sale"
+                    (exitInfo.totalExitable
+                        |> TokenValue.toFloatString Nothing
+                    )
+                    0
+                ]
 
         TxSigned trackedTxId actionData txHashResult ->
             case txHashResult of
@@ -821,12 +812,20 @@ update msg prevModel =
                         _ =
                             Debug.log "Error signing tx" ( actionData, errStr )
                     in
-                    justModelUpdate
+                    UpdateResult
                         { prevModel
                             | trackedTxs =
                                 prevModel.trackedTxs
                                     |> updateTrackedTxStatus trackedTxId Rejected
                         }
+                        Cmd.none
+                        ChainCmd.none
+                        [ CmdUp.gTag
+                            ("tx sign error / " ++ actionDataToString actionData)
+                            "tx lifecycle"
+                            errStr
+                            0
+                        ]
 
                 Ok txHash ->
                     let
@@ -849,11 +848,19 @@ update msg prevModel =
                                 _ ->
                                     prevModel.enterUXModel
                     in
-                    justModelUpdate
+                    UpdateResult
                         { prevModel
                             | trackedTxs = newTrackedTxs
                             , enterUXModel = newEnterUXModel
                         }
+                        Cmd.none
+                        ChainCmd.none
+                        [ CmdUp.gTag
+                            ("tx sign success / " ++ actionDataToString actionData)
+                            "tx lifecycle"
+                            (Eth.Utils.txHashToString txHash)
+                            0
+                        ]
 
         TxBroadcast trackedTxId actionData txResult ->
             case txResult of
@@ -862,12 +869,20 @@ update msg prevModel =
                         _ =
                             Debug.log "Error broadcasting tx" ( actionData, errStr )
                     in
-                    justModelUpdate
+                    UpdateResult
                         { prevModel
                             | trackedTxs =
                                 prevModel.trackedTxs
                                     |> updateTrackedTxStatus trackedTxId Failed
                         }
+                        Cmd.none
+                        ChainCmd.none
+                        [ CmdUp.gTag
+                            ("tx broadcast error / " ++ actionDataToString actionData)
+                            "tx lifecycle"
+                            errStr
+                            0
+                        ]
 
                 Ok tx ->
                     let
@@ -875,10 +890,18 @@ update msg prevModel =
                             prevModel.trackedTxs
                                 |> updateTrackedTxStatus trackedTxId Mining
                     in
-                    justModelUpdate
+                    UpdateResult
                         { prevModel
                             | trackedTxs = newTrackedTxs
                         }
+                        Cmd.none
+                        ChainCmd.none
+                        [ CmdUp.gTag
+                            ("tx broadcast success / " ++ actionDataToString actionData)
+                            "tx lifecycle"
+                            (Eth.Utils.txHashToString tx.hash)
+                            0
+                        ]
 
         TxMined trackedTxId actionData txReceiptResult ->
             case txReceiptResult of
@@ -887,12 +910,20 @@ update msg prevModel =
                         _ =
                             Debug.log "Error mining tx" ( actionData, errStr )
                     in
-                    justModelUpdate
+                    UpdateResult
                         { prevModel
                             | trackedTxs =
                                 prevModel.trackedTxs
                                     |> updateTrackedTxStatus trackedTxId Failed
                         }
+                        Cmd.none
+                        ChainCmd.none
+                        [ CmdUp.gTag
+                            ("tx mine error / " ++ actionDataToString actionData)
+                            "tx lifecycle"
+                            errStr
+                            0
+                        ]
 
                 Ok txReceipt ->
                     let
@@ -932,7 +963,13 @@ update msg prevModel =
                         }
                         cmd
                         ChainCmd.none
-                        []
+                        [ CmdUp.gTag
+                            ("tx sign success / " ++ actionDataToString actionData)
+                            "tx lifecycle"
+                            (Eth.Utils.txHashToString txReceipt.hash)
+                            0
+                        ]
+                        
 
 
 toggleAssentForPoint : ( Int, Int ) -> ConfirmTosModel -> ConfirmTosModel
@@ -1281,3 +1318,69 @@ port beginLocationCheck : () -> Cmd msg
 
 
 port locationCheckResult : (Json.Decode.Value -> msg) -> Sub msg
+
+
+tosLines : List (List ( List (Element Msg), Maybe String ))
+tosLines =
+    [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
+          , Element.newTabLink
+                [ Element.Font.color EH.blue ]
+                { url = "https://foundrydao.com/contact"
+                , label = Element.text "Contact info"
+                }
+          , Element.text ")."
+          ]
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
+        , Just "I agree."
+        )
+      , ( [ Element.text "A text version if this agreement can be found "
+          , Element.newTabLink
+                [ Element.Font.color EH.blue ]
+                { url = "https://foundrydao.com/sale/terms/"
+                , label = Element.text "here"
+                }
+          , Element.text "."
+          ]
+        , Nothing
+        )
+      ]
+    , [ ( List.singleton <| Element.text "Foundry and/or FRY are extremely experimental and could enter into several failure modes."
+        , Nothing
+        )
+      , ( List.singleton <| Element.text "Foundry and/or FRY could fail technically through a software vulnerability."
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "While Foundry and/or FRY have been audited, bugs may have nonetheless snuck through."
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "Foundry and/or FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch."
+        , Just "I understand."
+        )
+      ]
+    , [ ( List.singleton <| Element.text "The projects that Foundry funds may turn out to be flawed technically or have economic attack vectors that make them infeasible."
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "FRY, and the projects funded by Foundry, might never find profitable returns."
+        , Just "I understand."
+        )
+      ]
+    , [ ( List.singleton <| Element.text "You will not hold DAOAI liable for damages or losses."
+        , Just "I agree."
+        )
+      , ( List.singleton <| Element.text "Even if you did, DAOAI will be unlikely to have the resources to settle."
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "DAI deposited into this will be held in smart contracts, which DAOAI might not have complete or significant control over."
+        , Just "I understand."
+        )
+      ]
+    , [ ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "US citizens and residents are strictly prohibited from this sale."
+        , Just "I am not a citizen of the USA."
+        )
+      ]
+    ]

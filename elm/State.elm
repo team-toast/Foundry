@@ -222,15 +222,6 @@ update msg prevModel =
                     (\cmd ->
                         Cmd.batch
                             [ cmd
-                            , gTagOut <|
-                                encodeGTag <|
-                                    GTagData
-                                        "GotoRoute"
-                                        "navigation"
-                                        (Routing.routeToString
-                                            (Routing.FullRoute prevModel.testMode pageRoute Nothing)
-                                        )
-                                        0
                             , Browser.Navigation.pushUrl
                                 prevModel.key
                                 (Routing.routeToString
@@ -270,18 +261,44 @@ update msg prevModel =
                             ( Wallet.OnlyNetwork walletSentry.networkId
                             , False
                             )
-            in
-            { prevModel
-                | userAddress = walletSentry.account
-                , wallet = newWallet
-            }
-                |> (if foundWeb3Account then
-                        removeUserNoticesByLabel UN.noWeb3Account.label
 
-                    else
-                        addUserNotice UN.noWeb3Account
-                   )
-                |> runCmdDown (CmdDown.UpdateWallet newWallet)
+                newModel =
+                    { prevModel
+                        | userAddress = walletSentry.account
+                        , wallet = newWallet
+                    }
+                        |> (if foundWeb3Account then
+                                removeUserNoticesByLabel UN.noWeb3Account.label
+
+                            else
+                                addUserNotice UN.noWeb3Account
+                           )
+            in
+            if newWallet /= prevModel.wallet then
+                newModel
+                    |> runCmdDown (CmdDown.UpdateWallet newWallet)
+                    |> (\(newModel_, updateWalletCmd) ->
+                            ( newModel_
+                            , Cmd.batch
+                                [ updateWalletCmd
+                                , gTagOut <|
+                                    encodeGTag <|
+                                        GTagData
+                                            "new wallet"
+                                            "funnel"
+                                            (newWallet
+                                                |> Wallet.userInfo
+                                                |> Maybe.map .address
+                                                |> Maybe.map Eth.Utils.addressToString
+                                                |> Maybe.withDefault "none"
+                                            )
+                                            0
+                                ]
+                            )
+                       )
+
+            else
+                ( newModel, Cmd.none )
 
         BucketSaleMsg bucketSaleMsg ->
             case prevModel.submodel of

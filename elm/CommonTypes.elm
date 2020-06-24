@@ -13,6 +13,7 @@ type TestMode
     | TestKovan
     | TestGanache
 
+
 type DisplayProfile
     = Desktop
     | Mobile
