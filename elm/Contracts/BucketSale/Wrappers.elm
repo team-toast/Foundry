@@ -73,6 +73,29 @@ getUserExitInfo testMode userAddress msgConstructor =
         |> Task.attempt msgConstructor
 
 
+type alias StateUpdateInfo =
+    { totalExitedTokens : BigInt
+    , bucket_totalValueEntered : BigInt
+    , buy_valueEntered : BigInt
+    , buy_buyerTokensExited : BigInt
+    , tokenSoldForAllowance : BigInt
+    , tokenOnSaleBalance : BigInt
+    , exitInfo : List (BigInt)
+    }
+
+
+getStateUpdateInfo : TestMode -> Address -> BigInt -> (Result Http.Error (Maybe StateUpdateInfo) -> msg) -> Cmd msg
+getStateUpdateInfo testMode userAddress bucketId =
+    BucketSaleBindings.getGeneralInfo
+        Config.bucketSaleScriptsAddress
+        Config.bucketSaleAddress
+        userAddress
+        bucketId
+        |> Eth.call (EthHelpers.appHttpProvider testMode)
+        |> Task.map ()
+    
+
+
 unlockDai : TestMode -> Call Bool
 unlockDai testMode =
     Token.approve

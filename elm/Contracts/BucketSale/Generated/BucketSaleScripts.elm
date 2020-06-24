@@ -1,6 +1,9 @@
 module Contracts.BucketSale.Generated.BucketSaleScripts exposing
-    ( exitMany
+    ( GetGeneralInfo
+    , exitMany
     , getExitInfo
+    , getGeneralInfo
+    , getGeneralInfoDecoder
     )
 
 import Eth.Abi.Decode as D exposing (abiDecode, andMap, data, toElmDecoder, topic)
@@ -49,5 +52,45 @@ getExitInfo contractAddress bucketSale_ buyer_ =
     , nonce = Nothing
     , decoder = toElmDecoder (D.staticArray 1201 D.uint)
     }
+
+
+-- getGeneralInfo(address,address,uint256) function
+
+
+type alias GetGeneralInfo =
+    { totalExitedTokens : BigInt
+    , bucket_totalValueEntered : BigInt
+    , buy_valueEntered : BigInt
+    , buy_buyerTokensExited : BigInt
+    , tokenSoldForAllowance : BigInt
+    , tokenOnSaleBalance : BigInt
+    , exitInfo : List (BigInt)
+    }
+
+
+getGeneralInfo : Address -> Address -> Address -> BigInt -> Call GetGeneralInfo
+getGeneralInfo contractAddress bucketSale_ buyer_ bucketId_ =
+    { to = Just contractAddress
+    , from = Nothing
+    , gas = Nothing
+    , gasPrice = Nothing
+    , value = Nothing
+    , data = Just <| E.functionCall "9fe5d76c" [ E.address bucketSale_, E.address buyer_, E.uint bucketId_ ]
+    , nonce = Nothing
+    , decoder = getGeneralInfoDecoder
+    }
+
+
+getGeneralInfoDecoder : Decoder GetGeneralInfo
+getGeneralInfoDecoder =
+    abiDecode GetGeneralInfo
+        |> andMap D.uint
+        |> andMap D.uint
+        |> andMap D.uint
+        |> andMap D.uint
+        |> andMap D.uint
+        |> andMap D.uint
+        |> andMap (D.staticArray 1201 D.uint)
+        |> toElmDecoder
 
 

@@ -75,13 +75,13 @@ bucketSaleScriptsAddress : TestMode -> Address
 bucketSaleScriptsAddress testMode =
     case testMode of
         None ->
-            Eth.Utils.unsafeToAddress "0x487Ac5423555B1D83F5b8BA13F260B296E9D0777"
+            Eth.Utils.unsafeToAddress "0x4B5bd4AC762dc62E1Cf8D79dfb0B886778ed3719"
 
         TestKovan ->
             Debug.todo ""
 
         TestMainnet ->
-            Eth.Utils.unsafeToAddress "0x487Ac5423555B1D83F5b8BA13F260B296E9D0777"
+            Eth.Utils.unsafeToAddress "0x4B5bd4AC762dc62E1Cf8D79dfb0B886778ed3719"
 
         TestGanache ->
             Eth.Utils.unsafeToAddress "0xA57B8a5584442B467b4689F1144D269d096A3daF"
