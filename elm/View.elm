@@ -51,48 +51,75 @@ root model =
 
 pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
 pageElementAndModal model =
-    let
-        ( submodelEl, modalEls ) =
-            submodelElementAndModal model
-
-        maybeTestnetIndicator =
-            Element.el
-                [ Element.centerX
-                , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
-                , Element.Font.bold
-                , Element.Font.italic
-                , Element.Font.color EH.softRed
-                ]
-            <|
-                case model.testMode of
-                    None ->
-                        Element.none
-
-                    TestMainnet ->
-                        Element.text "In Test (Mainnet) mode"
-
-                    TestKovan ->
-                        Element.text "In Test (Kovan) mode"
-
-                    TestGanache ->
-                        Element.text "In Test (Local) mode"
-    in
-    ( Element.column
-        [ Element.width Element.fill
-        , Element.height Element.fill
-        , Element.spacing (20 |> changeForMobile 10 model.dProfile)
-        , Element.behindContent <| headerBackground model.dProfile
-        ]
-        [ header model.dProfile
-        , maybeTestnetIndicator
-        , Element.el
+    if model.dProfile /= Desktop && model.displayMobileWarning then
+        ( Element.column
             [ Element.width Element.fill
-            , Element.paddingXY 20 0
+            , Element.height Element.fill
+            , Element.Background.color <| Element.rgb255 20 53 138
+            , Element.spacing 30
+            , Element.paddingXY 10 30
+            , Element.Font.size 22
+            , Element.Font.color EH.white
             ]
-            submodelEl
-        ]
-    , modalEls ++ userNoticeEls model.dProfile model.userNotices
-    )
+            [ Element.paragraph [ Element.Font.center ]
+                [ Element.text "This interface is not designed for screens this small. To participate in this sale, visit on a larger screen. Alternatively, some mobile browsers have a \"desktop mode\" that might help." ]
+            , Element.paragraph [ Element.Font.center ]
+                [ Element.text "If you're just looking for info on Foundry, FRY, or the sale, check out "
+                , Element.newTabLink
+                    [ Element.Font.color EH.lightBlue
+                    ]
+                    { url = "https://foundrydao.com"
+                    , label = Element.text "foundrydao.com"
+                    }
+                , Element.text "."
+                ]
+            ]
+        , []
+        )
+
+    else
+        let
+            ( submodelEl, modalEls ) =
+                submodelElementAndModal model
+
+            maybeTestnetIndicator =
+                Element.el
+                    [ Element.centerX
+                    , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
+                    , Element.Font.bold
+                    , Element.Font.italic
+                    , Element.Font.color EH.softRed
+                    ]
+                <|
+                    case model.testMode of
+                        None ->
+                            Element.none
+
+                        TestMainnet ->
+                            Element.text "In Test (Mainnet) mode"
+
+                        TestKovan ->
+                            Element.text "In Test (Kovan) mode"
+
+                        TestGanache ->
+                            Element.text "In Test (Local) mode"
+        in
+        ( Element.column
+            [ Element.width Element.fill
+            , Element.height Element.fill
+            , Element.spacing (20 |> changeForMobile 10 model.dProfile)
+            , Element.behindContent <| headerBackground model.dProfile
+            ]
+            [ header model.dProfile
+            , maybeTestnetIndicator
+            , Element.el
+                [ Element.width Element.fill
+                , Element.paddingXY 20 0
+                ]
+                submodelEl
+            ]
+        , modalEls ++ userNoticeEls model.dProfile model.userNotices
+        )
 
 
 headerBackground : DisplayProfile -> Element Msg
@@ -298,58 +325,28 @@ headerMenuAttributes =
 
 submodelElementAndModal : Model -> ( Element Msg, List (Element Msg) )
 submodelElementAndModal model =
-    case model.testMode of
-        None ->
-            let
-                submodelEl =
-                    Element.el
-                        [ Element.paddingXY 0 100
-                        , Element.centerX
-                        ]
-                    <|
-                        Element.column
-                            [ Element.Background.color EH.lightBlue
-                            , Element.Border.rounded 10
-                            , Element.padding 20
-                            , Element.spacing 10
-                            ]
-                        <|
-                            List.map
-                                (Element.paragraph
-                                    [ Element.Font.size 40
-                                    , Element.Font.color EH.white
-                                    , Element.Font.center
-                                    ]
-                                )
-                                [ [ Element.text "The sale hasn't started yet." ]
-                                , [ Element.text "We'll announce a launch date soon!" ]
-                                ]
-            in
-            ( submodelEl, [] )
+    let
+        ( submodelEl, modalEls ) =
+            case model.submodel of
+                NullSubmodel ->
+                    ( Element.none
+                    , []
+                    )
 
-        _ ->
-            let
-                ( submodelEl, modalEls ) =
-                    case model.submodel of
-                        NullSubmodel ->
-                            ( Element.none
-                            , []
-                            )
-
-                        BucketSaleModel bucketSaleModel ->
-                            BucketSale.View.root bucketSaleModel
-                                |> Tuple.mapBoth
-                                    (Element.map BucketSaleMsg)
-                                    (List.map (Element.map BucketSaleMsg))
-            in
-            ( Element.el
-                [ Element.width Element.fill
-                , Element.height Element.fill
-                , Element.Border.rounded 10
-                ]
-                submodelEl
-            , modalEls
-            )
+                BucketSaleModel bucketSaleModel ->
+                    BucketSale.View.root bucketSaleModel
+                        |> Tuple.mapBoth
+                            (Element.map BucketSaleMsg)
+                            (List.map (Element.map BucketSaleMsg))
+    in
+    ( Element.el
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        , Element.Border.rounded 10
+        ]
+        submodelEl
+    , modalEls
+    )
 
 
 userNoticeEls : DisplayProfile -> List (UserNotice Msg) -> List (Element Msg)

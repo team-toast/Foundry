@@ -164,3 +164,11 @@ keybase =
         { src = "img/social-media/keybase.svg"
         , description = "keybase"
         }
+
+
+checkmark : Image
+checkmark =
+    JustImage
+        { src = "img/check.svg"
+        , description = "checked"
+        }

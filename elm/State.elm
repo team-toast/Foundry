@@ -32,16 +32,12 @@ init flags url key =
         fullRoute =
             Routing.urlToFullRoute url
 
-        ( wallet, cmdUps ) =
+        wallet =
             if flags.networkId == 0 then
-                ( Wallet.NoneDetected
-                , [ CmdUp.gTag "web3 status" "profile" "none" 0 ]
-                )
+                Wallet.NoneDetected
 
             else
-                ( Wallet.OnlyNetwork <| Eth.Net.toNetworkId flags.networkId
-                , [ CmdUp.gTag "web3 status" "profile" (Eth.Net.networkIdToString <| Eth.Net.toNetworkId flags.networkId) 0 ]
-                )
+                Wallet.OnlyNetwork <| Eth.Net.toNetworkId flags.networkId
 
         providerNotice =
             case fullRoute.pageRoute of
@@ -127,9 +123,10 @@ init flags url key =
             , userNotices = []
             , dProfile = dProfile
             , maybeReferrer = maybeReferrer
+            , displayMobileWarning =
+                flags.width < 1024
             }
                 |> updateFromPageRoute fullRoute.pageRoute
-                |> runCmdUps cmdUps
     in
     ( model
         |> addUserNotices userNotices
@@ -220,15 +217,6 @@ update msg prevModel =
                     (\cmd ->
                         Cmd.batch
                             [ cmd
-                            , gTagOut <|
-                                encodeGTag <|
-                                    GTagData
-                                        "GotoRoute"
-                                        "navigation"
-                                        (Routing.routeToString
-                                            (Routing.FullRoute prevModel.testMode pageRoute Nothing)
-                                        )
-                                        0
                             , Browser.Navigation.pushUrl
                                 prevModel.key
                                 (Routing.routeToString
@@ -268,18 +256,44 @@ update msg prevModel =
                             ( Wallet.OnlyNetwork walletSentry.networkId
                             , False
                             )
-            in
-            { prevModel
-                | userAddress = walletSentry.account
-                , wallet = newWallet
-            }
-                |> (if foundWeb3Account then
-                        removeUserNoticesByLabel UN.noWeb3Account.label
 
-                    else
-                        addUserNotice UN.noWeb3Account
-                   )
-                |> runCmdDown (CmdDown.UpdateWallet newWallet)
+                newModel =
+                    { prevModel
+                        | userAddress = walletSentry.account
+                        , wallet = newWallet
+                    }
+                        |> (if foundWeb3Account then
+                                removeUserNoticesByLabel UN.noWeb3Account.label
+
+                            else
+                                addUserNotice UN.noWeb3Account
+                           )
+            in
+            if newWallet /= prevModel.wallet then
+                newModel
+                    |> runCmdDown (CmdDown.UpdateWallet newWallet)
+                    |> (\( newModel_, updateWalletCmd ) ->
+                            ( newModel_
+                            , Cmd.batch
+                                [ updateWalletCmd
+                                , gTagOut <|
+                                    encodeGTag <|
+                                        GTagData
+                                            "new wallet"
+                                            "funnel"
+                                            (newWallet
+                                                |> Wallet.userInfo
+                                                |> Maybe.map .address
+                                                |> Maybe.map Eth.Utils.addressToString
+                                                |> Maybe.withDefault "none"
+                                            )
+                                            0
+                                ]
+                            )
+                       )
+
+            else
+                ( newModel, Cmd.none )
 
         BucketSaleMsg bucketSaleMsg ->
             case prevModel.submodel of

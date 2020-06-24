@@ -8,7 +8,9 @@ import Config
 import Contracts.BucketSale.Generated.BucketSale as BucketSaleBindings
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers exposing (ExitInfo)
 import Dict exposing (Dict)
+import Element exposing (Element)
 import Eth.Types exposing (Address, Tx, TxHash, TxReceipt)
+import Eth.Utils
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
@@ -34,7 +36,8 @@ type alias Model =
     , enterUXModel : EnterUXModel
     , userExitInfo : Maybe BucketSaleWrappers.ExitInfo
     , trackedTxs : List TrackedTx
-    , confirmModal : Maybe EnterInfo
+    , confirmTosModel : ConfirmTosModel
+    , enterInfoToConfirm : Maybe EnterInfo
     , showReferralModal : Bool
     }
 
@@ -47,6 +50,34 @@ type alias EnterUXModel =
     }
 
 
+type alias ConfirmTosModel =
+    { points : List (List TosCheckbox) -- List of lists, where each list is another page
+    , page : Int
+    }
+
+
+isAllPointsChecked : ConfirmTosModel -> Bool
+isAllPointsChecked agreeToTosModel =
+    List.all
+        (List.all
+            (\tosPoint ->
+                case tosPoint.maybeCheckedString of
+                    Nothing ->
+                        True
+
+                    Just ( _, isChecked ) ->
+                        isChecked
+            )
+        )
+        agreeToTosModel.points
+
+
+type alias TosCheckbox =
+    { textEls : List (Element Msg)
+    , maybeCheckedString : Maybe ( String, Bool )
+    }
+
+
 type Msg
     = NoOp
     | CmdUp (CmdUp Msg)
@@ -55,6 +86,9 @@ type Msg
     | UpdateNow Time.Posix
     | FetchFastGasPrice
     | FetchedFastGasPrice (Result Http.Error BigInt)
+    | TosPreviousPageClicked
+    | TosNextPageClicked
+    | TosCheckboxClicked ( Int, Int )
     | VerifyJurisdictionClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)
@@ -96,9 +130,6 @@ justModelUpdate model =
     }
 
 
-
-
-
 type alias EnterInfo =
     { userInfo : UserInfo
     , bucketId : Int
@@ -118,6 +149,19 @@ type ActionData
     = Unlock
     | Enter EnterInfo
     | Exit
+
+
+actionDataToString : ActionData -> String
+actionDataToString actionData =
+    case actionData of
+        Unlock ->
+            "Unlock"
+
+        Enter _ ->
+            "Enter"
+
+        Exit ->
+            "Exit"
 
 
 type TxStatus
@@ -354,11 +398,18 @@ type CountryInfo
 
 
 type Jurisdiction
-    = ChinaOrUSA
+    = USA
     | JurisdictionsWeArentIntimidatedIntoExcluding
+
 
 type JurisdictionCheckStatus
     = WaitingForClick
     | Checking
     | Checked Jurisdiction
     | Error String
+
+
+maybeReferrerToString : Maybe Address -> String
+maybeReferrerToString =
+    Maybe.map Eth.Utils.addressToString
+        >> Maybe.withDefault "no referrer"

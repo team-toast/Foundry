@@ -31,14 +31,18 @@ import Wallet
 root : Model -> ( Element Msg, List (Element Msg) )
 root model =
     ( Element.column
-        [ Element.width Element.fill
-        , Element.paddingEach
+        ([ Element.width Element.fill
+         , Element.paddingEach
             { bottom = 40
             , top = 0
             , right = 0
             , left = 0
             }
-        ]
+         ]
+            ++ (List.map Element.inFront <|
+                    viewModals model
+               )
+        )
         [ case model.bucketSale of
             Nothing ->
                 Element.el
@@ -88,7 +92,7 @@ root model =
                         ]
                     ]
         ]
-    , viewModals model
+    , []
     )
 
 
@@ -863,18 +867,19 @@ otherBidsImpactMsg =
         ]
 
 
-actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
-actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
-    let
-        msgInstead text color =
-            Element.el
-                [ Element.centerX
-                , Element.Font.size 22
-                , Element.Font.italic
-                , Element.Font.color color
-                ]
-                (Element.text text)
-    in
+msgInsteadOfButton : String -> Element.Color -> Element Msg
+msgInsteadOfButton text color =
+    Element.el
+        [ Element.centerX
+        , Element.Font.size 22
+        , Element.Font.italic
+        , Element.Font.color color
+        ]
+        (Element.text text)
+
+
+verifyJurisdictionButtonOrResult : JurisdictionCheckStatus -> Element Msg
+verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
     case jurisdictionCheckStatus of
         WaitingForClick ->
             EH.redButton
@@ -895,7 +900,7 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
                 [ Element.spacing 10
                 , Element.width Element.fill
                 ]
-                [ msgInstead "Error verifying jurisdiction." red
+                [ msgInsteadOfButton "Error verifying jurisdiction." red
                 , Element.paragraph
                     [ Element.Font.color grayTextColor ]
                     [ Element.text errStr ]
@@ -904,9 +909,16 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
                     [ Element.text "There may be more info in the console." ]
                 ]
 
-        Checked ChinaOrUSA ->
-            msgInstead "Sorry, US and Chinese citizens are excluded." red
+        Checked USA ->
+            msgInsteadOfButton "Sorry, US citizens are excluded." red
 
+        Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
+            msgInsteadOfButton "Jurisdiction Verified." green
+
+
+actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
+actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
+    case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
                 Nothing ->
@@ -943,14 +955,14 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
                     in
                     case enterUXModel.allowance of
                         Nothing ->
-                            msgInstead "Fetching Dai unlock status..." grayTextColor
+                            msgInsteadOfButton "Fetching Dai unlock status..." grayTextColor
 
                         Just allowance ->
                             if enterUXModel.allowance == Just TokenValue.zero then
                                 unlockDaiButton
 
                             else if unlockMining then
-                                msgInstead "Mining Dai unlock..." grayTextColor
+                                msgInsteadOfButton "Mining Dai unlock..." grayTextColor
 
                             else
                                 -- Allowance is loaded and nonzero, and we are not mining an Unlock
@@ -964,6 +976,9 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
 
                                     _ ->
                                         disabledContinueButton
+
+        _ ->
+            verifyJurisdictionButtonOrResult jurisdictionCheckStatus
 
 
 noBucketsLeftBlock : Element Msg
@@ -1157,58 +1172,240 @@ makeDescription action =
 
 viewModals : Model -> List (Element Msg)
 viewModals model =
-    [ case model.confirmModal of
-        Just exitInfo ->
-            continueConfirmModal exitInfo
+    Maybe.Extra.values
+        [ case model.enterInfoToConfirm of
+            Just enterInfo ->
+                Just <|
+                    EH.modal
+                        (Element.rgba 0 0 0 0.25)
+                        False
+                        NoOp
+                        CancelClicked
+                    <|
+                        viewAgreeToTosModal model.confirmTosModel enterInfo
 
-        Nothing ->
-            Element.none
-    , if model.showReferralModal then
-        EH.modal
-            (Element.rgba 0 0 0 0.25)
-            False
-            CloseReferralModal
-            CloseReferralModal
-            Element.none
+            _ ->
+                Nothing
+        , if model.showReferralModal then
+            Just <|
+                EH.modal
+                    (Element.rgba 0 0 0 0.25)
+                    False
+                    CloseReferralModal
+                    CloseReferralModal
+                    Element.none
 
-      else
-        Element.none
-    ]
-
-
-continueConfirmModal : EnterInfo -> Element Msg
-continueConfirmModal enterInfo =
-    EH.closeableModal
-        True
-        [ Element.Border.rounded 6
-        , Element.width <| Element.px 520
+          else
+            Nothing
         ]
-        (Element.column
-            [ Element.padding 27
-            , Element.spacing 20
-            , Element.width Element.fill
+
+
+viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> Element Msg
+viewAgreeToTosModal confirmTosModel enterInfo =
+    Element.el
+        [ Element.centerX
+        , Element.paddingEach
+            { top = 100
+            , bottom = 0
+            , right = 0
+            , left = 0
+            }
+        ]
+    <|
+        Element.el
+            [ Element.centerX
+            , Element.alignTop
+            , Element.width <| Element.px 700
+            , Element.height <| Element.px 800
+            , Element.Border.rounded 10
+            , Element.Border.glow
+                (Element.rgba 0 0 0 0.2)
+                5
+            , Element.Background.color <| Element.rgb 0.7 0.8 1
+            , Element.padding 20
             ]
-            [ Element.column
+        <|
+            Element.column
                 [ Element.width Element.fill
-                , Element.spacing 15
+                , Element.height Element.fill
+                , Element.spacing 10
+                , Element.padding 20
                 ]
-                [ Element.el
-                    [ Element.Font.bold
-                    , Element.Font.size 30
-                    , Element.Font.color <| Element.rgb255 1 31 52
+                [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points)
+                , Element.el
+                    [ Element.centerY
+                    , Element.width Element.fill
                     ]
-                    (Element.text "Just to Confirm...")
-                , Element.paragraph
-                    [ Element.Font.color grayTextColor
-                    , Element.Font.size 16
+                  <|
+                    viewTosPage confirmTosModel
+                , Element.el
+                    [ Element.alignBottom
+                    , Element.width Element.fill
                     ]
-                    [ Element.text "I understand that this bid cannot be refunded, and that if other bids are entered before the bucket ends, the amount of FRY I will be able to claim from this bucket will decrease." ]
+                  <|
+                    viewTosPageNavigationButtons confirmTosModel enterInfo
                 ]
-            , Element.column
-                [ Element.width Element.fill
-                , Element.spacing 15
+
+
+viewTosTitle : Int -> Int -> Element Msg
+viewTosTitle pageNum totalPages =
+    Element.el
+        [ Element.Font.size 40
+        , Element.Font.bold
+        , Element.centerX
+        ]
+    <|
+        Element.text <|
+            "Terms of Service ("
+                ++ String.fromInt (pageNum + 1)
+                ++ " of "
+                ++ String.fromInt totalPages
+                ++ ")"
+
+
+viewTosPage : ConfirmTosModel -> Element Msg
+viewTosPage agreeToTosModel =
+    let
+        ( boundedPageNum, pagePoints ) =
+            case List.Extra.getAt agreeToTosModel.page agreeToTosModel.points of
+                Just points ->
+                    ( agreeToTosModel.page
+                    , points
+                    )
+
+                Nothing ->
+                    ( 0
+                    , List.head agreeToTosModel.points
+                        |> Maybe.withDefault []
+                    )
+    in
+    Element.column
+        [ Element.width Element.fill
+        , Element.spacing 30
+        , Element.padding 20
+        ]
+        (pagePoints
+            |> List.indexedMap
+                (\pointNum point ->
+                    viewTosPoint ( boundedPageNum, pointNum ) point
+                )
+        )
+
+
+viewTosPoint : ( Int, Int ) -> TosCheckbox -> Element Msg
+viewTosPoint pointRef point =
+    Element.row
+        [ Element.width Element.fill
+        , Element.spacing 15
+        ]
+        [ Element.el
+            [ Element.Font.size 40
+            , Element.alignTop
+            ]
+          <|
+            Element.text EH.bulletPointString
+        , Element.column
+            [ Element.width Element.fill
+            , Element.spacing 10
+            ]
+            [ Element.paragraph []
+                point.textEls
+            , case point.maybeCheckedString of
+                Just checkedString ->
+                    viewTosCheckbox checkedString pointRef
+
+                Nothing ->
+                    Element.none
+            ]
+        ]
+
+
+viewTosCheckbox : ( String, Bool ) -> ( Int, Int ) -> Element Msg
+viewTosCheckbox ( checkboxText, checked ) pointRef =
+    Element.row
+        [ Element.Border.rounded 5
+        , Element.Background.color <|
+            if checked then
+                EH.green
+
+            else
+                Element.rgb 1 0.3 0.3
+        , Element.padding 10
+        , Element.spacing 15
+        , Element.Font.size 26
+        , Element.Font.color EH.white
+        , Element.pointer
+        , Element.Events.onClick <|
+            TosCheckboxClicked pointRef
+        ]
+        [ Element.el
+            [ Element.width <| Element.px 30
+            , Element.height <| Element.px 30
+            , Element.Border.rounded 3
+            , Element.Border.width 2
+            , Element.Border.color <|
+                Element.rgba 0 0 0 0.8
+            , Element.Background.color <|
+                Element.rgba 1 1 1 0.8
+            , Element.padding 3
+            ]
+          <|
+            if checked then
+                Images.toElement
+                    [ Element.height Element.fill
+                    , Element.width Element.fill
+                    ]
+                    Images.checkmark
+
+            else
+                Element.none
+        , Element.text checkboxText
+        ]
+
+
+viewTosPageNavigationButtons : ConfirmTosModel -> EnterInfo -> Element Msg
+viewTosPageNavigationButtons confirmTosModel enterInfo =
+    let
+        navigationButton text msg =
+            Element.el
+                [ Element.centerX
+                , Element.Border.rounded 5
+                , Element.Background.color EH.blue
+                , Element.Font.color EH.white
+                , Element.Font.size 30
+                , Element.paddingXY 20 10
+                , Element.pointer
+                , Element.Events.onClick msg
+                , EH.noSelectText
                 ]
-                [ EH.redButton
+                (Element.text text)
+    in
+    Element.row
+        [ Element.width Element.fill
+        , Element.padding 10
+        ]
+        [ Element.el
+            [ Element.width <| Element.fillPortion 1 ]
+          <|
+            if confirmTosModel.page /= 0 then
+                navigationButton
+                    "Previous"
+                    TosPreviousPageClicked
+
+            else
+                navigationButton
+                    "Back"
+                    CancelClicked
+        , Element.el
+            [ Element.width <| Element.fillPortion 1 ]
+          <|
+            if confirmTosModel.page < (List.length confirmTosModel.points - 1) then
+                navigationButton
+                    "Next"
+                    TosNextPageClicked
+
+            else if isAllPointsChecked confirmTosModel then
+                EH.redButton
                     Desktop
                     [ Element.width Element.fill ]
                     [ "Confirm & deposit "
@@ -1216,17 +1413,10 @@ continueConfirmModal enterInfo =
                         ++ " DAI"
                     ]
                     (ConfirmClicked enterInfo)
-                , EH.grayButton
-                    Desktop
-                    [ Element.width Element.fill ]
-                    [ "Cancel" ]
-                    CancelClicked
-                ]
-            ]
-        )
-        NoOp
-        CancelClicked
-        False
+
+            else
+                Element.none
+        ]
 
 
 referralBonusIndicator : Bool -> Bool -> Element Msg
@@ -1268,7 +1458,7 @@ referralBonusIndicator hasReferral focusedStyle =
                 "Referral Bonus Active"
 
             else
-                "No Referral Bonus"
+                "Activate Referral Bonus"
         )
 
 
@@ -1351,7 +1541,7 @@ referralModal userInfo maybeReferrer testMode =
                                 [ Element.text "Nice! You're using your own referral link." ]
                           , Element.paragraph []
                                 [ Element.text "This means you'll get both bonuses! More info "
-                                , Element.newTabLink [Element.Font.color EH.lightBlue ]
+                                , Element.newTabLink [ Element.Font.color EH.lightBlue ]
                                     { url = "https://foundrydao.com/faq/#about-referrals"
                                     , label = Element.text "here"
                                     }
@@ -1439,7 +1629,7 @@ referralLinkElement referrerAddress testMode =
                     Routing.Sale
                     (Just referrerAddress)
                     |> Routing.routeToString
-                    |> (\path -> "https://daihard.exchange" ++ path)
+                    |> (\path -> "https://sale.foundrydao.com" ++ path)
                 )
         )
 

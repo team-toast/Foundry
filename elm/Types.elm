@@ -37,6 +37,7 @@ type alias Model =
     , userNotices : List (UserNotice Msg)
     , dProfile : DisplayProfile
     , maybeReferrer : Maybe Address
+    , displayMobileWarning : Bool
     }
 
 
