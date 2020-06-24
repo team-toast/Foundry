@@ -114,6 +114,10 @@ update msg prevModel =
                 { prevModel | timezone = Just tz }
 
         Refresh ->
+            case (Wallet.userInfo prevModel.wallet, prevModel.bucketSale) of
+                (Just userInfo, Just bucketSale) ->
+                    
+
             let
                 fetchUserInfoCmds =
                     Cmd.batch <|
