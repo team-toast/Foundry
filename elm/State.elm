@@ -32,16 +32,12 @@ init flags url key =
         fullRoute =
             Routing.urlToFullRoute url
 
-        ( wallet, cmdUps ) =
+        wallet =
             if flags.networkId == 0 then
-                ( Wallet.NoneDetected
-                , [ CmdUp.gTag "web3 status" "profile" "none" 0 ]
-                )
+                Wallet.NoneDetected
 
             else
-                ( Wallet.OnlyNetwork <| Eth.Net.toNetworkId flags.networkId
-                , [ CmdUp.gTag "web3 status" "profile" (Eth.Net.networkIdToString <| Eth.Net.toNetworkId flags.networkId) 0 ]
-                )
+                Wallet.OnlyNetwork <| Eth.Net.toNetworkId flags.networkId
 
         providerNotice =
             case fullRoute.pageRoute of
@@ -131,7 +127,6 @@ init flags url key =
                 flags.width < 1024
             }
                 |> updateFromPageRoute fullRoute.pageRoute
-                |> runCmdUps cmdUps
     in
     ( model
         |> addUserNotices userNotices
@@ -277,7 +272,7 @@ update msg prevModel =
             if newWallet /= prevModel.wallet then
                 newModel
                     |> runCmdDown (CmdDown.UpdateWallet newWallet)
-                    |> (\(newModel_, updateWalletCmd) ->
+                    |> (\( newModel_, updateWalletCmd ) ->
                             ( newModel_
                             , Cmd.batch
                                 [ updateWalletCmd
