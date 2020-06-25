@@ -136,20 +136,21 @@ update msg prevModel =
                 { prevModel | timezone = Just tz }
 
         Refresh ->
-            case ( Wallet.userInfo prevModel.wallet, prevModel.bucketSale ) of
-                ( Just userInfo, Just (Ok bucketSale) ) ->
-                    UpdateResult
-                        prevModel
-                        (fetchStateUpdateInfoCmd
-                            userInfo
-                            (getFocusedBucketId bucketSale prevModel.bucketView prevModel.now prevModel.testMode)
-                            prevModel.testMode
-                        )
-                        ChainCmd.none
-                        []
+            UpdateResult
+                prevModel
+                (fetchStateUpdateInfoCmd
+                    (Wallet.userInfo prevModel.wallet)
+                    (case prevModel.bucketSale of
+                        Just (Ok bucketSale) ->
+                            Just <| getFocusedBucketId bucketSale prevModel.bucketView prevModel.now prevModel.testMode
 
-                _ ->
-                    justModelUpdate prevModel
+                        _ ->
+                            Nothing
+                    )
+                    prevModel.testMode
+                )
+                ChainCmd.none
+                []
 
         UpdateNow newNow ->
             let
@@ -1143,12 +1144,17 @@ fetchUserFryBalanceCmd userInfo testMode =
         (UserFryBalanceFetched userInfo.address)
 
 
-fetchStateUpdateInfoCmd : UserInfo -> Int -> TestMode -> Cmd Msg
-fetchStateUpdateInfoCmd userInfo bucketId testMode =
+fetchStateUpdateInfoCmd : Maybe UserInfo -> Maybe Int -> TestMode -> Cmd Msg
+fetchStateUpdateInfoCmd maybeUserInfo maybeBucketId testMode =
     BucketSaleWrappers.getStateUpdateInfo
         testMode
-        userInfo.address
-        bucketId
+        (maybeUserInfo
+            |> Maybe.map .address
+            |> Maybe.withDefault EthHelpers.zeroAddress
+        )
+        (maybeBucketId
+            |> Maybe.withDefault 0
+        )
         StateUpdateInfoFetched
 
 
@@ -1225,9 +1231,8 @@ runCmdDown cmdDown prevModel =
             else
                 let
                     newBucketSale =
-                        (Maybe.map << Result.map)
-                            clearBucketSaleExitInfo
-                            prevModel.bucketSale
+                        prevModel.bucketSale
+                            |> (Maybe.map << Result.map) clearBucketSaleExitInfo
                 in
                 UpdateResult
                     { prevModel
@@ -1244,20 +1249,21 @@ runCmdDown cmdDown prevModel =
                                 | allowance = Nothing
                             }
                     }
-                    (case ( Wallet.userInfo newWallet, newBucketSale ) of
-                        ( Just userInfo, Just (Ok bucketSale) ) ->
-                            fetchStateUpdateInfoCmd
-                                userInfo
-                                (getFocusedBucketId
-                                    bucketSale
-                                    prevModel.bucketView
-                                    prevModel.now
-                                    prevModel.testMode
-                                )
-                                prevModel.testMode
+                    (fetchStateUpdateInfoCmd
+                        (Wallet.userInfo newWallet)
+                        (case newBucketSale of
+                            Just (Ok bucketSale) ->
+                                Just <|
+                                    getFocusedBucketId
+                                        bucketSale
+                                        prevModel.bucketView
+                                        prevModel.now
+                                        prevModel.testMode
 
-                        _ ->
-                            Cmd.none
+                            _ ->
+                                Nothing
+                        )
+                        prevModel.testMode
                     )
                     ChainCmd.none
                     []
