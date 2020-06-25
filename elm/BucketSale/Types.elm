@@ -95,6 +95,7 @@ type Msg
     | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
     | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
     | UserExitInfoFetched Address (Result Http.Error (Maybe BucketSaleWrappers.ExitInfo))
+    | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
     | TotalTokensExitedFetched (Result Http.Error TokenValue)
     | UserFryBalanceFetched Address (Result Http.Error TokenValue)
     | FocusToBucket Int

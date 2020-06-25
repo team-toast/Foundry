@@ -74,26 +74,60 @@ getUserExitInfo testMode userAddress msgConstructor =
 
 
 type alias StateUpdateInfo =
-    { totalExitedTokens : BigInt
-    , bucket_totalValueEntered : BigInt
-    , buy_valueEntered : BigInt
-    , buy_buyerTokensExited : BigInt
-    , tokenSoldForAllowance : BigInt
-    , tokenOnSaleBalance : BigInt
-    , exitInfo : List (BigInt)
+    { totalTokensExited : TokenValue
+    , userStateInfo : UserStateInfo
+    , bucketInfo : BucketInfo
     }
 
 
-getStateUpdateInfo : TestMode -> Address -> BigInt -> (Result Http.Error (Maybe StateUpdateInfo) -> msg) -> Cmd msg
-getStateUpdateInfo testMode userAddress bucketId =
+type alias BucketInfo =
+    { bucketId : Int
+    , totalDaiEntered : TokenValue
+    , userDaiEntered : TokenValue
+    , userFryExited : TokenValue
+    }
+
+
+type alias UserStateInfo =
+    { address : Address
+    , daiAllowance : TokenValue
+    , fryBalance : TokenValue
+    , exitInfo : ExitInfo
+    }
+
+
+getStateUpdateInfo : TestMode -> Address -> Int -> (Result Http.Error (Maybe StateUpdateInfo) -> msg) -> Cmd msg
+getStateUpdateInfo testMode userAddress bucketId msgConstructor =
     BucketSaleBindings.getGeneralInfo
-        Config.bucketSaleScriptsAddress
-        Config.bucketSaleAddress
+        (Config.bucketSaleScriptsAddress testMode)
+        (Config.bucketSaleAddress testMode)
         userAddress
-        bucketId
+        (BigInt.fromInt bucketId)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
-        |> Task.map ()
-    
+        |> Task.map (getGeneralInfoToStateUpdateInfo userAddress bucketId)
+        |> Task.attempt msgConstructor
+
+
+getGeneralInfoToStateUpdateInfo : Address -> Int -> BucketSaleBindings.GetGeneralInfo -> Maybe StateUpdateInfo
+getGeneralInfoToStateUpdateInfo userAddress bucketId bindingStruct =
+    queryBigIntListToMaybExitInfo bindingStruct.exitInfo
+        |> Maybe.map
+            (\exitInfo ->
+                { totalTokensExited = TokenValue.tokenValue bindingStruct.totalExitedTokens
+                , userStateInfo =
+                    { address = userAddress
+                    , daiAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
+                    , fryBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
+                    , exitInfo = exitInfo
+                    }
+                , bucketInfo =
+                    { bucketId = bucketId
+                    , totalDaiEntered = TokenValue.tokenValue bindingStruct.bucket_totalValueEntered
+                    , userDaiEntered = TokenValue.tokenValue bindingStruct.buy_valueEntered
+                    , userFryExited = TokenValue.tokenValue bindingStruct.buy_buyerTokensExited
+                    }
+                }
+            )
 
 
 unlockDai : TestMode -> Call Bool

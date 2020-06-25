@@ -136,51 +136,20 @@ update msg prevModel =
                 { prevModel | timezone = Just tz }
 
         Refresh ->
-            case (Wallet.userInfo prevModel.wallet, prevModel.bucketSale) of
-                (Just userInfo, Just bucketSale) ->
-                    
-
-            let
-                fetchUserInfoCmds =
-                    Cmd.batch <|
-                        (Maybe.map
-                            (\userInfo ->
-                                [ fetchUserExitInfoCmd userInfo prevModel.testMode
-                                , fetchUserAllowanceForSaleCmd userInfo prevModel.testMode
-                                , fetchUserFryBalanceCmd userInfo prevModel.testMode
-                                ]
-                            )
-                            (Wallet.userInfo prevModel.wallet)
-                            |> Maybe.withDefault []
+            case ( Wallet.userInfo prevModel.wallet, prevModel.bucketSale ) of
+                ( Just userInfo, Just (Ok bucketSale) ) ->
+                    UpdateResult
+                        prevModel
+                        (fetchStateUpdateInfoCmd
+                            userInfo
+                            (getFocusedBucketId bucketSale prevModel.bucketView prevModel.now prevModel.testMode)
+                            prevModel.testMode
                         )
+                        ChainCmd.none
+                        []
 
-                bucketDataCmd =
-                    prevModel.bucketSale
-                        |> (Maybe.map << Result.map)
-                            (\bucketSale ->
-                                fetchBucketDataCmd
-                                    (getFocusedBucketId
-                                        bucketSale
-                                        prevModel.bucketView
-                                        prevModel.now
-                                        prevModel.testMode
-                                    )
-                                    (Wallet.userInfo prevModel.wallet)
-                                    prevModel.testMode
-                            )
-                        |> Maybe.withDefault (Ok Cmd.none)
-                        |> Result.withDefault Cmd.none
-            in
-            UpdateResult
-                prevModel
-                (Cmd.batch
-                    [ fetchTotalTokensExitedCmd prevModel.testMode
-                    , bucketDataCmd
-                    , fetchUserInfoCmds
-                    ]
-                )
-                ChainCmd.none
-                []
+                _ ->
+                    justModelUpdate prevModel
 
         UpdateNow newNow ->
             let
@@ -476,6 +445,86 @@ update msg prevModel =
                                         Debug.log "Warning! Bucket value fetched but there is no bucketSale present!" somethingElse
                                 in
                                 justModelUpdate prevModel
+
+        StateUpdateInfoFetched fetchResult ->
+            case fetchResult of
+                Err httpErr ->
+                    let
+                        _ =
+                            Debug.log "http error when fetching stateUpdateInfo" httpErr
+                    in
+                    justModelUpdate prevModel
+
+                Ok Nothing ->
+                    let
+                        _ =
+                            Debug.log "Query contract returned an invalid result" ""
+                    in
+                    justModelUpdate prevModel
+
+                Ok (Just stateUpdateInfo) ->
+                    let
+                        newModel =
+                            prevModel
+                                |> (\model ->
+                                        if (Wallet.userInfo prevModel.wallet |> Maybe.map .address) /= Just stateUpdateInfo.userStateInfo.address then
+                                            prevModel
+
+                                        else
+                                            { prevModel
+                                                | userExitInfo = Just stateUpdateInfo.userStateInfo.exitInfo
+                                                , userFryBalance = Just stateUpdateInfo.userStateInfo.fryBalance
+                                                , enterUXModel =
+                                                    let
+                                                        oldEnterUXModel =
+                                                            prevModel.enterUXModel
+                                                    in
+                                                    { oldEnterUXModel
+                                                        | allowance = Just <| stateUpdateInfo.userStateInfo.daiAllowance
+                                                    }
+                                            }
+                                   )
+                                |> (\model ->
+                                        case prevModel.bucketSale of
+                                            Just (Ok oldBucketSale) ->
+                                                let
+                                                    maybeNewBucketSale =
+                                                        oldBucketSale
+                                                            |> updateBucketAt
+                                                                stateUpdateInfo.bucketInfo.bucketId
+                                                                (\bucket ->
+                                                                    { bucket
+                                                                        | userBuy =
+                                                                            Just <|
+                                                                                { valueEntered = stateUpdateInfo.bucketInfo.userDaiEntered
+                                                                                , hasExited = not <| TokenValue.isZero stateUpdateInfo.bucketInfo.userFryExited
+                                                                                }
+                                                                        , totalValueEntered = Just stateUpdateInfo.bucketInfo.totalDaiEntered
+                                                                    }
+                                                                )
+                                                in
+                                                case maybeNewBucketSale of
+                                                    Nothing ->
+                                                        let
+                                                            _ =
+                                                                Debug.log "Warning! Somehow trying to update a bucket that does not exist or is in the future!" ""
+                                                        in
+                                                        model
+
+                                                    Just newBucketSale ->
+                                                        { model | bucketSale = Just <| Ok newBucketSale }
+
+                                            _ ->
+                                                model
+                                   )
+                                |> (\model ->
+                                        { model
+                                            | totalTokensExited = Just stateUpdateInfo.totalTokensExited
+                                        }
+                                   )
+                    in
+                    justModelUpdate
+                        newModel
 
         UserExitInfoFetched userAddress fetchResult ->
             if (Wallet.userInfo prevModel.wallet |> Maybe.map .address) /= Just userAddress then
@@ -973,7 +1022,6 @@ update msg prevModel =
                             (Eth.Utils.txHashToString txReceipt.hash)
                             0
                         ]
-                        
 
 
 toggleAssentForPoint : ( Int, Int ) -> ConfirmTosModel -> ConfirmTosModel
@@ -1095,6 +1143,15 @@ fetchUserFryBalanceCmd userInfo testMode =
         (UserFryBalanceFetched userInfo.address)
 
 
+fetchStateUpdateInfoCmd : UserInfo -> Int -> TestMode -> Cmd Msg
+fetchStateUpdateInfoCmd userInfo bucketId testMode =
+    BucketSaleWrappers.getStateUpdateInfo
+        testMode
+        userInfo.address
+        bucketId
+        StateUpdateInfoFetched
+
+
 fetchFastGasPriceCmd : Cmd Msg
 fetchFastGasPriceCmd =
     Http.get
@@ -1189,26 +1246,15 @@ runCmdDown cmdDown prevModel =
                     }
                     (case ( Wallet.userInfo newWallet, newBucketSale ) of
                         ( Just userInfo, Just (Ok bucketSale) ) ->
-                            Cmd.batch
-                                [ fetchUserAllowanceForSaleCmd
-                                    userInfo
+                            fetchStateUpdateInfoCmd
+                                userInfo
+                                (getFocusedBucketId
+                                    bucketSale
+                                    prevModel.bucketView
+                                    prevModel.now
                                     prevModel.testMode
-                                , fetchUserFryBalanceCmd
-                                    userInfo
-                                    prevModel.testMode
-                                , fetchBucketDataCmd
-                                    (getFocusedBucketId
-                                        bucketSale
-                                        prevModel.bucketView
-                                        prevModel.now
-                                        prevModel.testMode
-                                    )
-                                    (Just userInfo)
-                                    prevModel.testMode
-                                , fetchUserExitInfoCmd
-                                    userInfo
-                                    prevModel.testMode
-                                ]
+                                )
+                                prevModel.testMode
 
                         _ ->
                             Cmd.none
