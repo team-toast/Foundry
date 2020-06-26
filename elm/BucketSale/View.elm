@@ -67,7 +67,13 @@ root model =
                     [ Element.centerX
                     , Element.spacing 50
                     ]
-                    [ closedBucketsPane model
+                    [ Element.el
+                        [ Element.width <| Element.fillPortion 1
+                        , Element.height Element.fill
+                        , Element.inFront viewYoutubeLinksBlock
+                        ]
+                      <|
+                        closedBucketsPane model
                     , focusedBucketPane
                         bucketSale
                         (getFocusedBucketId
@@ -115,7 +121,7 @@ closedBucketsPane : Model -> Element Msg
 closedBucketsPane model =
     Element.column
         (commonPaneAttributes
-            ++ [ Element.width <| Element.fillPortion 1
+            ++ [ Element.width Element.fill
                , Element.paddingXY 32 25
                ]
         )
@@ -1198,6 +1204,58 @@ viewModals model =
           else
             Nothing
         ]
+
+
+viewYoutubeLinksBlock : Element Msg
+viewYoutubeLinksBlock =
+    Element.column
+        (commonPaneAttributes
+            ++ [ Element.padding 20
+               , Element.alignTop
+               , Element.width Element.fill
+               , Element.paddingXY 32 25
+               ]
+        )
+        [ Element.el
+            [ Element.Font.size 25
+            , Element.Font.bold
+            ]
+          <|
+            Element.text "Not sure where to start?"
+        , viewYoutubeLinksColumn
+            [ ( "Step 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
+            , ( "Step 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=Jy-Ng_E_D1I" )
+            , ( "Step 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
+            ]
+        ]
+
+
+viewYoutubeLinksColumn : List ( String, String, String ) -> Element Msg
+viewYoutubeLinksColumn linkInfoList =
+    Element.column
+        [ Element.width Element.fill
+        , Element.spacing 10
+        ]
+        (linkInfoList
+            |> List.map
+                (\( preTitle, title, url ) ->
+                    Element.row
+                        [ Element.spacing 10
+                        ]
+                        [ Element.el
+                            [ Element.Font.bold
+                            , Element.width <| Element.px 70
+                            ]
+                          <|
+                            Element.text preTitle
+                        , Element.newTabLink
+                            [ Element.Font.color EH.lightBlue ]
+                            { url = url
+                            , label = Element.text title
+                            }
+                        ]
+                )
+        )
 
 
 viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> Element Msg

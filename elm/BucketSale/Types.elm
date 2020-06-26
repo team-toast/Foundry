@@ -98,13 +98,13 @@ type Msg
     | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
     | TotalTokensExitedFetched (Result Http.Error TokenValue)
     | UserFryBalanceFetched Address (Result Http.Error TokenValue)
+    | AllowanceFetched (Result Http.Error BigInt)
     | FocusToBucket Int
     | DaiInputChanged String
     | ReferralIndicatorClicked
     | CloseReferralModal
     | GenerateReferralClicked Address
     | UnlockDaiButtonClicked
-    | AllowanceFetched (Result Http.Error BigInt)
     | ClaimClicked UserInfo ExitInfo
     | CancelClicked
     | EnterButtonClicked EnterInfo
