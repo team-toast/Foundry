@@ -67,13 +67,14 @@ root model =
                     [ Element.centerX
                     , Element.spacing 50
                     ]
-                    [ Element.el
+                    [ Element.column
                         [ Element.width <| Element.fillPortion 1
-                        , Element.height Element.fill
-                        , Element.inFront viewYoutubeLinksBlock
+                        , Element.alignTop
+                        , Element.spacing 20
                         ]
-                      <|
-                        closedBucketsPane model
+                        [ viewYoutubeLinksBlock
+                        , closedBucketsPane model
+                        ]
                     , focusedBucketPane
                         bucketSale
                         (getFocusedBucketId
