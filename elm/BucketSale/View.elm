@@ -1576,9 +1576,9 @@ referralModal userInfo maybeReferrer testMode =
                             [ Element.paragraph []
                                 [ Element.text "You're missing out. Help us market the sale and your friends get an extra "
                                 , highlightedText "10% bonus"
-                                , Element.text " on their purchase. You can earn from "
-                                , highlightedText "10%-100%"
-                                , Element.text " extra FRY tokens based on what others purchase with your referral code."
+                                , Element.text " on their purchase. In addition, you can earn "
+                                , highlightedText "10%-20%"
+                                , Element.text " extra FRY tokens, based on how much DAI you refer with this code."
                                 ]
                             , Element.paragraph []
                                 [ Element.text "You can also use your own reference code and get both benefits." ]
