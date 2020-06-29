@@ -170,11 +170,11 @@ actionDataToString actionData =
 
 type TxStatus
     = Signing
-    | Broadcasting
+    --| Broadcasting
     | Mining
-    | Mined
+    --| Mined
     | Rejected
-    | Failed
+    --| Failed
 
 
 type BucketView

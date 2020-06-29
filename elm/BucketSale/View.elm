@@ -26,6 +26,7 @@ import Routing
 import Time
 import TokenValue exposing (TokenValue)
 import Wallet
+import Eth.Utils
 
 
 root : Model -> DisplayProfile -> ( Element Msg, List (Element Msg) )
@@ -1123,40 +1124,22 @@ trackedTxRow trackedTx =
                     <|
                         Element.text "Signing"
 
-                Broadcasting ->
-                    Element.el
-                        [ Element.centerX
-                        , Element.Font.italic
-                        ]
-                    <|
-                        Element.text "Broadcasting"
-
                 Mining ->
-                    Element.el
-                        [ Element.centerX
-                        , Element.Font.italic
-                        ]
-                    <|
-                        Element.text "Mining"
-
-                Mined ->
-                    Element.el
-                        [ Element.centerX
-                        , Element.Font.bold
-                        , Element.Font.color EH.green
-                        ]
-                    <|
-                        Element.text "Mined"
-
-                Failed ->
-                    Element.el
-                        [ Element.centerX
-                        , Element.Font.color EH.softRed
-                        , Element.Font.italic
-                        , Element.Font.bold
-                        ]
-                    <|
-                        Element.text "Failed"
+                    case trackedTx.hash of
+                        Just hash ->
+                            Element.newTabLink
+                                [ Element.centerX
+                                , Element.Font.italic
+                                ]
+                                { url = "https://etherscan.io/tx/" ++ (Eth.Utils.txHashToString hash)
+                                , label = Element.text "Inspect"
+                                }
+                        Nothing -> 
+                            Element.el
+                                [ Element.centerX
+                                , Element.Font.italic
+                                ]
+                                (Element.text "...")
 
                 Rejected ->
                     Element.el
@@ -1245,7 +1228,7 @@ viewYoutubeLinksBlock =
             [ ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
             , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=Jy-Ng_E_D1I" )
             , ( "Video 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
-            , ( "Video 4", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
+            , ( "Video 4:", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
             ]
         ]
 
