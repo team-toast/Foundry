@@ -63,6 +63,8 @@ type alias GetGeneralInfo =
     , buy_valueEntered : BigInt
     , buy_buyerTokensExited : BigInt
     , tokenSoldForAllowance : BigInt
+    , tokenSoldForBalance : BigInt
+    , ethBalance : BigInt
     , tokenOnSaleBalance : BigInt
     , exitInfo : List (BigInt)
     }
@@ -84,6 +86,8 @@ getGeneralInfo contractAddress bucketSale_ buyer_ bucketId_ =
 getGeneralInfoDecoder : Decoder GetGeneralInfo
 getGeneralInfoDecoder =
     abiDecode GetGeneralInfo
+        |> andMap D.uint
+        |> andMap D.uint
         |> andMap D.uint
         |> andMap D.uint
         |> andMap D.uint

@@ -5,7 +5,7 @@ import BucketSale.Types exposing (..)
 import CmdUp exposing (CmdUp)
 import CommonTypes exposing (..)
 import Config
-import Contracts.BucketSale.Wrappers exposing (ExitInfo)
+import Contracts.BucketSale.Wrappers exposing (ExitInfo, UserStateInfo)
 import Element exposing (Attribute, Element)
 import Element.Background
 import Element.Border
@@ -83,6 +83,7 @@ root model =
                             model.testMode
                         )
                         model.wallet
+                        model.extraUserInfo
                         model.enterUXModel
                         model.jurisdictionCheckStatus
                         model.trackedTxs
@@ -136,14 +137,18 @@ closedBucketsPane model =
             , Element.Font.size 15
             ]
             [ Element.text "These are the concluded buckets of FRY that have been claimed. If you have FRY to claim it will show below." ]
-        , maybeUserBalanceBlock model.wallet model.userFryBalance
-        , maybeClaimBlock model.wallet model.userExitInfo
+        , maybeUserBalanceBlock
+            model.wallet
+            model.extraUserInfo
+        , maybeClaimBlock
+            model.wallet
+            (model.extraUserInfo |> Maybe.map .exitInfo)
         , totalExitedBlock model.totalTokensExited
         ]
 
 
-focusedBucketPane : BucketSale -> Int -> Wallet.State -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
-focusedBucketPane bucketSale bucketId wallet enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
+focusedBucketPane : BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
+focusedBucketPane bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width <| Element.fillPortion 2
@@ -173,7 +178,7 @@ focusedBucketPane bucketSale bucketId wallet enterUXModel jurisdictionCheckStatu
                         , focusedBucketTimeLeftEl
                             (getRelevantTimingInfo bucketInfo now testMode)
                             testMode
-                        , enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
+                        , enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
                         ]
                )
         )
@@ -234,20 +239,20 @@ futureBucketsPane model bucketSale =
                 ]
 
 
-maybeUserBalanceBlock : Wallet.State -> Maybe TokenValue -> Element Msg
-maybeUserBalanceBlock wallet maybeFryBalance =
-    case ( Wallet.userInfo wallet, maybeFryBalance ) of
+maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> Element Msg
+maybeUserBalanceBlock wallet maybeExtraUserInfo =
+    case ( Wallet.userInfo wallet, maybeExtraUserInfo ) of
         ( Nothing, _ ) ->
             Element.none
 
         ( _, Nothing ) ->
             loadingElement
 
-        ( Just userInfo, Just fryBalance ) ->
+        ( Just userInfo, Just extraUserInfo ) ->
             sidepaneBlockContainer PassiveStyle
                 [ bigNumberElement
                     [ Element.centerX ]
-                    (TokenNum fryBalance)
+                    (TokenNum extraUserInfo.fryBalance)
                     "FRY"
                     PassiveStyle
                 , Element.paragraph
@@ -468,8 +473,8 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Wallet.State -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
-enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
+enterBidUX : Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
+enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
     let
         miningEnters =
             trackedTxs
@@ -502,7 +507,7 @@ enterBidUX wallet enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs tes
         [ bidInputBlock enterUXModel bucketInfo testMode
         , bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode
         , otherBidsImpactMsg
-        , actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode
+        , actionButton wallet maybeExtraUserInfo enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode
         ]
 
 
@@ -922,8 +927,8 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
             msgInsteadOfButton "Jurisdiction Verified." green
 
 
-actionButton : Wallet.State -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
-actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
+actionButton : Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
+actionButton wallet maybeExtraUserInfo enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
     case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
@@ -959,22 +964,22 @@ actionButton wallet enterUXModel bucketInfo unlockMining jurisdictionCheckStatus
                                 "Continue"
                                 Nothing
                     in
-                    case enterUXModel.allowance of
+                    case maybeExtraUserInfo of
                         Nothing ->
-                            msgInsteadOfButton "Fetching Dai unlock status..." grayTextColor
+                            msgInsteadOfButton "Fetching user balance info..." grayTextColor
 
-                        Just allowance ->
-                            if enterUXModel.allowance == Just TokenValue.zero then
-                                unlockDaiButton
-
-                            else if unlockMining then
+                        Just extraUserInfo ->
+                            if unlockMining then
                                 msgInsteadOfButton "Mining Dai unlock..." grayTextColor
+
+                            else if extraUserInfo.daiAllowance == TokenValue.zero then
+                                unlockDaiButton
 
                             else
                                 -- Allowance is loaded and nonzero, and we are not mining an Unlock
                                 case enterUXModel.daiAmount of
                                     Just (Ok daiAmount) ->
-                                        if TokenValue.compare daiAmount allowance /= GT then
+                                        if TokenValue.compare daiAmount extraUserInfo.daiAllowance /= GT then
                                             continueButton daiAmount
 
                                         else
@@ -1223,9 +1228,9 @@ viewYoutubeLinksBlock =
           <|
             Element.text "Not sure where to start?"
         , viewYoutubeLinksColumn
-            [ ( "Step 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
-            , ( "Step 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=Jy-Ng_E_D1I" )
-            , ( "Step 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
+            [ ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
+            , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=Jy-Ng_E_D1I" )
+            , ( "Video 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
             ]
         ]
 

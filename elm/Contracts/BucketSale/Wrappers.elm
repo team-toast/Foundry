@@ -75,7 +75,7 @@ getUserExitInfo testMode userAddress msgConstructor =
 
 type alias StateUpdateInfo =
     { totalTokensExited : TokenValue
-    , userStateInfo : UserStateInfo
+    , userStateInfo : ( Address, UserStateInfo )
     , bucketInfo : BucketInfo
     }
 
@@ -89,7 +89,8 @@ type alias BucketInfo =
 
 
 type alias UserStateInfo =
-    { address : Address
+    { ethBalance : TokenValue
+    , daiBalance : TokenValue
     , daiAllowance : TokenValue
     , fryBalance : TokenValue
     , exitInfo : ExitInfo
@@ -115,11 +116,14 @@ getGeneralInfoToStateUpdateInfo userAddress bucketId bindingStruct =
             (\exitInfo ->
                 { totalTokensExited = TokenValue.tokenValue bindingStruct.totalExitedTokens
                 , userStateInfo =
-                    { address = userAddress
-                    , daiAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
-                    , fryBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
-                    , exitInfo = exitInfo
-                    }
+                    ( userAddress
+                    , { ethBalance = TokenValue.tokenValue bindingStruct.tokenSoldForBalance
+                      , daiBalance = TokenValue.tokenValue bindingStruct.ethBalance
+                      , daiAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
+                      , fryBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
+                      , exitInfo = exitInfo
+                      }
+                    )
                 , bucketInfo =
                     { bucketId = bucketId
                     , totalDaiEntered = TokenValue.tokenValue bindingStruct.bucket_totalValueEntered

@@ -23,6 +23,7 @@ import Wallet
 
 type alias Model =
     { wallet : Wallet.State
+    , extraUserInfo : Maybe BucketSaleWrappers.UserStateInfo
     , testMode : TestMode
     , now : Time.Posix
     , timezone : Maybe Time.Zone
@@ -30,11 +31,9 @@ type alias Model =
     , saleStartTime : Maybe Time.Posix
     , bucketSale : Maybe (Result String BucketSale)
     , totalTokensExited : Maybe TokenValue
-    , userFryBalance : Maybe TokenValue
     , bucketView : BucketView
     , jurisdictionCheckStatus : JurisdictionCheckStatus
     , enterUXModel : EnterUXModel
-    , userExitInfo : Maybe BucketSaleWrappers.ExitInfo
     , trackedTxs : List TrackedTx
     , confirmTosModel : ConfirmTosModel
     , enterInfoToConfirm : Maybe EnterInfo
@@ -42,11 +41,18 @@ type alias Model =
     }
 
 
+type alias ExtraUserInfo =
+    { ethBalance : TokenValue
+    , daiBalance : TokenValue
+    , fryBalance : TokenValue
+    , daiAllowance : TokenValue
+    }
+
+
 type alias EnterUXModel =
     { daiInput : String
     , daiAmount : Maybe (Result String TokenValue)
     , referrer : Maybe Address
-    , allowance : Maybe TokenValue
     }
 
 
@@ -94,11 +100,8 @@ type Msg
     | SaleStartTimestampFetched (Result Http.Error BigInt)
     | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
     | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
-    | UserExitInfoFetched Address (Result Http.Error (Maybe BucketSaleWrappers.ExitInfo))
     | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
     | TotalTokensExitedFetched (Result Http.Error TokenValue)
-    | UserFryBalanceFetched Address (Result Http.Error TokenValue)
-    | AllowanceFetched (Result Http.Error BigInt)
     | FocusToBucket Int
     | DaiInputChanged String
     | ReferralIndicatorClicked

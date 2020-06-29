@@ -36,6 +36,7 @@ import Wallet
 init : Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
 init maybeReferrer testMode wallet now =
     ( { wallet = verifyWalletCorrectNetwork wallet testMode
+      , extraUserInfo = Nothing
       , testMode = testMode
       , now = now
       , timezone = Nothing
@@ -43,33 +44,23 @@ init maybeReferrer testMode wallet now =
       , saleStartTime = Nothing
       , bucketSale = Nothing
       , totalTokensExited = Nothing
-      , userFryBalance = Nothing
       , bucketView = ViewCurrent
       , jurisdictionCheckStatus = WaitingForClick
       , enterUXModel = initEnterUXModel maybeReferrer
-      , userExitInfo = Nothing
       , trackedTxs = []
       , confirmTosModel = initConfirmTosModel
       , enterInfoToConfirm = Nothing
       , showReferralModal = False
       }
     , Cmd.batch
-        ([ fetchSaleStartTimestampCmd testMode
-         , fetchTotalTokensExitedCmd testMode
-         , fetchFastGasPriceCmd
-         , Task.perform TimezoneGot Time.here
-         ]
-            ++ (case Wallet.userInfo wallet of
-                    Just userInfo ->
-                        [ fetchUserExitInfoCmd userInfo testMode
-                        , fetchUserAllowanceForSaleCmd userInfo testMode
-                        , fetchUserFryBalanceCmd userInfo testMode
-                        ]
-
-                    Nothing ->
-                        []
-               )
-        )
+        [ fetchSaleStartTimestampCmd testMode
+        , fetchFastGasPriceCmd
+        , Task.perform TimezoneGot Time.here
+        , fetchStateUpdateInfoCmd
+            (Wallet.userInfo wallet)
+            Nothing
+            testMode
+        ]
     )
 
 
@@ -114,7 +105,6 @@ initEnterUXModel maybeReferrer =
     { daiInput = ""
     , daiAmount = Nothing
     , referrer = maybeReferrer
-    , allowance = Nothing
     }
 
 
@@ -243,12 +233,29 @@ update msg prevModel =
                 }
 
         TosCheckboxClicked pointRef ->
-            justModelUpdate
+            let
+                newConfirmTosModel =
+                    prevModel.confirmTosModel
+                        |> toggleAssentForPoint pointRef
+            in
+            UpdateResult
                 { prevModel
                     | confirmTosModel =
-                        prevModel.confirmTosModel
-                            |> toggleAssentForPoint pointRef
+                        newConfirmTosModel
                 }
+                Cmd.none
+                ChainCmd.none
+                (if isAllPointsChecked newConfirmTosModel then
+                    [ CmdUp.gTag
+                        "7 - agree to all"
+                        "funnel"
+                        ""
+                        0
+                    ]
+
+                 else
+                    []
+                )
 
         VerifyJurisdictionClicked ->
             UpdateResult
@@ -257,7 +264,12 @@ update msg prevModel =
                 }
                 (beginLocationCheck ())
                 ChainCmd.none
-                [ CmdUp.gTag "verify jurisdiction" "funnel" "clicked" 0 ]
+                [ CmdUp.gTag
+                    "3a - verify jurisdiction clicked"
+                    "funnel"
+                    ""
+                    0
+                ]
 
         LocationCheckResult decodeResult ->
             let
@@ -270,33 +282,37 @@ update msg prevModel =
                 }
                 Cmd.none
                 ChainCmd.none
-                [ CmdUp.gTag
-                    "verify jurisdiction"
-                    "funnel"
-                    ("result: "
-                        ++ (case jurisdictionCheckStatus of
-                                WaitingForClick ->
-                                    "WaitingForClick"
+                (case jurisdictionCheckStatus of
+                    WaitingForClick ->
+                        []
 
-                                Checking ->
-                                    "Checking"
+                    Checking ->
+                        []
 
-                                Checked jurisdiction ->
-                                    "Checked: "
-                                        ++ (case jurisdiction of
-                                                USA ->
-                                                    "USA"
+                    Checked USA ->
+                        [ CmdUp.gTag
+                            "jurisdiction not allowed"
+                            "funnel abort"
+                            ""
+                            0
+                        ]
 
-                                                _ ->
-                                                    "Allowed"
-                                           )
+                    Checked _ ->
+                        [ CmdUp.gTag
+                            "3b - jurisdiction verified"
+                            "funnel"
+                            ""
+                            0
+                        ]
 
-                                Error error ->
-                                    "Error: " ++ error
-                           )
-                    )
-                    0
-                ]
+                    Error error ->
+                        [ CmdUp.gTag
+                            "failed jursidiction check"
+                            "funnel abort"
+                            error
+                            0
+                        ]
+                )
 
         SaleStartTimestampFetched fetchResult ->
             case fetchResult of
@@ -468,22 +484,19 @@ update msg prevModel =
                         newModel =
                             prevModel
                                 |> (\model ->
-                                        if (Wallet.userInfo prevModel.wallet |> Maybe.map .address) /= Just stateUpdateInfo.userStateInfo.address then
-                                            prevModel
+                                        case Wallet.userInfo prevModel.wallet of
+                                            Nothing ->
+                                                prevModel
 
-                                        else
-                                            { prevModel
-                                                | userExitInfo = Just stateUpdateInfo.userStateInfo.exitInfo
-                                                , userFryBalance = Just stateUpdateInfo.userStateInfo.fryBalance
-                                                , enterUXModel =
-                                                    let
-                                                        oldEnterUXModel =
-                                                            prevModel.enterUXModel
-                                                    in
-                                                    { oldEnterUXModel
-                                                        | allowance = Just <| stateUpdateInfo.userStateInfo.daiAllowance
+                                            Just userInfo ->
+                                                if userInfo.address /= Tuple.first stateUpdateInfo.userStateInfo then
+                                                    prevModel
+
+                                                else
+                                                    { prevModel
+                                                        | extraUserInfo =
+                                                            Just <| Tuple.second <| stateUpdateInfo.userStateInfo
                                                     }
-                                            }
                                    )
                                 |> (\model ->
                                         case prevModel.bucketSale of
@@ -523,54 +536,39 @@ update msg prevModel =
                                             | totalTokensExited = Just stateUpdateInfo.totalTokensExited
                                         }
                                    )
+
+                        ( ethBalance, daiBalance ) =
+                            ( Tuple.second stateUpdateInfo.userStateInfo |> .ethBalance
+                            , Tuple.second stateUpdateInfo.userStateInfo |> .daiBalance
+                            )
                     in
-                    justModelUpdate
+                    UpdateResult
                         newModel
+                        Cmd.none
+                        ChainCmd.none
+                        ((if not <| TokenValue.isZero ethBalance then
+                            [ CmdUp.gTag
+                                "2a - has ETH"
+                                "funnel"
+                                (TokenValue.toConciseString ethBalance)
+                                0
+                            ]
 
-        UserExitInfoFetched userAddress fetchResult ->
-            if (Wallet.userInfo prevModel.wallet |> Maybe.map .address) /= Just userAddress then
-                justModelUpdate prevModel
+                          else
+                            []
+                         )
+                            ++ (if not <| TokenValue.isZero daiBalance then
+                                    [ CmdUp.gTag
+                                        "2b - has DAI"
+                                        "funnel"
+                                        (TokenValue.toConciseString daiBalance)
+                                        0
+                                    ]
 
-            else
-                case fetchResult of
-                    Err httpErr ->
-                        let
-                            _ =
-                                Debug.log "http error when fetching userExitInfo" ( userAddress, httpErr )
-                        in
-                        justModelUpdate prevModel
-
-                    Ok Nothing ->
-                        let
-                            _ =
-                                Debug.log "Query contract returned an invalid result" userAddress
-                        in
-                        justModelUpdate prevModel
-
-                    Ok (Just exitInfo) ->
-                        justModelUpdate
-                            { prevModel
-                                | userExitInfo = Just exitInfo
-                            }
-
-        UserFryBalanceFetched userAddress fetchResult ->
-            if (Wallet.userInfo prevModel.wallet |> Maybe.map .address) /= Just userAddress then
-                justModelUpdate prevModel
-
-            else
-                case fetchResult of
-                    Err httpErr ->
-                        let
-                            _ =
-                                Debug.log "http error when fetching userFryBalance" ( userAddress, httpErr )
-                        in
-                        justModelUpdate prevModel
-
-                    Ok userFryBalance ->
-                        justModelUpdate
-                            { prevModel
-                                | userFryBalance = Just userFryBalance
-                            }
+                                else
+                                    []
+                               )
+                        )
 
         TotalTokensExitedFetched fetchResult ->
             case fetchResult of
@@ -585,28 +583,6 @@ update msg prevModel =
                     justModelUpdate
                         { prevModel
                             | totalTokensExited = Just totalTokensExited
-                        }
-
-        AllowanceFetched fetchResult ->
-            case fetchResult of
-                Err httpErr ->
-                    let
-                        _ =
-                            Debug.log "http error when fetching user allowance" httpErr
-                    in
-                    justModelUpdate prevModel
-
-                Ok newAllowance ->
-                    justModelUpdate
-                        { prevModel
-                            | enterUXModel =
-                                let
-                                    oldEnterUXModel =
-                                        prevModel.enterUXModel
-                                in
-                                { oldEnterUXModel
-                                    | allowance = Just <| TokenValue.tokenValue newAllowance
-                                }
                         }
 
         FocusToBucket bucketId ->
@@ -659,7 +635,11 @@ update msg prevModel =
                         }
                         maybeFetchBucketDataCmd
                         ChainCmd.none
-                        [ CmdUp.gTag "focus to bucket" "navigation" "" bucketId ]
+                        [ CmdUp.gTag "focus to bucket"
+                            "navigation"
+                            (String.fromInt bucketId)
+                            1
+                        ]
 
                 somethingElse ->
                     let
@@ -688,7 +668,12 @@ update msg prevModel =
                 }
                 Cmd.none
                 ChainCmd.none
-                [ CmdUp.gTag "dai input changed" "funnel" input 0 ]
+                [ CmdUp.gTag
+                    "5? - dai input changed"
+                    "funnel"
+                    input
+                    0
+                ]
 
         ReferralIndicatorClicked ->
             UpdateResult
@@ -753,7 +738,12 @@ update msg prevModel =
                 }
                 Cmd.none
                 chainCmd
-                [ CmdUp.gTag "unlock clicked" "funnel" "" 0 ]
+                [ CmdUp.gTag
+                    "4a - unlock clicked"
+                    "funnel"
+                    ""
+                    0
+                ]
 
         EnterButtonClicked enterInfo ->
             UpdateResult
@@ -762,7 +752,12 @@ update msg prevModel =
                 }
                 Cmd.none
                 ChainCmd.none
-                [ CmdUp.gTag "enter clicked" "funnel" (TokenValue.toFloatString Nothing enterInfo.amount) 0 ]
+                [ CmdUp.gTag
+                    "6 - enter clicked"
+                    "funnel"
+                    (TokenValue.toFloatString Nothing enterInfo.amount)
+                    0
+                ]
 
         CancelClicked ->
             UpdateResult
@@ -771,7 +766,12 @@ update msg prevModel =
                 }
                 Cmd.none
                 ChainCmd.none
-                [ CmdUp.gTag "tos aborted" "funnel abort" "" 0 ]
+                [ CmdUp.gTag
+                    "tos aborted"
+                    "funnel abort"
+                    ""
+                    0
+                ]
 
         ConfirmClicked enterInfo ->
             let
@@ -814,7 +814,12 @@ update msg prevModel =
                 }
                 Cmd.none
                 chainCmd
-                [ CmdUp.gTag "confirm clicked" "funnel" (TokenValue.toFloatString Nothing enterInfo.amount) 0 ]
+                [ CmdUp.gTag
+                    "8a - confirm clicked"
+                    "funnel"
+                    (TokenValue.toFloatString Nothing enterInfo.amount)
+                    0
+                ]
 
         ClaimClicked userInfo exitInfo ->
             let
@@ -875,8 +880,8 @@ update msg prevModel =
                         Cmd.none
                         ChainCmd.none
                         [ CmdUp.gTag
-                            ("tx sign error / " ++ actionDataToString actionData)
-                            "tx lifecycle"
+                            (actionDataToString actionData ++ " tx sign error")
+                            "funnel abort - tx"
                             errStr
                             0
                         ]
@@ -885,7 +890,7 @@ update msg prevModel =
                     let
                         newTrackedTxs =
                             prevModel.trackedTxs
-                                |> updateTrackedTxStatus trackedTxId Mining
+                                |> updateTrackedTxStatus trackedTxId Broadcasting
 
                         newEnterUXModel =
                             case actionData of
@@ -909,12 +914,25 @@ update msg prevModel =
                         }
                         Cmd.none
                         ChainCmd.none
-                        [ CmdUp.gTag
-                            ("tx sign success / " ++ actionDataToString actionData)
-                            "tx lifecycle"
+                        (let
+                            funnelIdStr =
+                                case actionData of
+                                    Unlock ->
+                                        "4b - "
+
+                                    Enter _ ->
+                                        "8b - "
+
+                                    Exit ->
+                                        "9b - "
+                         in
+                         [ CmdUp.gTag
+                            (funnelIdStr ++ actionDataToString actionData ++ " tx signed ")
+                            "funnel - tx"
                             (Eth.Utils.txHashToString txHash)
                             0
-                        ]
+                         ]
+                        )
 
         TxBroadcast trackedTxId actionData txResult ->
             case txResult of
@@ -932,8 +950,8 @@ update msg prevModel =
                         Cmd.none
                         ChainCmd.none
                         [ CmdUp.gTag
-                            ("tx broadcast error / " ++ actionDataToString actionData)
-                            "tx lifecycle"
+                            (actionDataToString actionData ++ " tx broadcast error")
+                            "funnel abort - tx"
                             errStr
                             0
                         ]
@@ -950,12 +968,25 @@ update msg prevModel =
                         }
                         Cmd.none
                         ChainCmd.none
-                        [ CmdUp.gTag
-                            ("tx broadcast success / " ++ actionDataToString actionData)
-                            "tx lifecycle"
+                        (let
+                            funnelIdStr =
+                                case actionData of
+                                    Unlock ->
+                                        "4c - "
+
+                                    Enter _ ->
+                                        "8c - "
+
+                                    Exit ->
+                                        "9c - "
+                         in
+                         [ CmdUp.gTag
+                            (funnelIdStr ++ actionDataToString actionData ++ " tx broadcast")
+                            "funnel - tx"
                             (Eth.Utils.txHashToString tx.hash)
                             0
-                        ]
+                         ]
+                        )
 
         TxMined trackedTxId actionData txReceiptResult ->
             case txReceiptResult of
@@ -973,8 +1004,8 @@ update msg prevModel =
                         Cmd.none
                         ChainCmd.none
                         [ CmdUp.gTag
-                            ("tx mine error / " ++ actionDataToString actionData)
-                            "tx lifecycle"
+                            (actionDataToString actionData ++ " tx mine error")
+                            "funnel abort - tx"
                             errStr
                             0
                         ]
@@ -988,14 +1019,10 @@ update msg prevModel =
                         cmd =
                             case ( actionData, Wallet.userInfo prevModel.wallet ) of
                                 ( Exit, Just userInfo ) ->
-                                    Cmd.batch
-                                        [ fetchUserExitInfoCmd
-                                            userInfo
-                                            prevModel.testMode
-                                        , fetchUserFryBalanceCmd
-                                            userInfo
-                                            prevModel.testMode
-                                        ]
+                                    fetchStateUpdateInfoCmd
+                                        (Just userInfo)
+                                        Nothing
+                                        prevModel.testMode
 
                                 ( Enter enterInfo, _ ) ->
                                     case prevModel.bucketSale of
@@ -1017,12 +1044,121 @@ update msg prevModel =
                         }
                         cmd
                         ChainCmd.none
-                        [ CmdUp.gTag
-                            ("tx sign success / " ++ actionDataToString actionData)
-                            "tx lifecycle"
+                        (let
+                            funnelIdStr =
+                                case actionData of
+                                    Unlock ->
+                                        "4d - "
+
+                                    Enter _ ->
+                                        "8d - "
+
+                                    Exit ->
+                                        "9d - "
+                         in
+                         [ CmdUp.gTag
+                            (funnelIdStr ++ actionDataToString actionData ++ " tx mined")
+                            "funnel - tx"
                             (Eth.Utils.txHashToString txReceipt.hash)
                             0
-                        ]
+                         ]
+                        )
+
+
+runCmdDown : CmdDown -> Model -> UpdateResult
+runCmdDown cmdDown prevModel =
+    case cmdDown of
+        CmdDown.UpdateWallet newWallet ->
+            if prevModel.wallet == newWallet then
+                justModelUpdate prevModel
+
+            else
+                let
+                    newBucketSale =
+                        prevModel.bucketSale
+                            |> (Maybe.map << Result.map) clearBucketSaleExitInfo
+                in
+                UpdateResult
+                    { prevModel
+                        | wallet = verifyWalletCorrectNetwork newWallet prevModel.testMode
+                        , bucketSale = newBucketSale
+                        , extraUserInfo = Nothing
+                    }
+                    (fetchStateUpdateInfoCmd
+                        (Wallet.userInfo newWallet)
+                        (case newBucketSale of
+                            Just (Ok bucketSale) ->
+                                Just <|
+                                    getFocusedBucketId
+                                        bucketSale
+                                        prevModel.bucketView
+                                        prevModel.now
+                                        prevModel.testMode
+
+                            _ ->
+                                Nothing
+                        )
+                        prevModel.testMode
+                    )
+                    ChainCmd.none
+                    (case newWallet of
+                        Wallet.NoneDetected ->
+                            [ CmdUp.gTag
+                                "no web3"
+                                "funnel abort"
+                                ""
+                                0
+                            ]
+
+                        Wallet.OnlyNetwork _ ->
+                            [ CmdUp.gTag
+                                "1a - has web3"
+                                "funnel"
+                                ""
+                                0
+                            ]
+
+                        Wallet.WrongNetwork ->
+                            [ CmdUp.gTag
+                                "1a - has web3"
+                                "funnel"
+                                ""
+                                0
+                            , CmdUp.gTag
+                                "wrong network"
+                                "funnel abort"
+                                ""
+                                0
+                            ]
+
+                        Wallet.Active userInfo ->
+                            [ CmdUp.gTag
+                                "1b - unlocked web3"
+                                "funnel"
+                                (Eth.Utils.addressToChecksumString userInfo.address)
+                                0
+                            ]
+                    )
+
+        CmdDown.UpdateReferral address ->
+            UpdateResult
+                { prevModel
+                    | enterUXModel =
+                        let
+                            prevEnterUXModel =
+                                prevModel.enterUXModel
+                        in
+                        { prevEnterUXModel
+                            | referrer = Just address
+                        }
+                }
+                Cmd.none
+                ChainCmd.none
+                []
+
+        CmdDown.CloseAnyDropdownsOrModals ->
+            justModelUpdate
+                prevModel
 
 
 toggleAssentForPoint : ( Int, Int ) -> ConfirmTosModel -> ConfirmTosModel
@@ -1105,23 +1241,6 @@ fetchBucketUserBuyCmd id userInfo testMode =
         (UserBuyFetched userInfo.address id)
 
 
-fetchUserExitInfoCmd : UserInfo -> TestMode -> Cmd Msg
-fetchUserExitInfoCmd userInfo testMode =
-    BucketSaleWrappers.getUserExitInfo
-        testMode
-        userInfo.address
-        (UserExitInfoFetched userInfo.address)
-
-
-fetchUserAllowanceForSaleCmd : UserInfo -> TestMode -> Cmd Msg
-fetchUserAllowanceForSaleCmd userInfo testMode =
-    Contracts.Wrappers.getAllowanceCmd
-        testMode
-        userInfo.address
-        (Config.bucketSaleAddress testMode)
-        AllowanceFetched
-
-
 fetchSaleStartTimestampCmd : TestMode -> Cmd Msg
 fetchSaleStartTimestampCmd testMode =
     BucketSaleWrappers.getSaleStartTimestampCmd
@@ -1134,14 +1253,6 @@ fetchTotalTokensExitedCmd testMode =
     BucketSaleWrappers.getTotalExitedTokens
         testMode
         TotalTokensExitedFetched
-
-
-fetchUserFryBalanceCmd : UserInfo -> TestMode -> Cmd Msg
-fetchUserFryBalanceCmd userInfo testMode =
-    BucketSaleWrappers.getFryBalance
-        testMode
-        userInfo.address
-        (UserFryBalanceFetched userInfo.address)
 
 
 fetchStateUpdateInfoCmd : Maybe UserInfo -> Maybe Int -> TestMode -> Cmd Msg
@@ -1219,74 +1330,6 @@ updateTrackedTxStatus id newStatus =
         (\trackedTx ->
             { trackedTx | status = newStatus }
         )
-
-
-runCmdDown : CmdDown -> Model -> UpdateResult
-runCmdDown cmdDown prevModel =
-    case cmdDown of
-        CmdDown.UpdateWallet newWallet ->
-            if prevModel.wallet == newWallet then
-                justModelUpdate prevModel
-
-            else
-                let
-                    newBucketSale =
-                        prevModel.bucketSale
-                            |> (Maybe.map << Result.map) clearBucketSaleExitInfo
-                in
-                UpdateResult
-                    { prevModel
-                        | wallet = verifyWalletCorrectNetwork newWallet prevModel.testMode
-                        , bucketSale = newBucketSale
-                        , userFryBalance = Nothing
-                        , userExitInfo = Nothing
-                        , enterUXModel =
-                            let
-                                oldEnterUXModel =
-                                    prevModel.enterUXModel
-                            in
-                            { oldEnterUXModel
-                                | allowance = Nothing
-                            }
-                    }
-                    (fetchStateUpdateInfoCmd
-                        (Wallet.userInfo newWallet)
-                        (case newBucketSale of
-                            Just (Ok bucketSale) ->
-                                Just <|
-                                    getFocusedBucketId
-                                        bucketSale
-                                        prevModel.bucketView
-                                        prevModel.now
-                                        prevModel.testMode
-
-                            _ ->
-                                Nothing
-                        )
-                        prevModel.testMode
-                    )
-                    ChainCmd.none
-                    []
-
-        CmdDown.UpdateReferral address ->
-            UpdateResult
-                { prevModel
-                    | enterUXModel =
-                        let
-                            prevEnterUXModel =
-                                prevModel.enterUXModel
-                        in
-                        { prevEnterUXModel
-                            | referrer = Just address
-                        }
-                }
-                Cmd.none
-                ChainCmd.none
-                []
-
-        CmdDown.CloseAnyDropdownsOrModals ->
-            justModelUpdate
-                prevModel
 
 
 locationCheckResultToJurisdictionStatus : Result Json.Decode.Error (Result String LocationInfo) -> JurisdictionCheckStatus
