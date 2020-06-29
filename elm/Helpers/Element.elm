@@ -548,12 +548,12 @@ button dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor l
     Element.column
         (attributes
             ++ [ Element.Border.rounded 4
-               , Element.spacing (8 |> changeForMobile 5 dProfile)
+               , Element.spacing (responsiveVal dProfile 8 5)
                , Element.pointer
                , Element.Events.onClick msg
-               , Element.paddingXY 25 17 |> changeForMobile (Element.padding 10) dProfile
+               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.padding 10)
                , Element.Font.color textColor
-               , Element.Font.size (18 |> changeForMobile 16 dProfile)
+               , Element.Font.size (responsiveVal dProfile 18 16)
                , Element.Font.semiBold
                , Element.Background.color bgColor
                , Element.mouseDown [ Element.Background.color bgPressedColor ]
@@ -666,8 +666,8 @@ disabledButton dProfile attributes text maybeTipText =
     Element.el
         (attributes
             ++ [ Element.Border.rounded 4
-               , Element.paddingXY 25 17 |> changeForMobile (Element.paddingXY 10 5) dProfile
-               , Element.Font.size (18 |> changeForMobile 16 dProfile)
+               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.paddingXY 10 5)
+               , Element.Font.size (responsiveVal dProfile 18 16)
                , Element.Font.semiBold
                , Element.Background.color lightGray
                , Element.Font.center
@@ -1101,93 +1101,6 @@ simpleSubmodelContainer maxWidth el =
             el
 
 
-submodelContainer : Int -> DisplayProfile -> Maybe String -> Maybe (Element msg) -> Element msg -> Element msg
-submodelContainer maxWidth dProfile maybeBigTitleText maybeTitleEl el =
-    Element.column
-        [ Element.spacing 60
-        , Element.width Element.fill
-        ]
-        [ Maybe.map
-            (Element.el
-                [ Element.Font.color white
-                , Element.Font.size 38
-                , Element.centerX
-                ]
-                << Element.text
-            )
-            maybeBigTitleText
-            |> Maybe.withDefault Element.none
-        , Element.column
-            [ Element.Background.color <| submodelBackgroundColor
-            , Element.spacing (20 |> changeForMobile 5 dProfile)
-            , Element.Border.rounded 8
-            , Element.clip
-            , Element.centerX
-            , Element.width (Element.fill |> Element.maximum maxWidth)
-            , Element.Border.shadow
-                { offset = ( 0, 0 )
-                , size = 1
-                , blur = 3
-                , color = Element.rgba 0 0 0 0.2
-                }
-            ]
-            [ Maybe.map
-                (Element.el
-                    [ Element.width Element.fill
-                    , Element.padding (15 |> changeForMobile 5 dProfile)
-                    , Element.Background.color white
-                    , Element.Border.shadow
-                        { offset = ( 0, 0 )
-                        , size = 0
-                        , blur = 30
-                        , color = Element.rgba 0 0 0 0.15
-                        }
-                    ]
-                )
-                maybeTitleEl
-                |> Maybe.withDefault Element.none
-            , el
-            ]
-        ]
-
-
-withInputHeader : DisplayProfile -> List (Attribute msg) -> String -> Element msg -> Element msg
-withInputHeader dProfile attributes titleStr el =
-    withInputHeaderAndMaybeError dProfile attributes titleStr Nothing el
-
-
-withInputHeaderAndMaybeError : DisplayProfile -> List (Attribute msg) -> String -> Maybe String -> Element msg -> Element msg
-withInputHeaderAndMaybeError dProfile attributes titleStr maybeError el =
-    Element.column
-        (attributes
-            ++ [ Element.spacing 10
-               ]
-        )
-        [ Element.row
-            [ Element.spacing (20 |> changeForMobile 10 dProfile)
-            ]
-            [ Element.el
-                [ Element.Font.size (18 |> changeForMobile 16 dProfile)
-                , Element.Font.semiBold
-                , Element.Font.color <| Element.rgb255 1 31 52
-                , Element.alignLeft
-                ]
-                (Element.text titleStr)
-            , case maybeError of
-                Just error ->
-                    Element.el
-                        [ Element.Font.size (12 |> changeForMobile 10 dProfile)
-                        , Element.Font.color softRed
-                        ]
-                        (Element.text error)
-
-                Nothing ->
-                    Element.none
-            ]
-        , el
-        ]
-
-
 withSelectedUnderline : List (Attribute msg) -> Bool -> Element msg -> Element msg
 withSelectedUnderline attributes selected el =
     Element.el
@@ -1334,20 +1247,16 @@ inputContainer : DisplayProfile -> List (Element.Attribute msg) -> List (Element
 inputContainer dProfile attributes =
     Element.row <|
         [ Element.Background.color lightGray
-        , Element.height <| Element.px (55 |> changeForMobile 40 dProfile)
+        , Element.height <| Element.px (responsiveVal dProfile 55 40)
         , Element.Border.rounded 4
         , Element.Border.width 1
         , Element.Border.color lightGray
         , Element.spacing 1
         ]
             ++ attributes
-            ++ (case dProfile of
-                    Desktop ->
-                        []
-
-                    Mobile ->
-                        [ Element.Font.size 14 ]
-               )
+            ++ responsiveVal dProfile
+                []
+                [ Element.Font.size 14 ]
 
 
 moveToFront : Attribute msg

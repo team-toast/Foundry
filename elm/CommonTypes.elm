@@ -16,7 +16,7 @@ type TestMode
 
 type DisplayProfile
     = Desktop
-    | Mobile
+    | SmallDesktop
 
 
 type alias GTagData =
@@ -35,18 +35,18 @@ type alias UserInfo =
 
 screenWidthToDisplayProfile : Int -> DisplayProfile
 screenWidthToDisplayProfile width =
-    if width >= 1150 then
+    if width >= 1300 then
         Desktop
 
     else
-        Mobile
+        SmallDesktop
 
 
-changeForMobile : a -> DisplayProfile -> a -> a
-changeForMobile changed dProfile original =
+responsiveVal : DisplayProfile -> a -> a -> a
+responsiveVal dProfile val1 val2 =
     case dProfile of
         Desktop ->
-            original
+            val1
 
-        Mobile ->
-            changed
+        SmallDesktop ->
+            val2

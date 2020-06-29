@@ -85,7 +85,7 @@ pageElementAndModal model =
             maybeTestnetIndicator =
                 Element.el
                     [ Element.centerX
-                    , Element.Font.size (24 |> changeForMobile 16 model.dProfile)
+                    , Element.Font.size 24
                     , Element.Font.bold
                     , Element.Font.italic
                     , Element.Font.color EH.softRed
@@ -107,7 +107,7 @@ pageElementAndModal model =
         ( Element.column
             [ Element.width Element.fill
             , Element.height Element.fill
-            , Element.spacing (20 |> changeForMobile 10 model.dProfile)
+            , Element.spacing 20
             , Element.behindContent <| headerBackground model.dProfile
             ]
             [ header model.dProfile
@@ -156,7 +156,7 @@ brandAndLogo : DisplayProfile -> Element Msg
 brandAndLogo dProfile =
     Element.row
         [ Element.height Element.fill
-        , Element.padding (20 |> changeForMobile 10 dProfile)
+        , Element.padding 20
         , Element.spacing 10
         ]
         [ Images.toElement
@@ -216,26 +216,16 @@ type HeaderLinkStyle
     | Important
 
 
-headerLinkBaseStyles : DisplayProfile -> List (Attribute Msg)
-headerLinkBaseStyles dProfile =
-    (case dProfile of
-        Desktop ->
-            [ Element.paddingXY 23 12
-            , Element.Font.size 21
-            , Element.Font.semiBold
-            , Element.spacing 13
-            ]
-
-        Mobile ->
-            [ Element.paddingXY 10 5
-            , Element.Font.size 16
-            , Element.spacing 6
-            ]
-    )
-        ++ [ Element.Font.color EH.white
-           , Element.pointer
-           , EH.noSelectText
-           ]
+headerLinkBaseStyles : List (Attribute Msg)
+headerLinkBaseStyles =
+    [ Element.paddingXY 23 12
+    , Element.Font.size 21
+    , Element.Font.semiBold
+    , Element.spacing 13
+    , Element.Font.color EH.white
+    , Element.pointer
+    , EH.noSelectText
+    ]
 
 
 headerExternalLink : DisplayProfile -> String -> String -> Element Msg
@@ -251,7 +241,7 @@ headerExternalLink dProfile title url =
         , label =
             Element.el
                 [ Element.centerY
-                , Element.height <| Element.px (26 |> changeForMobile 14 dProfile)
+                , Element.height <| Element.px 26
                 ]
             <|
                 Element.text title
@@ -261,9 +251,6 @@ headerExternalLink dProfile title url =
 headerLink : DisplayProfile -> Maybe Image -> String -> Msg -> HeaderLinkStyle -> Element Msg
 headerLink dProfile maybeIcon title onClick style =
     let
-        height =
-            26 |> changeForMobile 18 dProfile
-
         extraStyles =
             case style of
                 Normal ->
@@ -280,19 +267,19 @@ headerLink dProfile maybeIcon title onClick style =
                     ]
     in
     Element.row
-        (headerLinkBaseStyles dProfile
+        (headerLinkBaseStyles
             ++ [ Element.Events.onClick onClick ]
             ++ extraStyles
         )
         [ Maybe.map
             (Images.toElement
-                [ Element.height <| Element.px height ]
+                [ Element.height <| Element.px 26 ]
             )
             maybeIcon
             |> Maybe.withDefault Element.none
         , Element.el
             [ Element.centerY
-            , Element.height <| Element.px height
+            , Element.height <| Element.px 26
             ]
           <|
             Element.text title
@@ -302,7 +289,7 @@ headerLink dProfile maybeIcon title onClick style =
 logoElement : DisplayProfile -> Element Msg
 logoElement dProfile =
     Element.el
-        [ Element.Font.size (29 |> changeForMobile 20 dProfile)
+        [ Element.Font.size 29
         , Element.Font.color EH.white
         , Element.Font.bold
         , Element.centerX
@@ -334,7 +321,7 @@ submodelElementAndModal model =
                     )
 
                 BucketSaleModel bucketSaleModel ->
-                    BucketSale.View.root bucketSaleModel
+                    BucketSale.View.root bucketSaleModel model.dProfile
                         |> Tuple.mapBoth
                             (Element.map BucketSaleMsg)
                             (List.map (Element.map BucketSaleMsg))
@@ -356,13 +343,13 @@ userNoticeEls dProfile notices =
 
     else
         [ Element.column
-            [ Element.moveLeft (20 |> changeForMobile 5 dProfile)
-            , Element.moveUp (20 |> changeForMobile 5 dProfile)
-            , Element.spacing (10 |> changeForMobile 5 dProfile)
+            [ Element.moveLeft 20
+            , Element.moveUp 20
+            , Element.spacing 10
             , Element.alignRight
             , Element.alignBottom
-            , Element.width <| Element.px (300 |> changeForMobile 150 dProfile)
-            , Element.Font.size (15 |> changeForMobile 10 dProfile)
+            , Element.width <| Element.px 300
+            , Element.Font.size 15
             ]
             (notices
                 |> List.indexedMap (\id notice -> ( id, notice ))
@@ -370,13 +357,13 @@ userNoticeEls dProfile notices =
                 |> List.map (userNotice dProfile)
             )
         , Element.column
-            [ Element.moveRight (20 |> changeForMobile 5 dProfile)
+            [ Element.moveRight 20
             , Element.moveDown 100
-            , Element.spacing (10 |> changeForMobile 5 dProfile)
+            , Element.spacing 10
             , Element.alignLeft
             , Element.alignTop
-            , Element.width <| Element.px (300 |> changeForMobile 150 dProfile)
-            , Element.Font.size (15 |> changeForMobile 10 dProfile)
+            , Element.width <| Element.px 300
+            , Element.Font.size 15
             ]
             (notices
                 |> List.indexedMap (\id notice -> ( id, notice ))
@@ -422,8 +409,8 @@ userNotice dProfile ( id, notice ) =
     in
     Element.el
         [ Element.Background.color color
-        , Element.Border.rounded (10 |> changeForMobile 5 dProfile)
-        , Element.padding (8 |> changeForMobile 3 dProfile)
+        , Element.Border.rounded 10
+        , Element.padding 8
         , Element.width Element.fill
         , Element.Border.width 1
         , Element.Border.color <| Element.rgba 0 0 0 0.15

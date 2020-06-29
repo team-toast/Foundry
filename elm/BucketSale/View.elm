@@ -28,8 +28,8 @@ import TokenValue exposing (TokenValue)
 import Wallet
 
 
-root : Model -> ( Element Msg, List (Element Msg) )
-root model =
+root : Model -> DisplayProfile -> ( Element Msg, List (Element Msg) )
+root model dProfile =
     ( Element.column
         ([ Element.width Element.fill
          , Element.paddingEach
@@ -72,9 +72,18 @@ root model =
                         , Element.alignTop
                         , Element.spacing 20
                         ]
-                        [ viewYoutubeLinksBlock
-                        , closedBucketsPane model
-                        ]
+                        ([ viewYoutubeLinksBlock
+                         , closedBucketsPane model
+                         ]
+                            ++ (if dProfile == SmallDesktop then
+                                    [ futureBucketsPane model bucketSale
+                                    , trackedTxsElement model.trackedTxs
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
                     , focusedBucketPane
                         bucketSale
                         (getFocusedBucketId
@@ -91,13 +100,17 @@ root model =
                         model.showReferralModal
                         model.now
                         model.testMode
-                    , Element.column
-                        [ Element.spacing 20
-                        , Element.width Element.fill
-                        ]
-                        [ futureBucketsPane model bucketSale
-                        , trackedTxsElement model.trackedTxs
-                        ]
+                    , if dProfile == Desktop then
+                        Element.column
+                            [ Element.spacing 20
+                            , Element.width Element.fill
+                            ]
+                            [ futureBucketsPane model bucketSale
+                            , trackedTxsElement model.trackedTxs
+                            ]
+
+                      else
+                        Element.none
                     ]
         ]
     , []
