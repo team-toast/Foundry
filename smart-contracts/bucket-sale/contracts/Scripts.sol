@@ -67,6 +67,8 @@ contract Scripts {
             uint _buy_valueEntered,
             uint _buy_buyerTokensExited,
             uint _tokenSoldForAllowance,
+            uint _tokenSoldForBalance,
+            uint _ethBalance,
             uint _tokenOnSaleBalance,
             uint[1201] memory _exitInfo)
     {
@@ -74,6 +76,8 @@ contract Scripts {
         _bucket_totalValueEntered = _bucketSale.buckets(_bucketId);
         (_buy_valueEntered, _buy_buyerTokensExited) = _bucketSale.buys(_bucketId, _buyer);
         _tokenSoldForAllowance = _bucketSale.tokenSoldFor().allowance(_buyer, address(_bucketSale));
+        _tokenSoldForBalance = _bucketSale.tokenSoldFor().balanceOf(_buyer);
+        _ethBalance = _buyer.balance;
         _tokenOnSaleBalance = _bucketSale.tokenOnSale().balanceOf(_buyer);
         _exitInfo = getExitInfo(_bucketSale, _buyer);
     }
