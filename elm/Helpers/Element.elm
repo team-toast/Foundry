@@ -1268,3 +1268,9 @@ noSelectText : Attribute msg
 noSelectText =
     Html.Attributes.style "user-select" "none"
         |> Element.htmlAttribute
+
+
+withTitle : String -> Attribute msg
+withTitle title =
+    Html.Attributes.title title
+    |> Element.htmlAttribute
