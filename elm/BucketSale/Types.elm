@@ -95,6 +95,7 @@ type Msg
     | TosPreviousPageClicked
     | TosNextPageClicked
     | TosCheckboxClicked ( Int, Int )
+    | AddFryToMetaMaskClicked
     | VerifyJurisdictionClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)

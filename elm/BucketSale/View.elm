@@ -27,6 +27,7 @@ import Time
 import TokenValue exposing (TokenValue)
 import Wallet
 import Eth.Utils
+import BucketSale.Types exposing (Msg(..))
 
 
 root : Model -> DisplayProfile -> ( Element Msg, List (Element Msg) )
@@ -275,6 +276,16 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
                     , Element.width Element.shrink
                     ]
                     [ Element.text "in your wallet"
+                    ]
+                , Element.paragraph
+                    [ Element.centerX
+                    , Element.width Element.shrink
+                    , Element.Font.color EH.lightBlue
+                    , Element.pointer
+                    , Element.Events.onClick AddFryToMetaMaskClicked
+                    , EH.withTitle "Add FRY to Metamask or another EIP 747 compliant Web3 wallet"
+                    ]
+                    [ Element.text "List FRY in your wallet"
                     ]
                 ]
 
