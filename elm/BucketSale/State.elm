@@ -126,18 +126,45 @@ update msg prevModel =
                 { prevModel | timezone = Just tz }
 
         Refresh ->
+            let
+                fetchStateCmd =
+                    fetchStateUpdateInfoCmd
+                        (Wallet.userInfo prevModel.wallet)
+                        (case prevModel.bucketSale of
+                            Just (Ok bucketSale) ->
+                                Just <| getFocusedBucketId bucketSale prevModel.bucketView prevModel.now prevModel.testMode
+
+                            _ ->
+                                Nothing
+                        )
+                        prevModel.testMode
+
+                checkTxsCmd =
+                    prevModel.trackedTxs
+                        |> List.indexedMap
+                            (\id trackedTx ->
+                                case trackedTx.status of
+                                    Signed txHash Mining ->
+                                        Just
+                                            (Eth.getTxReceipt
+                                                (EthHelpers.appHttpProvider prevModel.testMode)
+                                                txHash
+                                                |> Task.attempt
+                                                    (TxStatusFetched id trackedTx.action)
+                                            )
+
+                                    _ ->
+                                        Nothing
+                            )
+                        |> Maybe.Extra.values
+                        |> Cmd.batch
+            in
             UpdateResult
                 prevModel
-                (fetchStateUpdateInfoCmd
-                    (Wallet.userInfo prevModel.wallet)
-                    (case prevModel.bucketSale of
-                        Just (Ok bucketSale) ->
-                            Just <| getFocusedBucketId bucketSale prevModel.bucketView prevModel.now prevModel.testMode
-
-                        _ ->
-                            Nothing
-                    )
-                    prevModel.testMode
+                (Cmd.batch
+                    [ fetchStateCmd
+                    , checkTxsCmd
+                    ]
                 )
                 ChainCmd.none
                 []
@@ -713,7 +740,6 @@ update msg prevModel =
                     prevModel.trackedTxs
                         |> trackNewTx
                             (TrackedTx
-                                Nothing
                                 Unlock
                                 Signing
                             )
@@ -721,9 +747,9 @@ update msg prevModel =
                 chainCmd =
                     let
                         customSend =
-                            { onMined = Just ( TxMined trackedTxId Unlock, Nothing )
+                            { onMined = Nothing
                             , onSign = Just <| TxSigned trackedTxId Unlock
-                            , onBroadcast = Just <| TxBroadcast trackedTxId Unlock
+                            , onBroadcast = Nothing
                             }
 
                         txParams =
@@ -782,7 +808,6 @@ update msg prevModel =
                     prevModel.trackedTxs
                         |> trackNewTx
                             (TrackedTx
-                                Nothing
                                 actionData
                                 Signing
                             )
@@ -790,9 +815,9 @@ update msg prevModel =
                 chainCmd =
                     let
                         customSend =
-                            { onMined = Just ( TxMined trackedTxId actionData, Nothing )
+                            { onMined = Nothing
                             , onSign = Just <| TxSigned trackedTxId actionData
-                            , onBroadcast = Just <| TxBroadcast trackedTxId actionData
+                            , onBroadcast = Nothing
                             }
 
                         txParams =
@@ -827,7 +852,6 @@ update msg prevModel =
                     prevModel.trackedTxs
                         |> trackNewTx
                             (TrackedTx
-                                Nothing
                                 Exit
                                 Signing
                             )
@@ -835,9 +859,9 @@ update msg prevModel =
                 chainCmd =
                     let
                         customSend =
-                            { onMined = Just ( TxMined trackedTxId Exit, Nothing )
+                            { onMined = Nothing
                             , onSign = Just <| TxSigned trackedTxId Exit
-                            , onBroadcast = Just <| TxBroadcast trackedTxId Exit
+                            , onBroadcast = Nothing
                             }
 
                         txParams =
@@ -890,8 +914,7 @@ update msg prevModel =
                     let
                         newTrackedTxs =
                             prevModel.trackedTxs
-                                |> updateTrackedTxStatus trackedTxId Mining
-                                |> updateTrackedTxHash trackedTxId txHash
+                                |> updateTrackedTxStatus trackedTxId (Signed txHash Mining)
 
                         newEnterUXModel =
                             case actionData of
@@ -935,121 +958,87 @@ update msg prevModel =
                          ]
                         )
 
-        TxBroadcast trackedTxId actionData txResult ->
-            case txResult of
-                Err errStr ->
-                    let
-                        _ =
-                            Debug.log "Error broadcasting tx" ( actionData, errStr )
-                    in
-                    UpdateResult
+        TxStatusFetched trackedTxId actionData fetchResult ->
+            case fetchResult of
+                Err _ ->
+                    -- Usually indicates the tx has not yet been mined. Ignore and do nothing.
+                    justModelUpdate
                         prevModel
-                        Cmd.none
-                        ChainCmd.none
-                        [ CmdUp.gTag
-                            (actionDataToString actionData ++ " tx broadcast error")
-                            "funnel abort - tx"
-                            errStr
-                            0
-                        ]
-
-                Ok tx ->
-                    let
-                        newTrackedTxs =
-                            prevModel.trackedTxs
-                                |> updateTrackedTxStatus trackedTxId Mining
-                    in
-                    UpdateResult
-                        { prevModel
-                            | trackedTxs = newTrackedTxs
-                        }
-                        Cmd.none
-                        ChainCmd.none
-                        (let
-                            funnelIdStr =
-                                case actionData of
-                                    Unlock ->
-                                        "4c - "
-
-                                    Enter _ ->
-                                        "8c - "
-
-                                    Exit ->
-                                        "9c - "
-                         in
-                         [ CmdUp.gTag
-                            (funnelIdStr ++ actionDataToString actionData ++ " tx broadcast")
-                            "funnel - tx"
-                            (Eth.Utils.txHashToString tx.hash)
-                            0
-                         ]
-                        )
-
-        TxMined trackedTxId actionData txReceiptResult ->
-            case txReceiptResult of
-                Err errStr ->
-                    let
-                        _ =
-                            Debug.log "Error mining tx" ( actionData, errStr )
-                    in
-                    UpdateResult
-                        prevModel
-                        Cmd.none
-                        ChainCmd.none
-                        [ CmdUp.gTag
-                            (actionDataToString actionData ++ " tx mine error")
-                            "funnel abort - tx"
-                            errStr
-                            0
-                        ]
 
                 Ok txReceipt ->
                     let
-                        cmd =
-                            case ( actionData, Wallet.userInfo prevModel.wallet ) of
-                                ( Exit, Just userInfo ) ->
-                                    fetchStateUpdateInfoCmd
-                                        (Just userInfo)
-                                        Nothing
+                        success =
+                            -- the Maybe has to do with an Ethereum upgrade, far in the past, with which we need not concern ourselves
+                            txReceipt.status |> Maybe.withDefault False
+
+                        newSignedTxStatus =
+                            if success then
+                                Success
+
+                            else
+                                Failed
+
+                        newTrackedTxs =
+                            prevModel.trackedTxs
+                                |> updateTrackedTxStatus trackedTxId
+                                    (Signed txReceipt.hash newSignedTxStatus)
+
+                        ( cmd, cmdUps ) =
+                            case newSignedTxStatus of
+                                Mining ->
+                                    ( Cmd.none
+                                    , []
+                                    )
+
+                                Success ->
+                                    let
+                                        funnelIdStr =
+                                            case actionData of
+                                                Unlock ->
+                                                    "4c - "
+
+                                                Enter _ ->
+                                                    "8c - "
+
+                                                Exit ->
+                                                    "9c - "
+                                    in
+                                    ( let
+                                        maybeBucketRefreshId =
+                                            case actionData of
+                                                Enter enterInfo ->
+                                                    Just enterInfo.bucketId
+
+                                                _ ->
+                                                    Nothing
+                                      in
+                                      fetchStateUpdateInfoCmd
+                                        (Wallet.userInfo prevModel.wallet)
+                                        maybeBucketRefreshId
                                         prevModel.testMode
+                                    , [ CmdUp.gTag
+                                            (funnelIdStr ++ actionDataToString actionData ++ " tx success")
+                                            "funnel - tx"
+                                            (Eth.Utils.txHashToString txReceipt.hash)
+                                            0
+                                      ]
+                                    )
 
-                                ( Enter enterInfo, _ ) ->
-                                    case prevModel.bucketSale of
-                                        Just (Ok bucketSale) ->
-                                            fetchBucketDataCmd
-                                                enterInfo.bucketId
-                                                (Wallet.userInfo prevModel.wallet)
-                                                prevModel.testMode
-
-                                        _ ->
-                                            Cmd.none
-
-                                _ ->
-                                    Cmd.none
+                                Failed ->
+                                    ( Cmd.none
+                                    , [ CmdUp.gTag
+                                            (actionDataToString actionData ++ " tx failed")
+                                            "funnel abort - tx"
+                                            (Eth.Utils.txHashToString txReceipt.hash)
+                                            0
+                                      ]
+                                    )
                     in
                     UpdateResult
-                        prevModel
+                        { prevModel | trackedTxs = newTrackedTxs }
                         cmd
                         ChainCmd.none
-                        (let
-                            funnelIdStr =
-                                case actionData of
-                                    Unlock ->
-                                        "4d - "
-
-                                    Enter _ ->
-                                        "8d - "
-
-                                    Exit ->
-                                        "9d - "
-                         in
-                         [ CmdUp.gTag
-                            (funnelIdStr ++ actionDataToString actionData ++ " tx mined")
-                            "funnel - tx"
-                            (Eth.Utils.txHashToString txReceipt.hash)
-                            0
-                         ]
-                        )
+                        cmdUps
 
 
 runCmdDown : CmdDown -> Model -> UpdateResult
@@ -1316,13 +1305,6 @@ updateTrackedTxStatus id newStatus =
     List.Extra.updateAt id
         (\trackedTx ->
             { trackedTx | status = newStatus }
-        )
-
-updateTrackedTxHash : Int -> Eth.Types.TxHash -> List TrackedTx -> List TrackedTx
-updateTrackedTxHash id newHash =
-    List.Extra.updateAt id
-        (\trackedTx ->
-            { trackedTx | hash = Just newHash }
         )
 
 

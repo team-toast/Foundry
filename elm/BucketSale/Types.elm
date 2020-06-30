@@ -113,8 +113,7 @@ type Msg
     | EnterButtonClicked EnterInfo
     | ConfirmClicked EnterInfo
     | TxSigned Int ActionData (Result String TxHash)
-    | TxBroadcast Int ActionData (Result String Tx)
-    | TxMined Int ActionData (Result String TxReceipt)
+    | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
 
 
 type alias UpdateResult =
@@ -143,8 +142,7 @@ type alias EnterInfo =
 
 
 type alias TrackedTx =
-    { hash : Maybe TxHash
-    , action : ActionData
+    { action : ActionData
     , status : TxStatus
     }
 
@@ -170,11 +168,14 @@ actionDataToString actionData =
 
 type TxStatus
     = Signing
-    --| Broadcasting
-    | Mining
-    --| Mined
     | Rejected
-    --| Failed
+    | Signed TxHash SignedTxStatus
+
+
+type SignedTxStatus
+    = Mining
+    | Success
+    | Failed
 
 
 type BucketView

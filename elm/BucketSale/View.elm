@@ -13,6 +13,7 @@ import Element.Events
 import Element.Font
 import Element.Input
 import Eth.Types exposing (Address)
+import Eth.Utils
 import FormatFloat exposing (formatFloat)
 import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
@@ -26,7 +27,6 @@ import Routing
 import Time
 import TokenValue exposing (TokenValue)
 import Wallet
-import Eth.Utils
 
 
 root : Model -> DisplayProfile -> ( Element Msg, List (Element Msg) )
@@ -496,7 +496,7 @@ enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckSt
                 |> List.filterMap
                     (\trackedTx ->
                         case ( trackedTx.action, trackedTx.status ) of
-                            ( Enter enterInfo, Mining ) ->
+                            ( Enter enterInfo, Signed _ Mining ) ->
                                 Just enterInfo
 
                             _ ->
@@ -509,7 +509,12 @@ enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckSt
                     (\trackedTx ->
                         case trackedTx.action of
                             Unlock ->
-                                trackedTx.status == Mining
+                                case trackedTx.status of
+                                    Signed _ Mining ->
+                                        True
+
+                                    _ ->
+                                        False
 
                             _ ->
                                 False
@@ -1091,7 +1096,7 @@ trackedTxsElement trackedTxs =
 trackedTxsColumn : List TrackedTx -> Element Msg
 trackedTxsColumn trackedTxs =
     Element.column
-        [ Element.spacing 8
+        [ Element.spacing 10
         , Element.padding 5
         ]
         (List.map trackedTxRow trackedTxs)
@@ -1099,65 +1104,91 @@ trackedTxsColumn trackedTxs =
 
 trackedTxRow : TrackedTx -> Element Msg
 trackedTxRow trackedTx =
-    Element.row
+    let
+        statusEl =
+            let
+                ( text, bgColor, maybeEtherscanLinkEl ) =
+                    case trackedTx.status of
+                        Signing ->
+                            ( "Awaiting Metamask Signature"
+                            , Element.rgb 1 1 0.5
+                            , Nothing
+                            )
+
+                        Rejected ->
+                            ( "Rejected By User"
+                            , Element.rgb 1 0.7 0.7
+                            , Nothing
+                            )
+
+                        Signed txHash signedTxStatus ->
+                            let
+                                etherscanLink =
+                                    Element.newTabLink
+                                        []
+                                        { url = "https://etherscan.io/tx/" ++ Eth.Utils.txHashToString txHash
+                                        , label =
+                                            Element.el
+                                                [ Element.Font.color EH.lightBlue ]
+                                            <|
+                                                Element.text "Inspect"
+                                        }
+                            in
+                            case signedTxStatus of
+                                Mining ->
+                                    ( "Mining"
+                                    , Element.rgb 1 0.7 1
+                                    , Just etherscanLink
+                                    )
+
+                                Success ->
+                                    ( "Success"
+                                    , Element.rgb 0.7 1 0.7
+                                    , Just etherscanLink
+                                    )
+
+                                Failed ->
+                                    ( "Failed"
+                                    , Element.rgb 1 0.7 0.7
+                                    , Just etherscanLink
+                                    )
+            in
+            Element.row
+                [ Element.alignLeft
+                , Element.spacing 5
+                , Element.Font.size 12
+                ]
+                [ Element.el
+                    [ Element.padding 5
+                    , Element.Border.rounded 4
+                    , Element.Background.color <| bgColor
+                    , Element.Border.width 1
+                    , Element.Border.color <| Element.rgba 0 0 0 0.5
+                    ]
+                  <|
+                    Element.text text
+                , maybeEtherscanLinkEl |> Maybe.withDefault Element.none
+                ]
+    in
+    Element.column
         [ Element.Font.color grayTextColor
-        , Element.Font.size 12
         , Element.Border.width 1
         , Element.Border.color <| Element.rgb 0.8 0.8 0.8
         , Element.Background.color <| Element.rgb 0.95 0.95 0.95
-        , Element.spacing 8
+        , Element.spacing 5
         , Element.padding 4
         , Element.Border.rounded 4
         ]
         [ Element.el
-            [ Element.padding 5
-            , Element.Border.rounded 4
-            , Element.Background.color <| Element.rgb 0.8 0.8 0.8
-            , Element.width <| Element.px 90
-            ]
-            (case trackedTx.status of
-                Signing ->
-                    Element.el
-                        [ Element.centerX
-                        , Element.Font.italic
-                        ]
-                    <|
-                        Element.text "Signing"
-
-                Mining ->
-                    case trackedTx.hash of
-                        Just hash ->
-                            Element.newTabLink
-                                [ Element.centerX
-                                , Element.Font.italic
-                                ]
-                                { url = "https://etherscan.io/tx/" ++ (Eth.Utils.txHashToString hash)
-                                , label = Element.text "Inspect"
-                                }
-                        Nothing -> 
-                            Element.el
-                                [ Element.centerX
-                                , Element.Font.italic
-                                ]
-                                (Element.text "...")
-
-                Rejected ->
-                    Element.el
-                        [ Element.centerX
-                        , Element.Font.color EH.softRed
-                        , Element.Font.italic
-                        , Element.Font.bold
-                        ]
-                    <|
-                        Element.text "Rejected"
-            )
-        , Element.el
             [ Element.width Element.fill
             , Element.clip
+            , Element.Font.bold
+            , Element.Font.size 16
             ]
           <|
             Element.text <|
                 makeDescription trackedTx.action
+        , statusEl
         ]
 
 
