@@ -890,7 +890,8 @@ update msg prevModel =
                     let
                         newTrackedTxs =
                             prevModel.trackedTxs
-                                |> updateTrackedTxStatus trackedTxId Broadcasting
+                                |> updateTrackedTxStatus trackedTxId Mining
+                                |> updateTrackedTxHash trackedTxId txHash
 
                         newEnterUXModel =
                             case actionData of
@@ -942,11 +943,7 @@ update msg prevModel =
                             Debug.log "Error broadcasting tx" ( actionData, errStr )
                     in
                     UpdateResult
-                        { prevModel
-                            | trackedTxs =
-                                prevModel.trackedTxs
-                                    |> updateTrackedTxStatus trackedTxId Failed
-                        }
+                        prevModel
                         Cmd.none
                         ChainCmd.none
                         [ CmdUp.gTag
@@ -996,11 +993,7 @@ update msg prevModel =
                             Debug.log "Error mining tx" ( actionData, errStr )
                     in
                     UpdateResult
-                        { prevModel
-                            | trackedTxs =
-                                prevModel.trackedTxs
-                                    |> updateTrackedTxStatus trackedTxId Failed
-                        }
+                        prevModel
                         Cmd.none
                         ChainCmd.none
                         [ CmdUp.gTag
@@ -1012,10 +1005,6 @@ update msg prevModel =
 
                 Ok txReceipt ->
                     let
-                        newTrackedTxs =
-                            prevModel.trackedTxs
-                                |> updateTrackedTxStatus trackedTxId Mined
-
                         cmd =
                             case ( actionData, Wallet.userInfo prevModel.wallet ) of
                                 ( Exit, Just userInfo ) ->
@@ -1039,9 +1028,7 @@ update msg prevModel =
                                     Cmd.none
                     in
                     UpdateResult
-                        { prevModel
-                            | trackedTxs = newTrackedTxs
-                        }
+                        prevModel
                         cmd
                         ChainCmd.none
                         (let
@@ -1329,6 +1316,13 @@ updateTrackedTxStatus id newStatus =
     List.Extra.updateAt id
         (\trackedTx ->
             { trackedTx | status = newStatus }
+        )
+
+updateTrackedTxHash : Int -> Eth.Types.TxHash -> List TrackedTx -> List TrackedTx
+updateTrackedTxHash id newHash =
+    List.Extra.updateAt id
+        (\trackedTx ->
+            { trackedTx | hash = Just newHash }
         )
 
 
