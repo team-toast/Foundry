@@ -31,7 +31,6 @@ import Time
 import TokenValue exposing (TokenValue)
 import Utils
 import Wallet
-import BucketSale.Types exposing (Msg(..))
 
 
 init : Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
@@ -286,17 +285,16 @@ update msg prevModel =
                 )
 
         AddFryToMetaMaskClicked ->
-            UpdateResult 
+            UpdateResult
                 prevModel
                 (addFryToMetaMask ())
                 ChainCmd.none
                 [ CmdUp.gTag
                     "10 - User requested FRY to be added to MetaMask"
-                    "funnel" 
+                    "funnel"
                     ""
                     0
                 ]
-
 
         VerifyJurisdictionClicked ->
             UpdateResult
@@ -1006,16 +1004,22 @@ update msg prevModel =
 
                                 Success ->
                                     let
-                                        funnelIdStr =
+                                        ( funnelIdStr, label ) =
                                             case actionData of
                                                 Unlock ->
-                                                    "4c - "
+                                                    ( "4c - "
+                                                    , Eth.Utils.txHashToString txReceipt.hash
+                                                    )
 
-                                                Enter _ ->
-                                                    "8c - "
+                                                Enter enterInfo ->
+                                                    ( "8c - "
+                                                    , TokenValue.toFloatString Nothing enterInfo.amount
+                                                    )
 
                                                 Exit ->
-                                                    "9c - "
+                                                    ( "9c - "
+                                                    , Eth.Utils.txHashToString txReceipt.hash
+                                                    )
                                     in
                                     ( let
                                         maybeBucketRefreshId =
@@ -1033,7 +1037,7 @@ update msg prevModel =
                                     , [ CmdUp.gTag
                                             (funnelIdStr ++ actionDataToString actionData ++ " tx success")
                                             "funnel - tx"
-                                            (Eth.Utils.txHashToString txReceipt.hash)
+                                            label
                                             0
                                       ]
                                     )
