@@ -125,6 +125,7 @@ init flags url key =
             , maybeReferrer = maybeReferrer
             , displayMobileWarning =
                 flags.width < 1024
+            , nonRepeatingGTagsSent = []
             }
                 |> updateFromPageRoute fullRoute.pageRoute
     in
@@ -163,6 +164,28 @@ update msg prevModel =
                     ( prevModel
                     , gTagOut (encodeGTag gtag)
                     )
+
+                CmdUp.NonRepeatingGTag gtag ->
+                    let
+                        alreadySent =
+                            prevModel.nonRepeatingGTagsSent
+                                |> List.any
+                                    (\event ->
+                                        event == gtag.event
+                                    )
+                    in
+                    if alreadySent then
+                        ( prevModel, Cmd.none )
+
+                    else
+                        ( { prevModel
+                            | nonRepeatingGTagsSent =
+                                prevModel.nonRepeatingGTagsSent
+                                    |> List.append
+                                        [ gtag.event ]
+                          }
+                        , gTagOut (encodeGTag gtag)
+                        )
 
                 CmdUp.UserNotice userNotice ->
                     ( prevModel |> addUserNotice userNotice

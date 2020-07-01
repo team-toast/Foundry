@@ -588,7 +588,7 @@ update msg prevModel =
                         Cmd.none
                         ChainCmd.none
                         ((if not <| TokenValue.isZero ethBalance then
-                            [ CmdUp.gTag
+                            [ CmdUp.nonRepeatingGTag
                                 "2a - has ETH"
                                 "funnel"
                                 (TokenValue.toConciseString ethBalance)
@@ -599,7 +599,7 @@ update msg prevModel =
                             []
                          )
                             ++ (if not <| TokenValue.isZero daiBalance then
-                                    [ CmdUp.gTag
+                                    [ CmdUp.nonRepeatingGTag
                                         "2b - has DAI"
                                         "funnel"
                                         (TokenValue.toConciseString daiBalance)
@@ -1102,7 +1102,7 @@ runCmdDown cmdDown prevModel =
 
                         Wallet.OnlyNetwork _ ->
                             [ CmdUp.gTag
-                                "1a - has web3"
+                                "1a - new wallet state - has web3"
                                 "funnel"
                                 ""
                                 0
@@ -1110,7 +1110,7 @@ runCmdDown cmdDown prevModel =
 
                         Wallet.WrongNetwork ->
                             [ CmdUp.gTag
-                                "1a - has web3"
+                                "1a - new wallet state - has web3"
                                 "funnel"
                                 ""
                                 0

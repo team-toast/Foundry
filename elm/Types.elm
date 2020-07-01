@@ -38,6 +38,7 @@ type alias Model =
     , dProfile : DisplayProfile
     , maybeReferrer : Maybe Address
     , displayMobileWarning : Bool
+    , nonRepeatingGTagsSent : List String
     }
 
 
