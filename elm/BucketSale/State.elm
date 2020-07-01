@@ -31,7 +31,6 @@ import Time
 import TokenValue exposing (TokenValue)
 import Utils
 import Wallet
-import BucketSale.Types exposing (Msg(..))
 
 
 init : Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
@@ -286,17 +285,16 @@ update msg prevModel =
                 )
 
         AddFryToMetaMaskClicked ->
-            UpdateResult 
+            UpdateResult
                 prevModel
                 (addFryToMetaMask ())
                 ChainCmd.none
                 [ CmdUp.gTag
                     "10 - User requested FRY to be added to MetaMask"
-                    "funnel" 
+                    "funnel"
                     ""
                     0
                 ]
-
 
         VerifyJurisdictionClicked ->
             UpdateResult
@@ -311,6 +309,9 @@ update msg prevModel =
                     ""
                     0
                 ]
+
+        FeedbackButtonClicked ->
+            justModelUpdate prevModel
 
         LocationCheckResult decodeResult ->
             let

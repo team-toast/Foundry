@@ -85,28 +85,40 @@ root model dProfile =
                                     []
                                )
                         )
-                    , focusedBucketPane
-                        bucketSale
-                        (getFocusedBucketId
+                    , Element.column
+                        [ Element.width <| Element.fillPortion 2
+                        , Element.spacing 20
+                        ]
+                        [ focusedBucketPane
                             bucketSale
-                            model.bucketView
+                            (getFocusedBucketId
+                                bucketSale
+                                model.bucketView
+                                model.now
+                                model.testMode
+                            )
+                            model.wallet
+                            model.extraUserInfo
+                            model.enterUXModel
+                            model.jurisdictionCheckStatus
+                            model.trackedTxs
+                            model.showReferralModal
                             model.now
                             model.testMode
-                        )
-                        model.wallet
-                        model.extraUserInfo
-                        model.enterUXModel
-                        model.jurisdictionCheckStatus
-                        model.trackedTxs
-                        model.showReferralModal
-                        model.now
-                        model.testMode
+                        , if dProfile == SmallDesktop then
+                            feedbackButtonBlock
+
+                          else
+                            Element.none
+                        ]
                     , if dProfile == Desktop then
                         Element.column
                             [ Element.spacing 20
                             , Element.width Element.fill
+                            , Element.alignTop
                             ]
-                            [ futureBucketsPane model bucketSale
+                            [ feedbackButtonBlock
+                            , futureBucketsPane model bucketSale
                             , trackedTxsElement model.trackedTxs
                             ]
 
@@ -166,7 +178,7 @@ focusedBucketPane : BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> 
 focusedBucketPane bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
-            ++ [ Element.width <| Element.fillPortion 2
+            ++ [ Element.width Element.fill
                , Element.paddingXY 35 31
                , Element.spacing 7
                , Element.height Element.shrink
@@ -252,6 +264,28 @@ futureBucketsPane model bucketSale =
                     model.now
                     model.testMode
                 ]
+
+
+feedbackButtonBlock : Element Msg
+feedbackButtonBlock =
+    Element.column
+        (commonPaneAttributes
+            ++ [ Element.width <| Element.fillPortion 1
+               , Element.paddingXY 32 25
+               ]
+        )
+        [ Element.el
+            [ Element.Font.bold
+            , Element.centerX
+            ]
+          <|
+            Element.text "Having issues?"
+        , EH.blueButton
+            Desktop
+            [ Element.centerX ]
+            [ "Leave Feedback / Get Help" ]
+            FeedbackButtonClicked
+        ]
 
 
 maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> Element Msg
