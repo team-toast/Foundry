@@ -589,7 +589,7 @@ update msg prevModel =
                         Cmd.none
                         ChainCmd.none
                         ((if not <| TokenValue.isZero ethBalance then
-                            [ CmdUp.gTag
+                            [ CmdUp.nonRepeatingGTag
                                 "2a - has ETH"
                                 "funnel"
                                 (TokenValue.toConciseString ethBalance)
@@ -600,7 +600,7 @@ update msg prevModel =
                             []
                          )
                             ++ (if not <| TokenValue.isZero daiBalance then
-                                    [ CmdUp.gTag
+                                    [ CmdUp.nonRepeatingGTag
                                         "2b - has DAI"
                                         "funnel"
                                         (TokenValue.toConciseString daiBalance)
@@ -1007,16 +1007,22 @@ update msg prevModel =
 
                                 Success ->
                                     let
-                                        funnelIdStr =
+                                        ( funnelIdStr, label ) =
                                             case actionData of
                                                 Unlock ->
-                                                    "4c - "
+                                                    ( "4c - "
+                                                    , Eth.Utils.txHashToString txReceipt.hash
+                                                    )
 
-                                                Enter _ ->
-                                                    "8c - "
+                                                Enter enterInfo ->
+                                                    ( "8c - "
+                                                    , TokenValue.toFloatString Nothing enterInfo.amount
+                                                    )
 
                                                 Exit ->
-                                                    "9c - "
+                                                    ( "9c - "
+                                                    , Eth.Utils.txHashToString txReceipt.hash
+                                                    )
                                     in
                                     ( let
                                         maybeBucketRefreshId =
@@ -1034,7 +1040,7 @@ update msg prevModel =
                                     , [ CmdUp.gTag
                                             (funnelIdStr ++ actionDataToString actionData ++ " tx success")
                                             "funnel - tx"
-                                            (Eth.Utils.txHashToString txReceipt.hash)
+                                            label
                                             0
                                       ]
                                     )
@@ -1103,7 +1109,7 @@ runCmdDown cmdDown prevModel =
 
                         Wallet.OnlyNetwork _ ->
                             [ CmdUp.gTag
-                                "1a - has web3"
+                                "1a - new wallet state - has web3"
                                 "funnel"
                                 ""
                                 0
@@ -1111,7 +1117,7 @@ runCmdDown cmdDown prevModel =
 
                         Wallet.WrongNetwork ->
                             [ CmdUp.gTag
-                                "1a - has web3"
+                                "1a - new wallet state - has web3"
                                 "funnel"
                                 ""
                                 0

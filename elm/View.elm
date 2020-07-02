@@ -344,7 +344,7 @@ userNoticeEls dProfile notices =
     else
         [ Element.column
             [ Element.moveLeft 20
-            , Element.moveUp 20
+            , Element.moveUp 70
             , Element.spacing 10
             , Element.alignRight
             , Element.alignBottom

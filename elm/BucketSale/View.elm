@@ -310,16 +310,20 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
                     ]
                     [ Element.text "in your wallet"
                     ]
-                , Element.paragraph
-                    [ Element.centerX
-                    , Element.width Element.shrink
-                    , Element.Font.color EH.lightBlue
-                    , Element.pointer
-                    , Element.Events.onClick AddFryToMetaMaskClicked
-                    , EH.withTitle "Add FRY to Metamask or another EIP 747 compliant Web3 wallet"
-                    ]
-                    [ Element.text "List FRY in your wallet"
-                    ]
+                , if TokenValue.isZero extraUserInfo.fryBalance then
+                    Element.none
+
+                  else
+                    Element.paragraph
+                        [ Element.centerX
+                        , Element.width Element.shrink
+                        , Element.Font.color EH.lightBlue
+                        , Element.pointer
+                        , Element.Events.onClick AddFryToMetaMaskClicked
+                        , EH.withTitle "Add FRY to Metamask or another EIP 747 compliant Web3 wallet"
+                        ]
+                        [ Element.text "List FRY in your wallet"
+                        ]
                 ]
 
 
