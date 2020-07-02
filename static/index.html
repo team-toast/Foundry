@@ -12,7 +12,14 @@
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
 
-        gtag('config', 'G-BHE8PPB1N8');
+        gtag('config', 'G-BHE8PPB1N8', {
+                'linker': {
+                    'domains': ['foundrydao.com','https://foundrydao.com','http://foundrydao.com'],
+                    'linker': {
+                        'accept_incoming': true                    }
+                }
+            }
+        );
     </script>
     <script type="text/javascript" src="//script.crazyegg.com/pages/scripts/0094/2740.js" async="async"></script>
 
