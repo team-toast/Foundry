@@ -6,6 +6,7 @@ import CmdUp exposing (CmdUp)
 import CommonTypes exposing (..)
 import Config
 import Contracts.BucketSale.Wrappers exposing (ExitInfo, UserStateInfo)
+import Css exposing (true)
 import Element exposing (Attribute, Element)
 import Element.Background
 import Element.Border
@@ -687,7 +688,7 @@ enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckSt
         [ bidInputBlock enterUXModel bucketInfo testMode
         , bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode
         , otherBidsImpactMsg
-        , actionButton wallet maybeExtraUserInfo enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode
+        , actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode
         ]
 
 
@@ -1107,8 +1108,88 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
             msgInsteadOfButton "Jurisdiction Verified." green
 
 
-actionButton : Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> Bool -> JurisdictionCheckStatus -> TestMode -> Element Msg
-actionButton wallet maybeExtraUserInfo enterUXModel bucketInfo unlockMining jurisdictionCheckStatus testMode =
+unlockDaiButton : Element Msg
+unlockDaiButton =
+    EH.redButton
+        Desktop
+        [ Element.width Element.fill ]
+        [ "Unlock Dai" ]
+        UnlockDaiButtonClicked
+
+
+disabledButton : String -> Element Msg
+disabledButton disableText =
+    EH.disabledButton
+        Desktop
+        [ Element.width Element.fill ]
+        disableText
+        Nothing
+
+
+successButton : String -> Element Msg
+successButton text =
+    EH.disabledSuccessButton
+        Desktop
+        [ Element.width Element.fill ]
+        text
+        Nothing
+
+
+continueButton : UserInfo -> Int -> TokenValue -> Maybe Address -> TokenValue -> TokenValue -> Element Msg
+continueButton userInfo bucketId daiAmount referrer minedTotal miningTotal =
+    let
+        mining =
+            if miningTotal == TokenValue.zero then
+                ""
+
+            else
+                TokenValue.toFloatString (Just 2) miningTotal ++ " DAI currently mining"
+
+        mined =
+            if minedTotal == TokenValue.zero then
+                ""
+
+            else
+                TokenValue.toFloatString (Just 2) minedTotal ++ " DAI already entered"
+
+        alreadyEntered =
+            " (You have "
+                ++ (case ( mining, mined ) of
+                        ( "", "" ) ->
+                            ""
+
+                        ( _, "" ) ->
+                            mining
+
+                        ( "", _ ) ->
+                            mined
+
+                        ( _, _ ) ->
+                            mined
+                                ++ " and "
+                                ++ mining
+                   )
+                ++ ")"
+    in
+    EH.redButton
+        Desktop
+        [ Element.width Element.fill ]
+        [ "Enter with " ++ TokenValue.toFloatString (Just 2) daiAmount ++ " DAI" ++ alreadyEntered ]
+        (EnterButtonClicked <|
+            EnterInfo
+                userInfo
+                bucketId
+                daiAmount
+                referrer
+        )
+
+
+alreadyEnteredBucketButton daiAmount =
+    Element.none
+
+
+actionButton : JurisdictionCheckStatus -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> Element Msg
+actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
     case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
@@ -1116,34 +1197,6 @@ actionButton wallet maybeExtraUserInfo enterUXModel bucketInfo unlockMining juri
                     connectToWeb3Button wallet
 
                 Just userInfo ->
-                    let
-                        unlockDaiButton =
-                            EH.redButton
-                                Desktop
-                                [ Element.width Element.fill ]
-                                [ "Unlock Dai" ]
-                                UnlockDaiButtonClicked
-
-                        continueButton daiAmount =
-                            EH.redButton
-                                Desktop
-                                [ Element.width Element.fill ]
-                                [ "Continue" ]
-                                (EnterButtonClicked <|
-                                    EnterInfo
-                                        userInfo
-                                        bucketInfo.id
-                                        daiAmount
-                                        enterUXModel.referrer
-                                )
-
-                        disabledContinueButton =
-                            EH.disabledButton
-                                Desktop
-                                [ Element.width Element.fill ]
-                                "Continue"
-                                Nothing
-                    in
                     case maybeExtraUserInfo of
                         Nothing ->
                             msgInsteadOfButton "Fetching user balance info..." grayTextColor
@@ -1156,20 +1209,86 @@ actionButton wallet maybeExtraUserInfo enterUXModel bucketInfo unlockMining juri
                                 unlockDaiButton
 
                             else
+                                let
+                                    trackedEnterTxForBucket =
+                                        trackedTxs
+                                            |> List.filter
+                                                (\tx ->
+                                                    case tx.action of
+                                                        Enter enterInfo ->
+                                                            enterInfo.bucketId == bucketInfo.id
+
+                                                        _ ->
+                                                            False
+                                                )
+
+                                    miningTotalForThisBucket =
+                                        trackedEnterTxForBucket
+                                            |> List.filter
+                                                (\tx ->
+                                                    case tx.status of
+                                                        Signed _ Mining ->
+                                                            True
+
+                                                        _ ->
+                                                            False
+                                                )
+                                            |> List.map
+                                                (\tx ->
+                                                    case tx.action of
+                                                        Enter enterInfo ->
+                                                            enterInfo.amount
+
+                                                        _ ->
+                                                            TokenValue.zero
+                                                )
+                                            |> List.foldl TokenValue.add TokenValue.zero
+
+                                    lastTransactionsForThisBucketWasSuccessful =
+                                        trackedEnterTxForBucket
+                                            |> List.map
+                                                (\tx ->
+                                                    case tx.status of
+                                                        Signed _ Success ->
+                                                            True
+
+                                                        _ ->
+                                                            False
+                                                )
+                                            |> lastElem
+                                            |> Maybe.withDefault False
+
+                                    enteredIntoThisBucket =
+                                        bucketInfo.bucketData.userBuy
+                                            |> Maybe.map .valueEntered
+                                            |> Maybe.withDefault TokenValue.zero
+                                in
                                 -- Allowance is loaded and nonzero, and we are not mining an Unlock
                                 case enterUXModel.daiAmount of
                                     Just (Ok daiAmount) ->
-                                        if TokenValue.compare daiAmount extraUserInfo.daiAllowance /= GT then
-                                            continueButton daiAmount
+                                        if List.any (\tx -> tx.status == Signing) trackedTxs then
+                                            disabledButton "Sign or reject pending transactions to continue"
+
+                                        else if TokenValue.compare daiAmount extraUserInfo.daiAllowance /= GT then
+                                            continueButton userInfo bucketInfo.id daiAmount enterUXModel.referrer enteredIntoThisBucket miningTotalForThisBucket
 
                                         else
                                             unlockDaiButton
 
                                     _ ->
-                                        disabledContinueButton
+                                        if lastTransactionsForThisBucketWasSuccessful then
+                                            successButton "Successfully entered!"
+
+                                        else
+                                            disabledButton "Enter bid amount to continue"
 
         _ ->
             verifyJurisdictionButtonOrResult jurisdictionCheckStatus
+
+
+lastElem : List a -> Maybe a
+lastElem =
+    List.foldl (Just >> always) Nothing
 
 
 noBucketsLeftBlock : Element Msg

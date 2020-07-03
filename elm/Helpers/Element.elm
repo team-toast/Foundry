@@ -660,6 +660,18 @@ redButton dProfile attributes text msg =
         text
         msg
 
+greenButton : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg
+greenButton dProfile attributes text msg =
+    button dProfile
+        attributes
+        ( Element.rgba 0 1 0 1
+        , Element.rgba 0 1 0 0.8
+        , Element.rgba 0 1 0 0.6
+        )
+        white
+        text
+        msg
+
 
 disabledButton : DisplayProfile -> List (Attribute msg) -> String -> Maybe String -> Element msg
 disabledButton dProfile attributes text maybeTipText =
@@ -679,6 +691,26 @@ disabledButton dProfile attributes text maybeTipText =
                ]
         )
         (Element.text text)
+
+disabledSuccessButton : DisplayProfile -> List (Attribute msg) -> String -> Maybe String -> Element msg
+disabledSuccessButton dProfile attributes text maybeTipText =
+    Element.el
+        (attributes
+            ++ [ Element.Border.rounded 4
+               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.paddingXY 10 5)
+               , Element.Font.size (responsiveVal dProfile 18 16)
+               , Element.Font.semiBold
+               , Element.Background.color green
+               , Element.Font.center
+               , noSelectText
+               , Element.above <|
+                    maybeErrorElement
+                        [ Element.moveUp 5 ]
+                        maybeTipText
+               ]
+        )
+        (Element.text text)
+
 
 
 orangeButton : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg
