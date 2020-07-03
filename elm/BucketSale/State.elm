@@ -19,10 +19,12 @@ import Eth.Utils
 import Helpers.BigInt as BigIntHelpers
 import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
+import Helpers.Http as HttpHelpers
 import Helpers.Time as TimeHelpers
 import Http
 import Json.Decode
 import Json.Decode.Extra
+import Json.Encode
 import List.Extra
 import Maybe.Extra
 import Result.Extra
@@ -51,6 +53,9 @@ init maybeReferrer testMode wallet now =
       , confirmTosModel = initConfirmTosModel
       , enterInfoToConfirm = Nothing
       , showReferralModal = False
+      , showFeedbackUXModel = False
+      , feedbackUXModel =
+            initFeedbackUXModel
       }
     , Cmd.batch
         [ fetchSaleStartTimestampCmd testMode
@@ -311,7 +316,115 @@ update msg prevModel =
                 ]
 
         FeedbackButtonClicked ->
-            justModelUpdate prevModel
+            justModelUpdate
+                { prevModel
+                    | showFeedbackUXModel = True
+                }
+
+        FeedbackEmailChanged newEmail ->
+            justModelUpdate
+                { prevModel
+                    | feedbackUXModel =
+                        let
+                            prev =
+                                prevModel.feedbackUXModel
+                        in
+                        { prev | email = newEmail }
+                            |> updateAnyFeedbackUXErrors
+                }
+
+        FeedbackDescriptionChanged newDescription ->
+            justModelUpdate
+                { prevModel
+                    | feedbackUXModel =
+                        let
+                            prev =
+                                prevModel.feedbackUXModel
+                        in
+                        { prev | description = newDescription }
+                            |> updateAnyFeedbackUXErrors
+                }
+
+        FeedbackSubmitClicked ->
+            let
+                prevFeedbackModel =
+                    prevModel.feedbackUXModel
+            in
+            case validateFeedbackInput prevModel.feedbackUXModel of
+                Ok validated ->
+                    UpdateResult
+                        { prevModel
+                            | feedbackUXModel =
+                                { prevFeedbackModel | sendState = Sending }
+                        }
+                        (sendFeedbackCmd validated Nothing)
+                        ChainCmd.none
+                        [ CmdUp.gTag
+                            "feedback submitted"
+                            "feedback"
+                            (let
+                                combinedStr =
+                                    (validated.email |> Maybe.withDefault "[none]")
+                                        ++ ":"
+                                        ++ validated.description
+                             in
+                             combinedStr |> String.left 30
+                            )
+                            0
+                        ]
+
+                Err errStr ->
+                    justModelUpdate
+                        { prevModel
+                            | feedbackUXModel =
+                                { prevFeedbackModel | maybeError = Just errStr }
+                        }
+
+        FeedbackHttpResponse responseResult ->
+            let
+                newFeedbackUX =
+                    let
+                        prevFeedbackUX =
+                            prevModel.feedbackUXModel
+                    in
+                    case responseResult of
+                        Err httpErr ->
+                            { prevFeedbackUX
+                                | sendState = SendFailed <| HttpHelpers.errorToString httpErr
+                            }
+
+                        Ok _ ->
+                            { prevFeedbackUX
+                                | sendState = Sent
+                                , description = ""
+                                , debugString = Nothing
+                                , maybeError = Nothing
+                            }
+            in
+            UpdateResult
+                { prevModel | feedbackUXModel = newFeedbackUX }
+                Cmd.none
+                ChainCmd.none
+                []
+
+        FeedbackBackClicked ->
+            justModelUpdate
+                { prevModel
+                    | showFeedbackUXModel = False
+                }
+
+        FeedbackSendMoreClicked ->
+            justModelUpdate
+                { prevModel
+                    | feedbackUXModel =
+                        let
+                            prev =
+                                prevModel.feedbackUXModel
+                        in
+                        { prev
+                            | sendState = NotSent
+                        }
+                }
 
         LocationCheckResult decodeResult ->
             let
@@ -1275,6 +1388,30 @@ fetchFastGasPriceCmd =
                 FetchedFastGasPrice
                 fastGasPriceDecoder
         }
+
+
+sendFeedbackCmd : ValidatedFeedbackInput -> Maybe String -> Cmd Msg
+sendFeedbackCmd validatedFeedbackInput maybeDebugString =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = Config.feedbackEndpointUrl
+        , body =
+            Http.jsonBody <| encodeFeedback validatedFeedbackInput
+        , expect = Http.expectString FeedbackHttpResponse
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+encodeFeedback : ValidatedFeedbackInput -> Json.Encode.Value
+encodeFeedback feedback =
+    Json.Encode.object
+        [ ( "Id", Json.Encode.int 0 )
+        , ( "Email", Json.Encode.string (feedback.email |> Maybe.withDefault "") )
+        , ( "ProblemDescription", Json.Encode.string feedback.description )
+        , ( "ModelData", Json.Encode.string (feedback.debugString |> Maybe.withDefault "") )
+        ]
 
 
 fastGasPriceDecoder : Json.Decode.Decoder BigInt

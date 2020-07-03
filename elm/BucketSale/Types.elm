@@ -16,8 +16,10 @@ import Helpers.Time as TimeHelpers
 import Http
 import Json.Decode
 import List.Extra
+import String.Extra
 import Time
 import TokenValue exposing (TokenValue)
+import Validate
 import Wallet
 
 
@@ -38,6 +40,8 @@ type alias Model =
     , confirmTosModel : ConfirmTosModel
     , enterInfoToConfirm : Maybe EnterInfo
     , showReferralModal : Bool
+    , showFeedbackUXModel : Bool
+    , feedbackUXModel : FeedbackUXModel
     }
 
 
@@ -98,6 +102,12 @@ type Msg
     | AddFryToMetaMaskClicked
     | VerifyJurisdictionClicked
     | FeedbackButtonClicked
+    | FeedbackEmailChanged String
+    | FeedbackDescriptionChanged String
+    | FeedbackSubmitClicked
+    | FeedbackHttpResponse (Result Http.Error String)
+    | FeedbackBackClicked
+    | FeedbackSendMoreClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
     | SaleStartTimestampFetched (Result Http.Error BigInt)
     | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
@@ -420,3 +430,71 @@ maybeReferrerToString : Maybe Address -> String
 maybeReferrerToString =
     Maybe.map Eth.Utils.addressToString
         >> Maybe.withDefault "no referrer"
+
+
+type alias FeedbackUXModel =
+    { email : String
+    , description : String
+    , debugString : Maybe String
+    , sendState : FeedbackSendState
+    , maybeError : Maybe String
+    }
+
+
+type FeedbackSendState
+    = NotSent
+    | Sending
+    | SendFailed String
+    | Sent
+
+
+initFeedbackUXModel : FeedbackUXModel
+initFeedbackUXModel =
+    FeedbackUXModel
+        ""
+        ""
+        Nothing
+        NotSent
+        Nothing
+
+
+validateFeedbackInput : FeedbackUXModel -> Result String ValidatedFeedbackInput
+validateFeedbackInput feedbackUXModel =
+    if String.isEmpty feedbackUXModel.description then
+        Err "Description is required."
+
+    else if String.isEmpty feedbackUXModel.email || Validate.isValidEmail feedbackUXModel.email then
+        Ok <|
+            ValidatedFeedbackInput
+                (String.Extra.nonEmpty feedbackUXModel.email)
+                feedbackUXModel.description
+                feedbackUXModel.debugString
+
+    else
+        Err <|
+            "Email is invalid."
+
+
+updateAnyFeedbackUXErrors : FeedbackUXModel -> FeedbackUXModel
+updateAnyFeedbackUXErrors feedbackUXModel =
+    case feedbackUXModel.maybeError of
+        Nothing ->
+            feedbackUXModel
+
+        Just err ->
+            { feedbackUXModel
+                | maybeError =
+                    case validateFeedbackInput feedbackUXModel of
+                        Ok _ ->
+                            Nothing
+
+                        Err errStr ->
+                            Just errStr
+            }
+
+
+type alias ValidatedFeedbackInput =
+    { email : Maybe String
+    , description : String
+    , debugString : Maybe String
+    }

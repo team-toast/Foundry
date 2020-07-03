@@ -105,3 +105,8 @@ bucketSaleTokensPerBucket testMode =
 bucketSaleNumBuckets : Int
 bucketSaleNumBuckets =
     2000
+
+
+feedbackEndpointUrl : String
+feedbackEndpointUrl =
+    "https://personal-rxyx.outsystemscloud.com/SaleFeedbackUI/rest/Feedback/SubmitFeedback"

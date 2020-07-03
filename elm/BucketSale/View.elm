@@ -88,6 +88,7 @@ root model dProfile =
                     , Element.column
                         [ Element.width <| Element.fillPortion 2
                         , Element.spacing 20
+                        , Element.alignTop
                         ]
                         [ focusedBucketPane
                             bucketSale
@@ -106,7 +107,7 @@ root model dProfile =
                             model.now
                             model.testMode
                         , if dProfile == SmallDesktop then
-                            feedbackButtonBlock
+                            feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
 
                           else
                             Element.none
@@ -117,7 +118,7 @@ root model dProfile =
                             , Element.width Element.fill
                             , Element.alignTop
                             ]
-                            [ feedbackButtonBlock
+                            [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
                             , futureBucketsPane model bucketSale
                             , trackedTxsElement model.trackedTxs
                             ]
@@ -145,6 +146,17 @@ commonPaneAttributes =
     ]
 
 
+blockTitleText : String -> Element Msg
+blockTitleText text =
+    Element.el
+        [ Element.width Element.fill
+        , Element.Font.size 25
+        , Element.Font.bold
+        ]
+    <|
+        Element.text text
+
+
 closedBucketsPane : Model -> Element Msg
 closedBucketsPane model =
     Element.column
@@ -153,12 +165,7 @@ closedBucketsPane model =
                , Element.paddingXY 32 25
                ]
         )
-        [ Element.el
-            [ Element.Font.size 25
-            , Element.Font.bold
-            ]
-          <|
-            Element.text "Concluded Buckets"
+        [ blockTitleText "Concluded Buckets"
         , Element.paragraph
             [ Element.Font.color grayTextColor
             , Element.Font.size 15
@@ -181,7 +188,6 @@ focusedBucketPane bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jur
             ++ [ Element.width Element.fill
                , Element.paddingXY 35 31
                , Element.spacing 7
-               , Element.height Element.shrink
                ]
         )
         ([ focusedBucketHeaderEl
@@ -237,13 +243,7 @@ futureBucketsPane model bucketSale =
                        , Element.paddingXY 32 25
                        ]
                 )
-                [ Element.el
-                    [ Element.width Element.fill
-                    , Element.Font.size 25
-                    , Element.Font.bold
-                    ]
-                  <|
-                    Element.text "Future Buckets"
+                [ blockTitleText "Future Buckets"
                 , Element.paragraph
                     [ Element.Font.color grayTextColor
                     , Element.Font.size 15
@@ -266,26 +266,138 @@ futureBucketsPane model bucketSale =
                 ]
 
 
-feedbackButtonBlock : Element Msg
-feedbackButtonBlock =
+feedbackButtonBlock : Bool -> FeedbackUXModel -> Element Msg
+feedbackButtonBlock showFeedbackUXModel feedbackUXModel =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width <| Element.fillPortion 1
                , Element.paddingXY 32 25
                ]
         )
-        [ Element.el
-            [ Element.Font.bold
-            , Element.centerX
-            ]
-          <|
-            Element.text "Having issues?"
-        , EH.blueButton
-            Desktop
-            [ Element.centerX ]
-            [ "Leave Feedback / Get Help" ]
-            FeedbackButtonClicked
+        [ blockTitleText "Having issues?"
+        , if showFeedbackUXModel then
+            viewFeedbackForm feedbackUXModel
+
+          else
+            EH.blueButton
+                Desktop
+                [ Element.centerX ]
+                [ "Leave Feedback / Get Help" ]
+                FeedbackButtonClicked
         ]
+
+
+viewFeedbackForm : FeedbackUXModel -> Element Msg
+viewFeedbackForm feedbackUXModel =
+    let
+        inputHeader text =
+            Element.el
+                []
+            <|
+                Element.text text
+
+        withHeader text el =
+            Element.column
+                [ Element.spacing 5
+                , Element.width Element.fill
+                ]
+                [ inputHeader text
+                , el
+                ]
+
+        textElInsteadOfButton color text =
+            Element.paragraph
+                [ Element.Font.color color
+                , Element.Font.italic
+                , Element.Font.size 20
+                ]
+            <|
+                [ Element.text text ]
+
+        errorEls =
+            [ case feedbackUXModel.maybeError of
+                Just inputErrStr ->
+                    textElInsteadOfButton EH.softRed inputErrStr
+
+                Nothing ->
+                    Element.none
+            , case feedbackUXModel.sendState of
+                SendFailed sendErrStr ->
+                    textElInsteadOfButton EH.softRed <| "Submit failed: " ++ sendErrStr
+
+                _ ->
+                    Element.none
+            ]
+
+        submitFeedbackButton text =
+            EH.blueButton
+                Desktop
+                [ Element.alignLeft ]
+                [ text ]
+                FeedbackSubmitClicked
+
+        backButton =
+            EH.lightBlueButton
+                Desktop
+                [ Element.alignRight ]
+                [ "Back" ]
+                FeedbackBackClicked
+
+        submitButtonOrMsg =
+            case feedbackUXModel.sendState of
+                Sending ->
+                    textElInsteadOfButton EH.blue "Sending..."
+
+                Sent ->
+                    Element.column
+                        [ Element.spacing 5 ]
+                        [ textElInsteadOfButton EH.green "Sent!"
+                        , Element.el
+                            [ Element.Font.color EH.lightBlue
+                            , Element.pointer
+                            , Element.Events.onClick FeedbackSendMoreClicked
+                            ]
+                            (Element.text "Send More")
+                        ]
+
+                SendFailed sendErrStr ->
+                    submitFeedbackButton "Try Again"
+
+                NotSent ->
+                    submitFeedbackButton "Submit"
+    in
+    Element.column
+        [ Element.width Element.fill
+        , Element.spacing 20
+        ]
+        ([ withHeader "Email (optional)" <|
+            Element.Input.text
+                [ Element.width Element.fill ]
+                { onChange = FeedbackEmailChanged
+                , text = feedbackUXModel.email
+                , placeholder = Nothing
+                , label = Element.Input.labelHidden "email"
+                }
+         , withHeader "What's the problem?" <|
+            Element.Input.multiline
+                [ Element.width Element.fill
+                , Element.height <| Element.px 300
+                ]
+                { onChange = FeedbackDescriptionChanged
+                , text = feedbackUXModel.description
+                , placeholder = Nothing
+                , label = Element.Input.labelHidden "problem description"
+                , spellcheck = False
+                }
+         ]
+            ++ errorEls
+            ++ [ Element.row
+                    [ Element.width Element.fill ]
+                    [ submitButtonOrMsg
+                    , backButton
+                    ]
+               ]
+        )
 
 
 maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> Element Msg
@@ -1297,12 +1409,7 @@ viewYoutubeLinksBlock =
                , Element.paddingXY 32 25
                ]
         )
-        [ Element.el
-            [ Element.Font.size 25
-            , Element.Font.bold
-            ]
-          <|
-            Element.text "Not sure where to start?"
+        [ blockTitleText "Not sure where to start?"
         , viewYoutubeLinksColumn
             [ ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
             , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=Jy-Ng_E_D1I" )
