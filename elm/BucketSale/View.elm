@@ -1007,23 +1007,24 @@ continueButton userInfo bucketId daiAmount referrer minedTotal miningTotal =
                 TokenValue.toFloatString (Just 2) minedTotal ++ " DAI already entered"
 
         alreadyEntered =
-            " (You have "
-                ++ (case ( mining, mined ) of
-                        ( "", "" ) ->
-                            ""
+            case ( mining, mined ) of
+                ( "", "" ) ->
+                    ""
 
-                        ( _, "" ) ->
-                            mining
+                ( _, "" ) ->
+                    " (You have "
+                        ++ mining
+                        ++ ")"
 
-                        ( "", _ ) ->
-                            mined
+                ( "", _ ) ->
+                    " (You have " ++ mined ++ ")"
 
-                        ( _, _ ) ->
-                            mined
-                                ++ " and "
-                                ++ mining
-                   )
-                ++ ")"
+                ( _, _ ) ->
+                    " (You have "
+                        ++ mined
+                        ++ " and "
+                        ++ mining
+                        ++ ")"
     in
     EH.redButton
         Desktop
