@@ -92,6 +92,7 @@ root model dProfile =
                         , Element.alignTop
                         ]
                         [ focusedBucketPane
+                            dProfile
                             bucketSale
                             (getFocusedBucketId
                                 bucketSale
@@ -182,8 +183,8 @@ closedBucketsPane model =
         ]
 
 
-focusedBucketPane : BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
-focusedBucketPane bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
+focusedBucketPane : DisplayProfile -> BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
+focusedBucketPane dProfile bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
@@ -192,6 +193,7 @@ focusedBucketPane bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jur
                ]
         )
         ([ focusedBucketHeaderEl
+            dProfile
             bucketId
             (Wallet.userInfo wallet)
             enterUXModel.referrer
@@ -395,7 +397,8 @@ viewFeedbackForm feedbackUXModel =
             ++ errorEls
             ++ [ Element.row
                     [ Element.width Element.fill
-                    , Element.Font.size 16]
+                    , Element.Font.size 16
+                    ]
                     [ submitButtonOrMsg
                     , backButton
                     ]
@@ -504,8 +507,8 @@ totalExitedBlock maybeTotalExited =
                 ]
 
 
-focusedBucketHeaderEl : Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
-focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
+focusedBucketHeaderEl : DisplayProfile -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
+focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
         [ Element.spacing 8
         , Element.width Element.fill
@@ -525,6 +528,7 @@ focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive t
                 , nextBucketArrow bucketId
                 ]
             , maybeReferralIndicatorAndModal
+                dProfile
                 maybeUserInfo
                 maybeReferrer
                 referralModalActive
@@ -533,27 +537,31 @@ focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive t
         ]
 
 
-maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
-maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive testMode =
+maybeReferralIndicatorAndModal : DisplayProfile -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
+maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModalActive testMode =
     case maybeUserInfo of
         Nothing ->
             Element.none
 
         Just userInfo ->
+            let
+                maybeModalAttribute =
+                    (responsiveVal dProfile Element.onRight Element.onLeft) <|
+                        if referralModalActive then
+                            Element.el
+                                [ responsiveVal dProfile Element.alignLeft Element.alignRight
+                                , (responsiveVal dProfile Element.moveRight Element.moveLeft) 25
+                                , Element.moveUp 50
+                                , EH.moveToFront
+                                ]
+                                (referralModal userInfo maybeReferrer testMode)
+
+                        else
+                            Element.none
+            in
             Element.el
                 [ Element.alignRight
-                , Element.onRight <|
-                    if referralModalActive then
-                        Element.el
-                            [ Element.alignLeft
-                            , Element.moveRight 25
-                            , Element.moveUp 50
-                            , EH.moveToFront
-                            ]
-                            (referralModal userInfo maybeReferrer testMode)
-
-                    else
-                        Element.none
+                , maybeModalAttribute
                 , Element.inFront <|
                     if referralModalActive then
                         Element.el
