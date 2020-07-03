@@ -310,7 +310,6 @@ viewFeedbackForm feedbackUXModel =
             Element.paragraph
                 [ Element.Font.color color
                 , Element.Font.italic
-                , Element.Font.size 20
                 ]
             <|
                 [ Element.text text ]
@@ -351,7 +350,9 @@ viewFeedbackForm feedbackUXModel =
 
                 Sent ->
                     Element.column
-                        [ Element.spacing 5 ]
+                        [ Element.spacing 5
+                        , Element.width Element.fill
+                        ]
                         [ textElInsteadOfButton EH.green "Sent! We'll be in contact."
                         , Element.el
                             [ Element.Font.color EH.lightBlue
@@ -393,7 +394,8 @@ viewFeedbackForm feedbackUXModel =
          ]
             ++ errorEls
             ++ [ Element.row
-                    [ Element.width Element.fill ]
+                    [ Element.width Element.fill
+                    , Element.Font.size 16]
                     [ submitButtonOrMsg
                     , backButton
                     ]
