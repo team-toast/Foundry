@@ -351,7 +351,7 @@ viewFeedbackForm feedbackUXModel =
                 Sent ->
                     Element.column
                         [ Element.spacing 5 ]
-                        [ textElInsteadOfButton EH.green "Sent!"
+                        [ textElInsteadOfButton EH.green "Sent! We'll be in contact."
                         , Element.el
                             [ Element.Font.color EH.lightBlue
                             , Element.pointer
