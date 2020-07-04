@@ -6,7 +6,7 @@ import ChainCmd exposing (ChainCmd)
 import CmdDown exposing (CmdDown)
 import CmdUp exposing (CmdUp)
 import CommonTypes exposing (..)
-import Config
+import Config exposing (forbiddenJurisdictionCodes)
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers
 import Contracts.Wrappers
 import Dict exposing (Dict)
@@ -26,6 +26,7 @@ import Json.Decode.Extra
 import List.Extra
 import Maybe.Extra
 import Result.Extra
+import Set
 import Task
 import Time
 import TokenValue exposing (TokenValue)
@@ -328,7 +329,7 @@ update msg prevModel =
                     Checking ->
                         []
 
-                    Checked USA ->
+                    Checked ForbiddenJurisdictions ->
                         [ CmdUp.gTag
                             "jurisdiction not allowed"
                             "funnel abort"
@@ -1334,14 +1335,8 @@ locationCheckResultToJurisdictionStatus decodeResult =
                 checkResult
                     |> Result.map
                         (\locationInfo ->
-                            case locationInfo.countryInfo of
-                                Matching countryCode ->
-                                    Checked <|
-                                        countryCodeToJurisdiction countryCode
-
-                                NotMatching ->
-                                    Error
-                                        "Geolocation and IP analysis give different country codes."
+                            Checked <|
+                                countryCodeToJurisdiction locationInfo.ipCode locationInfo.geoCode
                         )
                     |> Result.mapError
                         (\e ->
@@ -1356,13 +1351,19 @@ locationCheckResultToJurisdictionStatus decodeResult =
         |> Result.Extra.merge
 
 
-countryCodeToJurisdiction : String -> Jurisdiction
-countryCodeToJurisdiction code =
-    if code == "US" then
-        USA
+countryCodeToJurisdiction : String -> String -> Jurisdiction
+countryCodeToJurisdiction ipCode geoCode =
+    let
+        allowedJurisdiction =
+            Set.fromList [ ipCode, geoCode ]
+                |> Set.intersect forbiddenJurisdictionCodes
+                |> Set.isEmpty
+    in
+    if allowedJurisdiction then
+        JurisdictionsWeArentIntimidatedIntoExcluding
 
     else
-        JurisdictionsWeArentIntimidatedIntoExcluding
+        ForbiddenJurisdictions
 
 
 locationCheckDecoder : Json.Decode.Decoder (Result String LocationInfo)
@@ -1376,24 +1377,11 @@ locationCheckDecoder =
 
 locationInfoDecoder : Json.Decode.Decoder LocationInfo
 locationInfoDecoder =
-    Json.Decode.map2
+    Json.Decode.map3
         LocationInfo
-        countryInfoDecoder
+        (Json.Decode.field "ipCountry" Json.Decode.string)
+        (Json.Decode.field "geoCountry" Json.Decode.string)
         (Json.Decode.field "kmDistance" Json.Decode.float)
-
-
-countryInfoDecoder : Json.Decode.Decoder CountryInfo
-countryInfoDecoder =
-    Json.Decode.map2
-        (\countryMatches countryString ->
-            if countryMatches then
-                Matching countryString
-
-            else
-                NotMatching
-        )
-        (Json.Decode.field "countryMatches" Json.Decode.bool)
-        (Json.Decode.field "country" Json.Decode.string)
 
 
 subscriptions : Model -> Sub Msg

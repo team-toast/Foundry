@@ -6,6 +6,7 @@ import Eth.Types exposing (Address)
 import Eth.Utils
 import Time
 import TokenValue exposing (TokenValue)
+import Set exposing (Set)
 
 
 mainnetHttpProviderUrl : String
@@ -105,3 +106,7 @@ bucketSaleTokensPerBucket testMode =
 bucketSaleNumBuckets : Int
 bucketSaleNumBuckets =
     2000
+
+forbiddenJurisdictionCodes : Set String
+forbiddenJurisdictionCodes =
+    Set.fromList ["US"]

@@ -126,7 +126,8 @@ var commonModule = (function() {
             geoLocation: geoLoc,
             kmDistance: distance,
             countryMatches: ipLoc.country == geoLoc.country,
-            country: ipLoc.country == geoLoc.country ? ipLoc.country : "invalid"
+            ipCountry: ipLoc.country,
+            geoCountry: geoLoc.country
         };
 
         return result;
