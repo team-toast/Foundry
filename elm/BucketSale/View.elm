@@ -546,11 +546,11 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
         Just userInfo ->
             let
                 maybeModalAttribute =
-                    (responsiveVal dProfile Element.onRight Element.onLeft) <|
+                    responsiveVal dProfile Element.onRight Element.onLeft <|
                         if referralModalActive then
                             Element.el
                                 [ responsiveVal dProfile Element.alignLeft Element.alignRight
-                                , (responsiveVal dProfile Element.moveRight Element.moveLeft) 25
+                                , responsiveVal dProfile Element.moveRight Element.moveLeft 25
                                 , Element.moveUp 50
                                 , EH.moveToFront
                                 ]
@@ -1148,44 +1148,46 @@ successButton text =
 continueButton : UserInfo -> Int -> TokenValue -> Maybe Address -> TokenValue -> TokenValue -> Element Msg
 continueButton userInfo bucketId daiAmount referrer minedTotal miningTotal =
     let
-        mining =
+        maybeMining =
             if miningTotal == TokenValue.zero then
-                ""
+                Nothing
 
             else
-                TokenValue.toFloatString (Just 2) miningTotal ++ " DAI currently mining"
+                Just <| TokenValue.toFloatString (Just 2) miningTotal ++ " DAI currently mining"
 
-        mined =
+        maybeMined =
             if minedTotal == TokenValue.zero then
-                ""
+                Nothing
 
             else
-                TokenValue.toFloatString (Just 2) minedTotal ++ " DAI already entered"
+                Just <| TokenValue.toFloatString (Just 2) minedTotal ++ " DAI already entered"
 
-        alreadyEntered =
-            case ( mining, mined ) of
-                ( "", "" ) ->
-                    ""
+        maybeAlreadyEnteredString =
+            case ( maybeMining, maybeMined ) of
+                ( Nothing, Nothing ) ->
+                    Nothing
 
-                ( _, "" ) ->
-                    mining
+                ( Just mining, Nothing ) ->
+                    Just mining
 
-                ( "", _ ) ->
-                    mined
+                ( Nothing, Just mined ) ->
+                    Just mined
 
-                ( _, _ ) ->
-                    mined
-                        ++ " and "
-                        ++ mining
+                ( Just mining, Just mined ) ->
+                    Just <|
+                        mined
+                            ++ " and "
+                            ++ mining
 
         alreadyEnteredWithDescription =
-            if alreadyEntered == "" then
-                ""
+            case maybeAlreadyEnteredString of
+                Just alreadyEnteredString ->
+                    " (You have "
+                        ++ alreadyEnteredString
+                        ++ ")"
 
-            else
-                " (You have "
-                    ++ alreadyEntered
-                    ++ ")"
+                Nothing ->
+                    ""
     in
     EH.redButton
         Desktop
