@@ -4,6 +4,7 @@ import BigInt exposing (BigInt)
 import CommonTypes exposing (..)
 import Eth.Types exposing (Address)
 import Eth.Utils
+import Set exposing (Set)
 import Time
 import TokenValue exposing (TokenValue)
 
@@ -110,3 +111,8 @@ bucketSaleNumBuckets =
 feedbackEndpointUrl : String
 feedbackEndpointUrl =
     "https://personal-rxyx.outsystemscloud.com/SaleFeedbackUI/rest/Feedback/SubmitFeedback"
+
+
+forbiddenJurisdictionCodes : Set String
+forbiddenJurisdictionCodes =
+    Set.fromList [ "US" ]

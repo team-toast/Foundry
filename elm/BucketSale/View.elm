@@ -1111,7 +1111,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                     [ Element.text "There may be more info in the console." ]
                 ]
 
-        Checked USA ->
+        Checked ForbiddenJurisdictions ->
             msgInsteadOfButton "Sorry, US citizens are excluded." red
 
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
@@ -1168,24 +1168,29 @@ continueButton userInfo bucketId daiAmount referrer minedTotal miningTotal =
                     ""
 
                 ( _, "" ) ->
-                    " (You have "
-                        ++ mining
-                        ++ ")"
+                    mining
 
                 ( "", _ ) ->
-                    " (You have " ++ mined ++ ")"
+                    mined
 
                 ( _, _ ) ->
-                    " (You have "
-                        ++ mined
+                    mined
                         ++ " and "
                         ++ mining
-                        ++ ")"
+
+        alreadyEnteredWithDescription =
+            if alreadyEntered == "" then
+                ""
+
+            else
+                " (You have "
+                    ++ alreadyEntered
+                    ++ ")"
     in
     EH.redButton
         Desktop
         [ Element.width Element.fill ]
-        [ "Enter with " ++ TokenValue.toFloatString (Just 2) daiAmount ++ " DAI" ++ alreadyEntered ]
+        [ "Enter with " ++ TokenValue.toFloatString (Just 2) daiAmount ++ " DAI" ++ alreadyEnteredWithDescription ]
         (EnterButtonClicked <|
             EnterInfo
                 userInfo

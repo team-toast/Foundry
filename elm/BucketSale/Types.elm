@@ -404,7 +404,8 @@ getRelevantTimingInfo bucketInfo now testMode =
 
 
 type alias LocationInfo =
-    { countryInfo : CountryInfo
+    { ipCode : String
+    , geoCode : String
     , distanceKm : Float
     }
 
@@ -415,7 +416,7 @@ type CountryInfo
 
 
 type Jurisdiction
-    = USA
+    = ForbiddenJurisdictions
     | JurisdictionsWeArentIntimidatedIntoExcluding
 
 
