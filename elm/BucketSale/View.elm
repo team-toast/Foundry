@@ -86,28 +86,42 @@ root model dProfile =
                                     []
                                )
                         )
-                    , focusedBucketPane
-                        bucketSale
-                        (getFocusedBucketId
+                    , Element.column
+                        [ Element.width <| Element.fillPortion 2
+                        , Element.spacing 20
+                        , Element.alignTop
+                        ]
+                        [ focusedBucketPane
+                            dProfile
                             bucketSale
-                            model.bucketView
+                            (getFocusedBucketId
+                                bucketSale
+                                model.bucketView
+                                model.now
+                                model.testMode
+                            )
+                            model.wallet
+                            model.extraUserInfo
+                            model.enterUXModel
+                            model.jurisdictionCheckStatus
+                            model.trackedTxs
+                            model.showReferralModal
                             model.now
                             model.testMode
-                        )
-                        model.wallet
-                        model.extraUserInfo
-                        model.enterUXModel
-                        model.jurisdictionCheckStatus
-                        model.trackedTxs
-                        model.showReferralModal
-                        model.now
-                        model.testMode
+                        , if dProfile == SmallDesktop then
+                            feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+
+                          else
+                            Element.none
+                        ]
                     , if dProfile == Desktop then
                         Element.column
                             [ Element.spacing 20
                             , Element.width Element.fill
+                            , Element.alignTop
                             ]
-                            [ futureBucketsPane model bucketSale
+                            [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+                            , futureBucketsPane model bucketSale
                             , trackedTxsElement model.trackedTxs
                             ]
 
@@ -134,6 +148,17 @@ commonPaneAttributes =
     ]
 
 
+blockTitleText : String -> Element Msg
+blockTitleText text =
+    Element.el
+        [ Element.width Element.fill
+        , Element.Font.size 25
+        , Element.Font.bold
+        ]
+    <|
+        Element.text text
+
+
 closedBucketsPane : Model -> Element Msg
 closedBucketsPane model =
     Element.column
@@ -142,12 +167,7 @@ closedBucketsPane model =
                , Element.paddingXY 32 25
                ]
         )
-        [ Element.el
-            [ Element.Font.size 25
-            , Element.Font.bold
-            ]
-          <|
-            Element.text "Concluded Buckets"
+        [ blockTitleText "Concluded Buckets"
         , Element.paragraph
             [ Element.Font.color grayTextColor
             , Element.Font.size 15
@@ -163,17 +183,17 @@ closedBucketsPane model =
         ]
 
 
-focusedBucketPane : BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
-focusedBucketPane bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
+focusedBucketPane : DisplayProfile -> BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
+focusedBucketPane dProfile bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
-            ++ [ Element.width <| Element.fillPortion 2
+            ++ [ Element.width Element.fill
                , Element.paddingXY 35 31
                , Element.spacing 7
-               , Element.height Element.shrink
                ]
         )
         ([ focusedBucketHeaderEl
+            dProfile
             bucketId
             (Wallet.userInfo wallet)
             enterUXModel.referrer
@@ -226,13 +246,7 @@ futureBucketsPane model bucketSale =
                        , Element.paddingXY 32 25
                        ]
                 )
-                [ Element.el
-                    [ Element.width Element.fill
-                    , Element.Font.size 25
-                    , Element.Font.bold
-                    ]
-                  <|
-                    Element.text "Future Buckets"
+                [ blockTitleText "Future Buckets"
                 , Element.paragraph
                     [ Element.Font.color grayTextColor
                     , Element.Font.size 15
@@ -253,6 +267,143 @@ futureBucketsPane model bucketSale =
                     model.now
                     model.testMode
                 ]
+
+
+feedbackButtonBlock : Bool -> FeedbackUXModel -> Element Msg
+feedbackButtonBlock showFeedbackUXModel feedbackUXModel =
+    Element.column
+        (commonPaneAttributes
+            ++ [ Element.width <| Element.fillPortion 1
+               , Element.paddingXY 32 25
+               ]
+        )
+        [ blockTitleText "Having issues?"
+        , if showFeedbackUXModel then
+            viewFeedbackForm feedbackUXModel
+
+          else
+            EH.blueButton
+                Desktop
+                [ Element.centerX ]
+                [ "Leave Feedback / Get Help" ]
+                FeedbackButtonClicked
+        ]
+
+
+viewFeedbackForm : FeedbackUXModel -> Element Msg
+viewFeedbackForm feedbackUXModel =
+    let
+        inputHeader text =
+            Element.el
+                []
+            <|
+                Element.text text
+
+        withHeader text el =
+            Element.column
+                [ Element.spacing 5
+                , Element.width Element.fill
+                ]
+                [ inputHeader text
+                , el
+                ]
+
+        textElInsteadOfButton color text =
+            Element.paragraph
+                [ Element.Font.color color
+                , Element.Font.italic
+                ]
+            <|
+                [ Element.text text ]
+
+        errorEls =
+            [ case feedbackUXModel.maybeError of
+                Just inputErrStr ->
+                    textElInsteadOfButton EH.softRed inputErrStr
+
+                Nothing ->
+                    Element.none
+            , case feedbackUXModel.sendState of
+                SendFailed sendErrStr ->
+                    textElInsteadOfButton EH.softRed <| "Submit failed: " ++ sendErrStr
+
+                _ ->
+                    Element.none
+            ]
+
+        submitFeedbackButton text =
+            EH.blueButton
+                Desktop
+                [ Element.alignLeft ]
+                [ text ]
+                FeedbackSubmitClicked
+
+        backButton =
+            EH.lightBlueButton
+                Desktop
+                [ Element.alignRight ]
+                [ "Back" ]
+                FeedbackBackClicked
+
+        submitButtonOrMsg =
+            case feedbackUXModel.sendState of
+                Sending ->
+                    textElInsteadOfButton EH.blue "Sending..."
+
+                Sent ->
+                    Element.column
+                        [ Element.spacing 5
+                        , Element.width Element.fill
+                        ]
+                        [ textElInsteadOfButton EH.green "Sent! We'll be in contact."
+                        , Element.el
+                            [ Element.Font.color EH.lightBlue
+                            , Element.pointer
+                            , Element.Events.onClick FeedbackSendMoreClicked
+                            ]
+                            (Element.text "Send More")
+                        ]
+
+                SendFailed sendErrStr ->
+                    submitFeedbackButton "Try Again"
+
+                NotSent ->
+                    submitFeedbackButton "Submit"
+    in
+    Element.column
+        [ Element.width Element.fill
+        , Element.spacing 20
+        ]
+        ([ withHeader "Email (optional)" <|
+            Element.Input.text
+                [ Element.width Element.fill ]
+                { onChange = FeedbackEmailChanged
+                , text = feedbackUXModel.email
+                , placeholder = Nothing
+                , label = Element.Input.labelHidden "email"
+                }
+         , withHeader "What's the problem?" <|
+            Element.Input.multiline
+                [ Element.width Element.fill
+                , Element.height <| Element.px 300
+                ]
+                { onChange = FeedbackDescriptionChanged
+                , text = feedbackUXModel.description
+                , placeholder = Nothing
+                , label = Element.Input.labelHidden "problem description"
+                , spellcheck = False
+                }
+         ]
+            ++ errorEls
+            ++ [ Element.row
+                    [ Element.width Element.fill
+                    , Element.Font.size 16
+                    ]
+                    [ submitButtonOrMsg
+                    , backButton
+                    ]
+               ]
+        )
 
 
 maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> Element Msg
@@ -356,8 +507,8 @@ totalExitedBlock maybeTotalExited =
                 ]
 
 
-focusedBucketHeaderEl : Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
-focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
+focusedBucketHeaderEl : DisplayProfile -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
+focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
         [ Element.spacing 8
         , Element.width Element.fill
@@ -377,6 +528,7 @@ focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive t
                 , nextBucketArrow bucketId
                 ]
             , maybeReferralIndicatorAndModal
+                dProfile
                 maybeUserInfo
                 maybeReferrer
                 referralModalActive
@@ -385,27 +537,31 @@ focusedBucketHeaderEl bucketId maybeUserInfo maybeReferrer referralModalActive t
         ]
 
 
-maybeReferralIndicatorAndModal : Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
-maybeReferralIndicatorAndModal maybeUserInfo maybeReferrer referralModalActive testMode =
+maybeReferralIndicatorAndModal : DisplayProfile -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
+maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModalActive testMode =
     case maybeUserInfo of
         Nothing ->
             Element.none
 
         Just userInfo ->
+            let
+                maybeModalAttribute =
+                    (responsiveVal dProfile Element.onRight Element.onLeft) <|
+                        if referralModalActive then
+                            Element.el
+                                [ responsiveVal dProfile Element.alignLeft Element.alignRight
+                                , (responsiveVal dProfile Element.moveRight Element.moveLeft) 25
+                                , Element.moveUp 50
+                                , EH.moveToFront
+                                ]
+                                (referralModal userInfo maybeReferrer testMode)
+
+                        else
+                            Element.none
+            in
             Element.el
                 [ Element.alignRight
-                , Element.onRight <|
-                    if referralModalActive then
-                        Element.el
-                            [ Element.alignLeft
-                            , Element.moveRight 25
-                            , Element.moveUp 50
-                            , EH.moveToFront
-                            ]
-                            (referralModal userInfo maybeReferrer testMode)
-
-                    else
-                        Element.none
+                , maybeModalAttribute
                 , Element.inFront <|
                     if referralModalActive then
                         Element.el
@@ -1383,12 +1539,7 @@ viewYoutubeLinksBlock =
                , Element.paddingXY 32 25
                ]
         )
-        [ Element.el
-            [ Element.Font.size 25
-            , Element.Font.bold
-            ]
-          <|
-            Element.text "Not sure where to start?"
+        [ blockTitleText "Not sure where to start?"
         , viewYoutubeLinksColumn
             [ ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
             , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=Jy-Ng_E_D1I" )
