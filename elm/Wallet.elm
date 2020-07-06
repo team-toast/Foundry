@@ -26,7 +26,7 @@ userInfo walletState =
 httpProvider : State -> Maybe HttpProvider
 httpProvider walletState =
     network walletState
-        |> Maybe.andThen EthHelpers.networkToHttpProvider
+        |> Maybe.andThen EthHelpers.networkToHttpProvider 
 
 
 -- httpProviderWithDefault : State -> HttpProvider

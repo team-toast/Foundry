@@ -426,6 +426,10 @@ type JurisdictionCheckStatus
     | Checked Jurisdiction
     | Error String
 
+type ReferredStatus
+    = NoReferrer
+    | 
+
 
 maybeReferrerToString : Maybe Address -> String
 maybeReferrerToString =
