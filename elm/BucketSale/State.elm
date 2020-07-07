@@ -1121,21 +1121,25 @@ update msg prevModel =
 
                                 Success ->
                                     let
-                                        ( funnelIdStr, label ) =
+                                        ( funnelIdStr, maybeEventValue ) =
                                             case actionData of
                                                 Unlock ->
                                                     ( "4c - "
-                                                    , Eth.Utils.txHashToString txReceipt.hash
+                                                    , Nothing
                                                     )
 
                                                 Enter enterInfo ->
                                                     ( "8c - "
-                                                    , TokenValue.toFloatString Nothing enterInfo.amount
+                                                    , Just
+                                                        (enterInfo.amount
+                                                            |> TokenValue.toFloatWithWarning
+                                                            |> floor
+                                                        )
                                                     )
 
                                                 Exit ->
                                                     ( "9c - "
-                                                    , Eth.Utils.txHashToString txReceipt.hash
+                                                    , Nothing
                                                     )
                                     in
                                     ( let
@@ -1154,8 +1158,8 @@ update msg prevModel =
                                     , [ CmdUp.gTag
                                             (funnelIdStr ++ actionDataToString actionData ++ " tx success")
                                             "funnel - tx"
-                                            label
-                                            0
+                                            (Eth.Utils.txHashToString txReceipt.hash)
+                                            (maybeEventValue |> Maybe.withDefault 0)
                                       ]
                                     )
 
