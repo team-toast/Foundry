@@ -49,24 +49,6 @@ var commonModule = (function() {
         }
     }
 
-    function haversine(point1, point2) {
-        toRad = (value) => value * Math.PI / 180;
-
-        var R = 6371; // earth radius in km
-        var dLat = toRad(point2.lat - point1.lat);
-        var dLon = toRad(point2.lng - point1.lng);
-        var lat1 = toRad(point1.lat);
-        var lat2 = toRad(point2.lat);
-
-        var a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.sin(dLon / 2) * Math.sin(dLon / 2) *
-            Math.cos(lat1) * Math.cos(lat2);
-
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    }
-
     function getJsonPromise(url) {
         return new Promise((resolve, reject) => {
             var rej = (a, b, c) => { reject(c); };
@@ -86,49 +68,41 @@ var commonModule = (function() {
     }
 
     async function beginDualLocationCheck() {
-        // fire off the request to ipgelocation.io so long
-        var ipResponseTask = getJsonPromise("https://api.ipgeolocation.io/ipgeo?apiKey=0a44cf721e614b2ba440943b51d9a235");
-
-        // get the browser's location, and fire off a look up for the country code 
+        // get the browser's location
         var position = await monadPromise(getLocationPromise());
         if (position.isError())
             return position.getErrorMessage();
-        var reverseGeoResponseTask = monadPromise(getJsonPromise("https://geocode.xyz/" + position.getOrNull().coords.latitude + "," + position.getOrNull().coords.longitude + "?json=1&auth=933556588498608367442x4952"));
 
-        // now wait for the responses
-        var ipResponse = await monadPromise(ipResponseTask);
-        if (ipResponse.isError())
-            return ipResponse.getErrorMessage();
+        // ask our service for the country codes
+        var countryResponse = await monadPromise(getJsonPromise("https://personal-rxyx.outsystemscloud.com/SaleFeedbackUI/rest/General/CountryLookup?lat=" + position.getOrNull().coords.latitude + "&long=" + position.getOrNull().coords.longitude))
+        if (countryResponse.isError())
+            return countryResponse.getErrorMessage();
 
-        var reverseGeoResponse = await reverseGeoResponseTask;
-        if (reverseGeoResponse.isError())
-            return reverseGeoResponse.getErrorMessage();
+        console.log("country response:", countryResponse.getOrNull());
 
         // calculate the results
         var ipLoc = {
-            lat: ipResponse.getOrNull().latitude,
-            lng: ipResponse.getOrNull().longitude,
-            country: ipResponse.getOrNull().country_code2
+            country: countryResponse.getOrNull().IPCountryCode
         };
         console.log("fetched IP location: ", ipLoc);
 
         var geoLoc = {
             lat: position.getOrNull().coords.latitude,
             lng: position.getOrNull().coords.longitude,
-            country: reverseGeoResponse.getOrNull().prov,
+            country: countryResponse.getOrNull().LocationCoutryCode,
             acc: position.getOrNull().coords.accuracy
         };
         console.log("geo location: ", geoLoc);
 
-        var distance = haversine(geoLoc, ipLoc);
         var result = {
             ipLocation: ipLoc,
             geoLocation: geoLoc,
-            kmDistance: distance,
             countryMatches: ipLoc.country == geoLoc.country,
             ipCountry: ipLoc.country,
-            geoCountry: geoLoc.country
+            geoCountry: geoLoc.country,
+            errorMessage: countryResponse.getOrNull().ErrorMessage
         };
+        console.log("result: ", result);
 
         return result;
     }

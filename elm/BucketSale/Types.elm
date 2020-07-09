@@ -406,7 +406,6 @@ getRelevantTimingInfo bucketInfo now testMode =
 type alias LocationInfo =
     { ipCode : String
     , geoCode : String
-    , distanceKm : Float
     }
 
 

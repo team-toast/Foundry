@@ -1509,19 +1509,19 @@ countryCodeToJurisdiction ipCode geoCode =
 locationCheckDecoder : Json.Decode.Decoder (Result String LocationInfo)
 locationCheckDecoder =
     Json.Decode.oneOf
-        [ Json.Decode.map Err <|
-            Json.Decode.field "ErrorMessage" Json.Decode.string
-        , Json.Decode.map Ok locationInfoDecoder
+        [ Json.Decode.field "errorMessage" Json.Decode.string
+            |> Json.Decode.map Err
+        , locationInfoDecoder
+            |> Json.Decode.map Ok
         ]
 
 
 locationInfoDecoder : Json.Decode.Decoder LocationInfo
 locationInfoDecoder =
-    Json.Decode.map3
+    Json.Decode.map2
         LocationInfo
         (Json.Decode.field "ipCountry" Json.Decode.string)
         (Json.Decode.field "geoCountry" Json.Decode.string)
-        (Json.Decode.field "kmDistance" Json.Decode.float)
 
 
 subscriptions : Model -> Sub Msg
