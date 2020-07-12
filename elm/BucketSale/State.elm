@@ -1611,7 +1611,7 @@ tosLines =
         , Just "I understand."
         )
       , ( List.singleton <| Element.text "US citizens and residents are strictly prohibited from this sale."
-        , Just "I am not a citizen of the USA."
+        , Just "I am not a citizen or resident of the USA."
         )
       ]
     ]
