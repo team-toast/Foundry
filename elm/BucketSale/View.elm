@@ -1112,7 +1112,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 ]
 
         Checked ForbiddenJurisdictions ->
-            msgInsteadOfButton "Sorry, US citizens are excluded." red
+            msgInsteadOfButton "Sorry, US citizens and residents are excluded." red
 
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             msgInsteadOfButton "Jurisdiction Verified." green
