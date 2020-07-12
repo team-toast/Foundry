@@ -1604,7 +1604,10 @@ tosLines =
         , Just "I understand."
         )
       ]
-    , [ ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
+    , [ ( List.singleton <| Element.text "I agree Foundry may track anonymized data about my interactions with the sale."
+        , Just "I understand."
+        )
+      , ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
         , Just "I understand."
         )
       , ( List.singleton <| Element.text "US citizens and residents are strictly prohibited from this sale."
