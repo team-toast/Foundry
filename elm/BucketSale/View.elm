@@ -1548,7 +1548,8 @@ viewYoutubeLinksBlock =
         )
         [ blockTitleText "Not sure where to start?"
         , viewYoutubeLinksColumn
-            [ ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
+            [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf")
+            , ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
             , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=Jy-Ng_E_D1I" )
             , ( "Video 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
             , ( "Video 4:", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
