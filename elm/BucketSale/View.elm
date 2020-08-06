@@ -668,7 +668,11 @@ enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckSt
                     (\trackedTx ->
                         case ( trackedTx.action, trackedTx.status ) of
                             ( Enter enterInfo, Signed _ Mining ) ->
+                                if enterInfo.bucketId == bucketInfo.id then
                                 Just enterInfo
+
+                                else
+                                    Nothing
 
                             _ ->
                                 Nothing
@@ -1548,7 +1552,7 @@ viewYoutubeLinksBlock =
         )
         [ blockTitleText "Not sure where to start?"
         , viewYoutubeLinksColumn
-            [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf")
+            [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf" )
             , ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
             , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=Jy-Ng_E_D1I" )
             , ( "Video 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
