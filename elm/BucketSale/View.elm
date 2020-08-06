@@ -669,7 +669,7 @@ enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckSt
                         case ( trackedTx.action, trackedTx.status ) of
                             ( Enter enterInfo, Signed _ Mining ) ->
                                 if enterInfo.bucketId == bucketInfo.id then
-                                Just enterInfo
+                                    Just enterInfo
 
                                 else
                                     Nothing
@@ -1017,7 +1017,13 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
                                 )
                             |> List.intersperse (Element.text " + ")
                          )
-                            ++ [ Element.text " DAI" ]
+                            |> (\els ->
+                                    if List.length els > 0 then
+                                        els ++ [ Element.text " DAI" ]
+
+                                    else
+                                        [ Element.text "0 DAI"]
+                               )
                         )
                     ]
                 , Element.column
@@ -1956,18 +1962,18 @@ referralModal userInfo maybeReferrer testMode =
                                 , Element.Font.color green
                                 ]
                                 [ Element.text "Nice! You’ve got a referral bonus." ]
-                            , Element.paragraph []
-                                    [ Element.text "Every bid you make will result in a bonus bid into the next bucket, at 10% of the first bid amount. Check the next bucket after you enter your bid!" ]
-                                    , Element.paragraph []
-                                        [ Element.text "Share your own referral code with others to earn FRY! More info " 
-                                        , Element.newTabLink [ Element.Font.color EH.lightBlue ]
-                                            { url = "https://foundrydao.com/faq/#about-referrals"
-                                            , label = Element.text "here"
-                                        }
-                                    , Element.text "."
-                                    ]
-                            , referralLinkElement userInfo.address testMode
-                            , referralLinkCopyButton
+                          , Element.paragraph []
+                                [ Element.text "Every bid you make will result in a bonus bid into the next bucket, at 10% of the first bid amount. Check the next bucket after you enter your bid!" ]
+                          , Element.paragraph []
+                                [ Element.text "Share your own referral code with others to earn FRY! More info "
+                                , Element.newTabLink [ Element.Font.color EH.lightBlue ]
+                                    { url = "https://foundrydao.com/faq/#about-referrals"
+                                    , label = Element.text "here"
+                                    }
+                                , Element.text "."
+                                ]
+                          , referralLinkElement userInfo.address testMode
+                          , referralLinkCopyButton
                           ]
                         , Nothing
                         )
