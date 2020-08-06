@@ -1097,7 +1097,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
             EH.redButton
                 Desktop
                 [ Element.width Element.fill ]
-                [ "Verify Jurisdiction" ]
+                [ "Confirm you are not a US citizen" ]
                 VerifyJurisdictionClicked
 
         Checking ->
