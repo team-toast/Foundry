@@ -171,9 +171,9 @@ brandAndLogo dProfile =
                 , Element.centerY
                 ]
               <|
-                Element.text "Foundry"
+                Element.text "Foundry Sale"
             , Element.newTabLink
-                [ Element.centerX
+                [ Element.alignLeft
                 , Element.Background.color EH.lightBlue
                 , Element.paddingXY 10 3
                 , Element.Border.rounded 4
