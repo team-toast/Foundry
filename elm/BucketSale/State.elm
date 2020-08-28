@@ -645,14 +645,19 @@ update msg prevModel =
                                                 prevModel
 
                                             Just userInfo ->
-                                                if userInfo.address /= Tuple.first stateUpdateInfo.userStateInfo then
-                                                    prevModel
+                                                case stateUpdateInfo.maybeUserStateInfo of
+                                                    Nothing ->
+                                                        prevModel
 
-                                                else
-                                                    { prevModel
-                                                        | extraUserInfo =
-                                                            Just <| Tuple.second <| stateUpdateInfo.userStateInfo
-                                                    }
+                                                    Just fetchedUserStateInfo ->
+                                                        if Tuple.first fetchedUserStateInfo /= userInfo.address then
+                                                            prevModel
+
+                                                        else
+                                                            { prevModel
+                                                                | extraUserInfo =
+                                                                    Just <| Tuple.second <| fetchedUserStateInfo
+                                                            }
                                    )
                                 |> (\model ->
                                         case prevModel.bucketSale of
@@ -694,9 +699,16 @@ update msg prevModel =
                                    )
 
                         ( ethBalance, daiBalance ) =
-                            ( Tuple.second stateUpdateInfo.userStateInfo |> .ethBalance
-                            , Tuple.second stateUpdateInfo.userStateInfo |> .daiBalance
-                            )
+                            case stateUpdateInfo.maybeUserStateInfo of
+                                Nothing ->
+                                    ( TokenValue.zero
+                                    , TokenValue.zero
+                                    )
+
+                                Just userStateInfo ->
+                                    ( Tuple.second userStateInfo |> .ethBalance
+                                    , Tuple.second userStateInfo |> .daiBalance
+                                    )
                     in
                     UpdateResult
                         newModel
@@ -1384,10 +1396,7 @@ fetchStateUpdateInfoCmd : Maybe UserInfo -> Maybe Int -> TestMode -> Cmd Msg
 fetchStateUpdateInfoCmd maybeUserInfo maybeBucketId testMode =
     BucketSaleWrappers.getStateUpdateInfo
         testMode
-        (maybeUserInfo
-            |> Maybe.map .address
-            |> Maybe.withDefault EthHelpers.zeroAddress
-        )
+        (maybeUserInfo |> Maybe.map .address)
         (maybeBucketId
             |> Maybe.withDefault 0
         )

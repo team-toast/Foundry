@@ -75,7 +75,7 @@ getUserExitInfo testMode userAddress msgConstructor =
 
 type alias StateUpdateInfo =
     { totalTokensExited : TokenValue
-    , userStateInfo : ( Address, UserStateInfo )
+    , maybeUserStateInfo : Maybe ( Address, UserStateInfo )
     , bucketInfo : BucketInfo
     }
 
@@ -97,33 +97,37 @@ type alias UserStateInfo =
     }
 
 
-getStateUpdateInfo : TestMode -> Address -> Int -> (Result Http.Error (Maybe StateUpdateInfo) -> msg) -> Cmd msg
-getStateUpdateInfo testMode userAddress bucketId msgConstructor =
+getStateUpdateInfo : TestMode -> Maybe Address -> Int -> (Result Http.Error (Maybe StateUpdateInfo) -> msg) -> Cmd msg
+getStateUpdateInfo testMode maybeUserAddress bucketId msgConstructor =
     BucketSaleBindings.getGeneralInfo
         (Config.bucketSaleScriptsAddress testMode)
         (Config.bucketSaleAddress testMode)
-        userAddress
+        (maybeUserAddress |> Maybe.withDefault EthHelpers.zeroAddress)
         (BigInt.fromInt bucketId)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
-        |> Task.map (getGeneralInfoToStateUpdateInfo userAddress bucketId)
+        |> Task.map (getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId)
         |> Task.attempt msgConstructor
 
 
-getGeneralInfoToStateUpdateInfo : Address -> Int -> BucketSaleBindings.GetGeneralInfo -> Maybe StateUpdateInfo
-getGeneralInfoToStateUpdateInfo userAddress bucketId bindingStruct =
+getGeneralInfoToStateUpdateInfo : Maybe Address -> Int -> BucketSaleBindings.GetGeneralInfo -> Maybe StateUpdateInfo
+getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId bindingStruct =
     queryBigIntListToMaybExitInfo bindingStruct.exitInfo
         |> Maybe.map
             (\exitInfo ->
                 { totalTokensExited = TokenValue.tokenValue bindingStruct.totalExitedTokens
-                , userStateInfo =
-                    ( userAddress
-                    , { ethBalance = TokenValue.tokenValue bindingStruct.tokenSoldForBalance
-                      , daiBalance = TokenValue.tokenValue bindingStruct.ethBalance
-                      , daiAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
-                      , fryBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
-                      , exitInfo = exitInfo
-                      }
-                    )
+                , maybeUserStateInfo =
+                    maybeUserAddress
+                        |> Maybe.map
+                            (\userAddress ->
+                                ( userAddress
+                                , { ethBalance = TokenValue.tokenValue bindingStruct.tokenSoldForBalance
+                                  , daiBalance = TokenValue.tokenValue bindingStruct.ethBalance
+                                  , daiAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
+                                  , fryBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
+                                  , exitInfo = exitInfo
+                                  }
+                                )
+                            )
                 , bucketInfo =
                     { bucketId = bucketId
                     , totalDaiEntered = TokenValue.tokenValue bindingStruct.bucket_totalValueEntered
