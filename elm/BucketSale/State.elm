@@ -1068,22 +1068,32 @@ update msg prevModel =
                         Cmd.none
                         ChainCmd.none
                         (let
-                            funnelIdStr =
+                            ( funnelIdStr, maybeEventValue ) =
                                 case actionData of
                                     Unlock ->
-                                        "4b - "
+                                        ( "4b - "
+                                        , Nothing
+                                        )
 
-                                    Enter _ ->
-                                        "8b - "
+                                    Enter enterInfo ->
+                                        ( "8b - "
+                                        , Just
+                                            (enterInfo.amount
+                                                |> TokenValue.toFloatWithWarning
+                                                |> floor
+                                            )
+                                        )
 
                                     Exit ->
-                                        "9b - "
+                                        ( "9b - "
+                                        , Nothing
+                                        )
                          in
                          [ CmdUp.gTag
                             (funnelIdStr ++ actionDataToString actionData ++ " tx signed ")
                             "funnel - tx"
                             (Eth.Utils.txHashToString txHash)
-                            0
+                            (maybeEventValue |> Maybe.withDefault 0)
                          ]
                         )
 
