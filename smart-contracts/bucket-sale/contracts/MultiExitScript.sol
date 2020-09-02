@@ -1,10 +1,3 @@
-//
-// Attention Auditor:
-// We consider this contract outside of the audit scope, given that it
-// interacts with the BucketSale contract as an external user and is
-// fundamentally limited in the same ways.
-//
-
 pragma solidity ^0.5.17;
 
 contract IBucketSale
