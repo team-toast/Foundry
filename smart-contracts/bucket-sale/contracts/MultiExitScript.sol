@@ -20,12 +20,10 @@ contract MultiExitScript
             uint[] memory _bucketIds)
         public
     {
+        require(_buyers.length == _bucketIds.length, "tupple mismatch");
         for (uint i = 0; i < _bucketIds.length; i++)
         {
-            for (uint j = 0; j < _buyers.length; j = j++)
-            {
-                _bucketSale.exit(_bucketIds[i], _buyers[j]);
-            }
+            _bucketSale.exit(_bucketIds[i], _buyers[i]);
         }
     }
 }
