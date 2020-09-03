@@ -28,6 +28,7 @@ import Routing
 import Time
 import TokenValue exposing (TokenValue)
 import Wallet
+import TokenValue exposing (toConciseString)
 
 
 root : Model -> DisplayProfile -> ( Element Msg, List (Element Msg) )
@@ -1296,6 +1297,9 @@ actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining ente
                                     Just (Ok daiAmount) ->
                                         if List.any (\tx -> tx.status == Signing) trackedTxs then
                                             disabledButton "Sign or reject pending transactions to continue"
+
+                                        else if TokenValue.compare daiAmount extraUserInfo.daiAllowance /= GT && TokenValue.compare daiAmount extraUserInfo.daiBalance /= LT then
+                                            disabledButton <| "You only have " ++ (toConciseString extraUserInfo.daiBalance) ++ " DAI"
 
                                         else if TokenValue.compare daiAmount extraUserInfo.daiAllowance /= GT then
                                             continueButton userInfo bucketInfo.id daiAmount enterUXModel.referrer enteredIntoThisBucket miningTotalForThisBucket
