@@ -120,8 +120,8 @@ getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId bindingStruct =
                         |> Maybe.map
                             (\userAddress ->
                                 ( userAddress
-                                , { ethBalance = TokenValue.tokenValue bindingStruct.tokenSoldForBalance
-                                  , daiBalance = TokenValue.tokenValue bindingStruct.ethBalance
+                                , { ethBalance = TokenValue.tokenValue bindingStruct.ethBalance
+                                  , daiBalance = TokenValue.tokenValue bindingStruct.tokenSoldForBalance
                                   , daiAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
                                   , fryBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
                                   , exitInfo = exitInfo
