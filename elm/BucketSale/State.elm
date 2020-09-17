@@ -1071,43 +1071,46 @@ update msg prevModel =
 
                                 _ ->
                                     prevModel.enterUXModel
+
+                        ( funnelIdStr, maybeEventValue ) =
+                            case actionData of
+                                Unlock ->
+                                    ( "4b - "
+                                    , Nothing
+                                    )
+
+                                Enter enterInfo ->
+                                    ( "8b - "
+                                    , Just
+                                        (enterInfo.amount
+                                            |> TokenValue.toFloatWithWarning
+                                        )
+                                    )
+
+                                Exit ->
+                                    ( "9b - "
+                                    , Nothing
+                                    )
                     in
                     UpdateResult
                         { prevModel
                             | trackedTxs = newTrackedTxs
                             , enterUXModel = newEnterUXModel
                         }
-                        Cmd.none
+                        (case maybeEventValue of
+                            Just eventValue ->
+                                tagTwitterConversion eventValue
+
+                            Nothing ->
+                                Cmd.none
+                        )
                         ChainCmd.none
-                        (let
-                            ( funnelIdStr, maybeEventValue ) =
-                                case actionData of
-                                    Unlock ->
-                                        ( "4b - "
-                                        , Nothing
-                                        )
-
-                                    Enter enterInfo ->
-                                        ( "8b - "
-                                        , Just
-                                            (enterInfo.amount
-                                                |> TokenValue.toFloatWithWarning
-                                                |> floor
-                                            )
-                                        )
-
-                                    Exit ->
-                                        ( "9b - "
-                                        , Nothing
-                                        )
-                         in
-                         [ CmdUp.gTag
+                        [ CmdUp.gTag
                             (funnelIdStr ++ actionDataToString actionData ++ " tx signed ")
                             "funnel - tx"
                             (Eth.Utils.txHashToString txHash)
-                            (maybeEventValue |> Maybe.withDefault 0)
-                         ]
-                        )
+                            (maybeEventValue |> Maybe.map floor |> Maybe.withDefault 0)
+                        ]
 
         TxStatusFetched trackedTxId actionData fetchResult ->
             case fetchResult of
@@ -1565,6 +1568,9 @@ port locationCheckResult : (Json.Decode.Value -> msg) -> Sub msg
 
 
 port addFryToMetaMask : () -> Cmd msg
+
+
+port tagTwitterConversion : Float -> Cmd msg
 
 
 tosLines : List (List ( List (Element Msg), Maybe String ))
