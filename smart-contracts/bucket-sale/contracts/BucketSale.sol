@@ -60,6 +60,7 @@ contract BucketSale
     uint public totalExitedTokens;
     ERC20Mintable public tokenOnSale;       // we assume the bucket sale contract has minting rights for this contract
     IERC20 public tokenSoldFor;
+    bool public referralsEnabled;
 
     constructor (
             address _treasury,
@@ -67,8 +68,9 @@ contract BucketSale
             uint _bucketPeriod,
             uint _bucketSupply,
             uint _bucketCount,
-            ERC20Mintable _tokenOnSale,    // FRY in our case
-            IERC20 _tokenSoldFor)    // typically DAI
+            ERC20Mintable _tokenOnSale,     // FRY in our case
+            IERC20 _tokenSoldFor,           // typically DAI
+            bool _referralsEnabled)    
         public
     {
         require(_treasury != address(0), "treasury cannot be 0x0");
@@ -85,6 +87,7 @@ contract BucketSale
         bucketCount = _bucketCount;
         tokenOnSale = _tokenOnSale;
         tokenSoldFor = _tokenSoldFor;
+        referralsEnabled = _referralsEnabled;
     }
 
     function currentBucket()
@@ -116,6 +119,11 @@ contract BucketSale
         require(transferSuccess, "enter transfer failed");
 
         registerEnter(_bucketId, _buyer, _amount);
+
+        if(!referralsEnabled)
+        {
+            _referrer = address(0);
+        }
         referredTotal[_referrer] = referredTotal[_referrer].add(_amount); // referredTotal[0x0] will track buys with no referral
 
         if (_referrer != address(0)) // If there is a referrer
