@@ -27,13 +27,12 @@
             "mthadley/elm-hash-routing": "1.0.1",
             "myrho/elm-round": "1.0.4",
             "pablohirafuji/elm-markdown": "2.0.5",
-            "rtfeldman/elm-css": "16.0.1",
+            "rtfeldman/elm-css": "16.1.0",
             "rtfeldman/elm-validate": "4.0.1",
             "timjs/elm-collage": "2.0.2"
         },
         "indirect": {
             "Chadtech/elm-bool-extra": "2.4.0",
-            "Skinney/murmur3": "2.0.8",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/parser": "1.1.0",
