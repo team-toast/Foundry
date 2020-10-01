@@ -20,7 +20,7 @@ contract BucketSale
 
     // When passing around bonuses, we use 3 decimals of precision.
     uint constant HUNDRED_PERC = 100000;
-    uint constant MAX_BONUS_PERC = 20000;
+    uint constant MAX_BONUS_PERC = 0; 
     uint constant ONE_PERC = 1000;
 
     /*
@@ -152,8 +152,9 @@ contract BucketSale
     function registerEnter(uint _bucketId, address _buyer, uint _amount)
         internal
     {
-        require(_bucketId >= currentBucket(), "cannot enter past buckets");
         require(_bucketId < bucketCount, "invalid bucket id--past end of sale");
+        require(_bucketId >= currentBucket(), "cannot enter past buckets");
+        
 
         Buy storage buy = buys[_bucketId][_buyer];
         buy.valueEntered = buy.valueEntered.add(_amount);
@@ -202,7 +203,15 @@ contract BucketSale
         pure
         returns(uint)
     {
-        return ONE_PERC.mul(10);
+        return ONE_PERC.mul(0);
+    }
+
+    function maxReferralRewardPerc()
+        public
+        pure
+        returns(uint)
+    {
+        return MAX_BONUS_PERC;
     }
 
     function referrerReferralRewardPerc(address _referrerAddress)

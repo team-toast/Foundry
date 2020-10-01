@@ -250,6 +250,9 @@ let ``B_EN008 - Can enter a bucket with a referrer``() =
 [<Specification("BucketSale", "exit", 1)>]
 [<Fact>]
 let ``B_EX001 - Cannot exit a bucket that is not yet concluded``() =
+    //let currentBlockTime = debug.BlockTimestamp 
+    //let startOfSale = bucketSale.Query "startOfSale" [||]
+    //currentBlockTime |> should greaterThan startOfSale
     let currentBucket = bucketSale.Query "currentBucket" [||]
     let firstReceipt = bucketSale.ExecuteFunctionFrom "exit" [| currentBucket; EthAddress.Zero |] debug
 

@@ -29,11 +29,11 @@ let DAI = makeToken "MCD DAI stable coin" "DAI" ethConn.Account.Address (bucketS
 let FRY = makeToken "Foundry logistics token" "FRY" ethConn.Account.Address (BigInteger 1000000UL)
 
 
-let referrerReward referrerAddress amount =
+let referrerReward maxReferrerRewardPerc referrerAddress amount =
     if referrerAddress = EthAddress.Zero then
         BigInteger.Zero
     else
-        ((amount / BigInteger 1000000000000000000UL) + BigInteger 10000UL)
+        min ((amount / BigInteger 1000000000000000000UL) + BigInteger 10000UL) maxReferrerRewardPerc
         
 
 let makeTreasury owner = 
@@ -70,7 +70,7 @@ let bucketSale =
         bucketCount 
         FRY.Address 
         DAI.Address
-        (BigInteger(0UL * days))
+        (BigInteger(2UL * hours))
     
 
 let addFryMinter newMinter =
@@ -103,9 +103,11 @@ let enterBucketAndValidateState sender buyer bucketToEnter valueToEnter referrer
     seedWithDAI debug.ContractPlug.Address valueToEnter
     approveDAIFor valueToEnter bucketSale.Address debug
 
+    let maxReferrerReferralRewardPerc = bucketSale.Query "maxReferralRewardPerc" [||]
+    let buyerReferralRewardPerc = bucketSale.Query "buyerReferralRewardPerc" [||]
     let referrerReferredTotalBefore = bucketSale.Query "referredTotal" [| referrer |]
     let referrerRewardPercBefore = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
-    let calculatedReferrerRewardPercBefore = referrerReward referrer referrerReferredTotalBefore
+    let calculatedReferrerRewardPercBefore = referrerReward maxReferrerReferralRewardPerc referrer referrerReferredTotalBefore
     referrerRewardPercBefore |> should equal calculatedReferrerRewardPercBefore
     let senderDaiBalanceBefore = DAI.Query "balanceOf" [| debug.ContractPlug.Address |]
     let treasuryDaiBalanceBefore = DAI.Query "balanceOf" [| treasury.Address |]
@@ -127,10 +129,10 @@ let enterBucketAndValidateState sender buyer bucketToEnter valueToEnter referrer
     // event validation
     let referredTotalAfter = bucketSale.Query "referredTotal" [| referrer |]
     referredTotalAfter |> should equal (referrerReferredTotalBefore + valueToEnter)
-    let calculatedReferrerRewardPercAfter = referrerReward referrer referredTotalAfter
+    let calculatedReferrerRewardPercAfter = referrerReward maxReferrerReferralRewardPerc referrer referredTotalAfter
     let referrerRewardPercAfter = bucketSale.Query "referrerReferralRewardPerc" [| referrer |]
     referrerRewardPercAfter |> should equal calculatedReferrerRewardPercAfter
-    let buyerReward = valueToEnter / BigInteger 10UL
+    let buyerReward = valueToEnter / BigInteger 1000UL * buyerReferralRewardPerc
     let referrerReward = valueToEnter * calculatedReferrerRewardPercAfter / BigInteger 100000
 
     let enteredEvent = receipt |> decodeFirstEvent<EnteredEventDTO>

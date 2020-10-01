@@ -21,3 +21,4 @@ smart-contracts/bucket-sale/tests/.vs/Tests/DesignTimeBuild/.dtbcache
 
 .fake
 .ionide
+smart-contracts/bucket-sale/contracts/flat.sol
