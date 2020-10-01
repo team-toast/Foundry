@@ -41,6 +41,7 @@ function startDapp() {
             referrerStoragePortStuff(app);
             locationCheckPortStuff(app);
             addFryToMetaMaskStuff(app);
+            twitterConversionTrackingPortStuff(app);
 
             web3PortStuff(app, web3);
         });
