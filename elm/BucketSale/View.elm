@@ -1905,7 +1905,7 @@ referralModal userInfo maybeReferrer testMode =
                                 [ Element.text "You can also use your own reference code and get both benefits." ]
                             , Element.paragraph []
                                 [ Element.newTabLink [ Element.Font.color <| EH.lightBlue ]
-                                    { url = "https://foundrydao.com/faq/#about-referrals"
+                                    { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "More info on how this works"
                                     }
                                 ]
@@ -1941,7 +1941,7 @@ referralModal userInfo maybeReferrer testMode =
                           , Element.paragraph []
                                 [ Element.text "This means you'll get both bonuses! More info "
                                 , Element.newTabLink [ Element.Font.color EH.lightBlue ]
-                                    { url = "https://foundrydao.com/faq/#about-referrals"
+                                    { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
                                     }
                                 , Element.text "."
@@ -1971,7 +1971,7 @@ referralModal userInfo maybeReferrer testMode =
                           , Element.paragraph []
                                 [ Element.text "Share your own referral code with others to earn FRY! More info "
                                 , Element.newTabLink [ Element.Font.color EH.lightBlue ]
-                                    { url = "https://foundrydao.com/faq/#about-referrals"
+                                    { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
                                     }
                                 , Element.text "."
