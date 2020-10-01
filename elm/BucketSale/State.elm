@@ -108,8 +108,8 @@ verifyWalletCorrectNetwork wallet testMode =
 
 initEnterUXModel : Maybe Address -> EnterUXModel
 initEnterUXModel maybeReferrer =
-    { daiInput = ""
-    , daiAmount = Nothing
+    { input = ""
+    , amount = Nothing
     , referrer = maybeReferrer
     }
 
@@ -296,7 +296,7 @@ update msg prevModel =
                 (addFryToMetaMask ())
                 ChainCmd.none
                 [ CmdUp.gTag
-                    "10 - User requested FRY to be added to MetaMask"
+                    "10 - User requested exitingToken to be added to MetaMask"
                     "funnel"
                     ""
                     0
@@ -671,10 +671,10 @@ update msg prevModel =
                                                                     { bucket
                                                                         | userBuy =
                                                                             Just <|
-                                                                                { valueEntered = stateUpdateInfo.bucketInfo.userDaiEntered
-                                                                                , hasExited = not <| TokenValue.isZero stateUpdateInfo.bucketInfo.userFryExited
+                                                                                { valueEntered = stateUpdateInfo.bucketInfo.userTokensEntered
+                                                                                , hasExited = not <| TokenValue.isZero stateUpdateInfo.bucketInfo.userTokensExited
                                                                                 }
-                                                                        , totalValueEntered = Just stateUpdateInfo.bucketInfo.totalDaiEntered
+                                                                        , totalValueEntered = Just stateUpdateInfo.bucketInfo.totalTokensEntered
                                                                     }
                                                                 )
                                                 in
@@ -698,7 +698,7 @@ update msg prevModel =
                                         }
                                    )
 
-                        ( ethBalance, daiBalance ) =
+                        ( ethBalance, enteringTokenBalance ) =
                             case stateUpdateInfo.maybeUserStateInfo of
                                 Nothing ->
                                     ( TokenValue.zero
@@ -707,7 +707,7 @@ update msg prevModel =
 
                                 Just userStateInfo ->
                                     ( Tuple.second userStateInfo |> .ethBalance
-                                    , Tuple.second userStateInfo |> .daiBalance
+                                    , Tuple.second userStateInfo |> .enteringTokenBalance
                                     )
                     in
                     UpdateResult
@@ -725,11 +725,11 @@ update msg prevModel =
                           else
                             []
                          )
-                            ++ (if not <| TokenValue.isZero daiBalance then
+                            ++ (if not <| TokenValue.isZero enteringTokenBalance then
                                     [ CmdUp.nonRepeatingGTag
-                                        "2b - has DAI"
+                                        "2b - has enteringToken"
                                         "funnel"
-                                        (TokenValue.toConciseString daiBalance)
+                                        (TokenValue.toConciseString enteringTokenBalance)
                                         0
                                     ]
 
@@ -816,7 +816,7 @@ update msg prevModel =
                     in
                     justModelUpdate prevModel
 
-        DaiInputChanged input ->
+        EnterInputChanged input ->
             UpdateResult
                 { prevModel
                     | enterUXModel =
@@ -825,19 +825,19 @@ update msg prevModel =
                                 prevModel.enterUXModel
                         in
                         { oldEnterUXModel
-                            | daiInput = input
-                            , daiAmount =
+                            | input = input
+                            , amount =
                                 if input == "" then
                                     Nothing
 
                                 else
-                                    Just <| validateDaiInput input
+                                    Just <| validateTokenInput input
                         }
                 }
                 Cmd.none
                 ChainCmd.none
                 [ CmdUp.gTag
-                    "5? - dai input changed"
+                    "5? - enteringToken input changed"
                     "funnel"
                     input
                     0
@@ -875,7 +875,7 @@ update msg prevModel =
                 , CmdUp.gTag "generate referral" "referral" (Eth.Utils.addressToString address) 0
                 ]
 
-        UnlockDaiButtonClicked ->
+        EnableTokenButtonClicked ->
             let
                 ( trackedTxId, newTrackedTxs ) =
                     prevModel.trackedTxs
@@ -894,7 +894,7 @@ update msg prevModel =
                             }
 
                         txParams =
-                            BucketSaleWrappers.unlockDai prevModel.testMode
+                            BucketSaleWrappers.approveTransfer prevModel.testMode
                                 |> Eth.toSend
                     in
                     ChainCmd.custom customSend txParams
@@ -1065,8 +1065,8 @@ update msg prevModel =
                                             prevModel.enterUXModel
                                     in
                                     { oldEnterUXModel
-                                        | daiInput = ""
-                                        , daiAmount = Nothing
+                                        | input = ""
+                                        , amount = Nothing
                                     }
 
                                 _ ->
@@ -1462,8 +1462,8 @@ clearBucketSaleExitInfo =
         )
 
 
-validateDaiInput : String -> Result String TokenValue
-validateDaiInput input =
+validateTokenInput : String -> Result String TokenValue
+validateTokenInput input =
     case String.toFloat input of
         Just floatVal ->
             if floatVal <= 0 then

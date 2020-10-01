@@ -161,7 +161,7 @@ brandAndLogo dProfile =
         ]
         [ Images.toElement
             [ Element.centerY ]
-            Images.fryIcon
+            Images.exitingTokenIcon
         , Element.column
             [ Element.spacing 5 ]
             [ Element.el

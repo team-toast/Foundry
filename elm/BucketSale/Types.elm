@@ -47,15 +47,15 @@ type alias Model =
 
 type alias ExtraUserInfo =
     { ethBalance : TokenValue
-    , daiBalance : TokenValue
-    , fryBalance : TokenValue
-    , daiAllowance : TokenValue
+    , enteringTokenBalance : TokenValue
+    , exitingTokenBalance : TokenValue
+    , enteringTokenAllowance : TokenValue
     }
 
 
 type alias EnterUXModel =
-    { daiInput : String
-    , daiAmount : Maybe (Result String TokenValue)
+    { input : String
+    , amount : Maybe (Result String TokenValue)
     , referrer : Maybe Address
     }
 
@@ -115,11 +115,11 @@ type Msg
     | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
     | TotalTokensExitedFetched (Result Http.Error TokenValue)
     | FocusToBucket Int
-    | DaiInputChanged String
+    | EnterInputChanged String
     | ReferralIndicatorClicked
     | CloseReferralModal
     | GenerateReferralClicked Address
-    | UnlockDaiButtonClicked
+    | EnableTokenButtonClicked
     | ClaimClicked UserInfo ExitInfo
     | CancelClicked
     | EnterButtonClicked EnterInfo
@@ -347,8 +347,8 @@ buyFromBindingBuy bindingBuy =
 
 
 calcClaimableTokens : TokenValue -> TokenValue -> TestMode -> TokenValue
-calcClaimableTokens totalValueEntered daiIn testMode =
-    if TokenValue.isZero daiIn then
+calcClaimableTokens totalValueEntered tokensIn testMode =
+    if TokenValue.isZero tokensIn then
         TokenValue.zero
 
     else if TokenValue.isZero totalValueEntered then
@@ -357,7 +357,7 @@ calcClaimableTokens totalValueEntered daiIn testMode =
     else
         let
             claimableRatio =
-                TokenValue.toFloatWithWarning daiIn
+                TokenValue.toFloatWithWarning tokensIn
                     / TokenValue.toFloatWithWarning totalValueEntered
         in
         TokenValue.mulFloatWithWarning

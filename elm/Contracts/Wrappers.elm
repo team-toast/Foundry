@@ -24,7 +24,7 @@ getAllowanceCmd testMode owner spender msgConstructor =
     Eth.call
         (EthHelpers.appHttpProvider testMode)
         (TokenContract.allowance
-            (Config.daiContractAddress testMode)
+            (Config.enteringTokenAddress testMode)
             owner
             spender
         )
