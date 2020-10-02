@@ -30,8 +30,8 @@ import TokenValue exposing (TokenValue, toConciseString)
 import Wallet
 
 
-root : Model -> DisplayProfile -> ( Element Msg, List (Element Msg) )
-root model dProfile =
+root : Model -> Maybe Address -> DisplayProfile -> ( Element Msg, List (Element Msg) )
+root model maybeReferrer dProfile =
     ( Element.column
         ([ Element.width Element.fill
          , Element.paddingEach
@@ -42,100 +42,76 @@ root model dProfile =
             }
          ]
             ++ (List.map Element.inFront <|
-                    viewModals model
+                    viewModals model maybeReferrer
                )
         )
-        [ case model.bucketSale of
-            Nothing ->
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size 30
-                    , Element.Font.color EH.white
-                    ]
-                <|
-                    Element.text "Loading..."
-
-            Just (Err error) ->
-                viewBucketSaleError error
-
-            Just (Ok bucketSale) ->
-                Element.row
-                    [ Element.centerX
-                    , Element.spacing 50
-                    ]
-                    [ Element.column
-                        [ Element.width <| Element.fillPortion 1
-                        , Element.alignTop
-                        , Element.spacing 20
-                        ]
-                        ([ viewYoutubeLinksBlock
-                         , closedBucketsPane model
-                         ]
-                            ++ (if dProfile == SmallDesktop then
-                                    [ futureBucketsPane model bucketSale
-                                    , trackedTxsElement model.trackedTxs
-                                    ]
-
-                                else
-                                    []
-                               )
-                        )
-                    , Element.column
-                        [ Element.width <| Element.fillPortion 2
-                        , Element.spacing 20
-                        , Element.alignTop
-                        ]
-                        [ focusedBucketPane
-                            dProfile
-                            bucketSale
-                            (getFocusedBucketId
-                                bucketSale
-                                model.bucketView
-                                model.now
-                                model.testMode
-                            )
-                            model.wallet
-                            model.extraUserInfo
-                            model.enterUXModel
-                            model.jurisdictionCheckStatus
-                            model.trackedTxs
-                            model.showReferralModal
-                            model.now
-                            model.testMode
-                        , if dProfile == SmallDesktop then
-                            feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-
-                          else
-                            Element.none
-                        ]
-                    , if dProfile == Desktop then
-                        Element.column
-                            [ Element.spacing 20
-                            , Element.width Element.fill
-                            , Element.alignTop
-                            ]
-                            [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-                            , futureBucketsPane model bucketSale
+        [ Element.row
+            [ Element.centerX
+            , Element.spacing 50
+            ]
+            [ Element.column
+                [ Element.width <| Element.fillPortion 1
+                , Element.alignTop
+                , Element.spacing 20
+                ]
+                ([ viewYoutubeLinksBlock
+                 , closedBucketsPane model
+                 ]
+                    ++ (if dProfile == SmallDesktop then
+                            [ futureBucketsPane model
                             , trackedTxsElement model.trackedTxs
                             ]
 
-                      else
-                        Element.none
+                        else
+                            []
+                       )
+                )
+            , Element.column
+                [ Element.width <| Element.fillPortion 2
+                , Element.spacing 20
+                , Element.alignTop
+                ]
+                [ focusedBucketPane
+                    dProfile
+                    maybeReferrer
+                    model.bucketSale
+                    (getFocusedBucketId
+                        model.bucketSale
+                        model.bucketView
+                        model.now
+                        model.testMode
+                    )
+                    model.wallet
+                    model.extraUserInfo
+                    model.enterUXModel
+                    model.jurisdictionCheckStatus
+                    model.trackedTxs
+                    model.showReferralModal
+                    model.now
+                    model.testMode
+                , if dProfile == SmallDesktop then
+                    feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+
+                  else
+                    Element.none
+                ]
+            , if dProfile == Desktop then
+                Element.column
+                    [ Element.spacing 20
+                    , Element.width Element.fill
+                    , Element.alignTop
                     ]
+                    [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+                    , futureBucketsPane model
+                    , trackedTxsElement model.trackedTxs
+                    ]
+
+              else
+                Element.none
+            ]
         ]
     , []
     )
-
-
-viewBucketSaleError : BucketSaleError -> Element Msg
-viewBucketSaleError error =
-    Element.el
-        [ Element.centerX
-        , Element.Font.size 30
-        , Element.Font.color EH.white
-        ]
-    <|
-        Element.text "uh oh! D:"
 
 
 commonPaneAttributes : List (Attribute Msg)
@@ -188,8 +164,8 @@ closedBucketsPane model =
         ]
 
 
-focusedBucketPane : DisplayProfile -> BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
-focusedBucketPane dProfile bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
+focusedBucketPane : DisplayProfile -> Maybe Address -> BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
+focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
@@ -201,7 +177,7 @@ focusedBucketPane dProfile bucketSale bucketId wallet maybeExtraUserInfo enterUX
             dProfile
             bucketId
             (Wallet.userInfo wallet)
-            enterUXModel.referrer
+            maybeReferrer
             referralModalActive
             testMode
          ]
@@ -219,20 +195,20 @@ focusedBucketPane dProfile bucketSale bucketId wallet maybeExtraUserInfo enterUX
                         , focusedBucketTimeLeftEl
                             (getRelevantTimingInfo bucketInfo now testMode)
                             testMode
-                        , enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
+                        , enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
                         ]
                )
         )
 
 
-futureBucketsPane : Model -> BucketSale -> Element Msg
-futureBucketsPane model bucketSale =
+futureBucketsPane : Model -> Element Msg
+futureBucketsPane model =
     let
         fetchedNextBucketInfo =
             getBucketInfo
-                bucketSale
+                model.bucketSale
                 (getCurrentBucketId
-                    bucketSale
+                    model.bucketSale
                     model.now
                     model.testMode
                     + 1
@@ -264,11 +240,11 @@ futureBucketsPane model bucketSale =
                                 model.now
                     ]
                 , maybeBucketsLeftBlock
-                    bucketSale
+                    model.bucketSale
                     model.now
                     model.testMode
                 , maybeSoldTokenInFutureBucketsBlock
-                    bucketSale
+                    model.bucketSale
                     model.now
                     model.testMode
                 ]
@@ -573,7 +549,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                             [ EH.moveToFront ]
                         <|
                             referralBonusIndicator
-                                (maybeReferrer /= Nothing)
+                                maybeReferrer
                                 True
 
                     else
@@ -581,7 +557,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                 ]
             <|
                 referralBonusIndicator
-                    (maybeReferrer /= Nothing)
+                    maybeReferrer
                     referralModalActive
 
 
@@ -664,8 +640,8 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
-enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
+enterBidUX : Wallet.State -> Maybe Address -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
+enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
     let
         miningEnters =
             trackedTxs
@@ -707,7 +683,7 @@ enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckSt
         [ bidInputBlock enterUXModel bucketInfo testMode
         , bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode
         , otherBidsImpactMsg
-        , actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode
+        , actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode
         ]
 
 
@@ -1243,8 +1219,8 @@ alreadyEnteredBucketButton enterAmount =
     Element.none
 
 
-actionButton : JurisdictionCheckStatus -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> Element Msg
-actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
+actionButton : JurisdictionCheckStatus -> Maybe Address -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> Element Msg
+actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
     case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
@@ -1328,7 +1304,7 @@ actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining ente
                                             disabledButton <| "You only have " ++ toConciseString extraUserInfo.enteringTokenBalance ++ " " ++ Config.enteringTokenCurrencyLabel ++ ""
 
                                         else if TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= GT then
-                                            continueButton userInfo bucketInfo.id enterAmount enterUXModel.referrer enteredIntoThisBucket miningTotalForThisBucket
+                                            continueButton userInfo bucketInfo.id enterAmount maybeReferrer enteredIntoThisBucket miningTotalForThisBucket
 
                                         else
                                             enableTokenButton
@@ -1547,8 +1523,8 @@ makeDescription action =
             "Claim " ++ Config.exitingTokenCurrencyLabel ++ ""
 
 
-viewModals : Model -> List (Element Msg)
-viewModals model =
+viewModals : Model -> Maybe Address -> List (Element Msg)
+viewModals model maybeReferrer =
     Maybe.Extra.values
         [ case model.enterInfoToConfirm of
             Just enterInfo ->
@@ -1568,8 +1544,8 @@ viewModals model =
                 EH.modal
                     (Element.rgba 0 0 0 0.25)
                     False
-                    CloseReferralModal
-                    CloseReferralModal
+                    (CloseReferralModal maybeReferrer)
+                    (CloseReferralModal maybeReferrer)
                     Element.none
 
           else
@@ -1592,6 +1568,7 @@ viewYoutubeLinksBlock =
         , viewYoutubeLinksColumn
             [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf" )
             , ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
+
             -- , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=gkt-Wv104RU" )
             -- , ( "Video 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
             , ( "Video 4:", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
@@ -1848,14 +1825,18 @@ viewTosPageNavigationButtons confirmTosModel enterInfo =
         ]
 
 
-referralBonusIndicator : Bool -> Bool -> Element Msg
-referralBonusIndicator hasReferral focusedStyle =
+referralBonusIndicator : Maybe Address -> Bool -> Element Msg
+referralBonusIndicator maybeReferrer focusedStyle =
+    let
+        hasReferral =
+            maybeReferrer /= Nothing
+    in
     Element.el
         [ Element.paddingXY 16 7
         , Element.Font.bold
         , Element.Font.size 18
         , Element.pointer
-        , Element.Events.onClick ReferralIndicatorClicked
+        , Element.Events.onClick (ReferralIndicatorClicked maybeReferrer)
         , Element.Background.color
             ((if hasReferral then
                 green

@@ -30,7 +30,7 @@ type alias Model =
     , now : Time.Posix
     , fastGasPrice : Maybe BigInt
     , saleStartTime : Maybe Time.Posix
-    , bucketSale : Maybe (Result BucketSaleError BucketSale)
+    , bucketSale : BucketSale
     , totalTokensExited : Maybe TokenValue
     , bucketView : BucketView
     , jurisdictionCheckStatus : JurisdictionCheckStatus
@@ -51,8 +51,6 @@ type Msg
     | UpdateNow Time.Posix
     | FetchFastGasPrice
     | FetchedFastGasPrice (Result Http.Error BigInt)
-    | FetchUserEnteringTokenBalance
-    | UserEnteringtokenBalanceFetched Address (Result Http.Error TokenValue)
     | TosPreviousPageClicked
     | TosNextPageClicked
     | TosCheckboxClicked ( Int, Int )
@@ -66,15 +64,14 @@ type Msg
     | FeedbackBackClicked
     | FeedbackSendMoreClicked
     | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
-    | SaleStartTimestampFetched (Result Http.Error BigInt)
     | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
     | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
     | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
     | TotalTokensExitedFetched (Result Http.Error TokenValue)
     | FocusToBucket Int
     | EnterInputChanged String
-    | ReferralIndicatorClicked
-    | CloseReferralModal
+    | ReferralIndicatorClicked (Maybe Address)
+    | CloseReferralModal (Maybe Address)
     | GenerateReferralClicked Address
     | EnableTokenButtonClicked
     | ClaimClicked UserInfo ExitInfo
@@ -113,7 +110,6 @@ justModelUpdate model =
 type alias EnterUXModel =
     { input : String
     , amount : Maybe (Result String TokenValue)
-    , referrer : Maybe Address
     }
 
 
@@ -199,10 +195,6 @@ type alias BucketSale =
     { startTime : Time.Posix
     , buckets : List BucketData
     }
-
-type BucketSaleError
-    = SaleNotDeployed
-    | SaleNotStarted Time.Posix
 
 
 type FetchedBucketInfo

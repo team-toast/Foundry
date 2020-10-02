@@ -1,5 +1,6 @@
 module Types exposing (..)
 
+import BigInt exposing (BigInt)
 import Browser
 import Browser.Navigation
 import BucketSale.Types
@@ -9,8 +10,9 @@ import Eth.Sentry.Tx as TxSentry exposing (TxSentry)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (Address)
 import Http
-import Routing
+-- import Routing
 import Time
+import TokenValue exposing (TokenValue)
 import Url exposing (Url)
 import UserNotice as UN exposing (UserNotice)
 import Wallet
@@ -28,7 +30,7 @@ type alias Flags =
 type alias Model =
     { key : Browser.Navigation.Key
     , testMode : TestMode
-    , pageRoute : Routing.PageRoute
+    -- , pageRoute : Routing.PageRoute
     , userAddress : Maybe Address -- `wallet` will store this but only after commPubkey has been generated
     , wallet : Wallet.State
     , now : Time.Posix
@@ -44,12 +46,16 @@ type alias Model =
 
 type Msg
     = NoOp
-    | GotoRoute Routing.PageRoute
+    | UpdateNow Time.Posix
+    | SaleStartTimestampFetched (Result Http.Error BigInt)
+    | FetchUserEnteringTokenBalance Address
+    | UserEnteringTokenBalanceFetched Address (Result Http.Error TokenValue)
+    -- | GotoRoute Routing.PageRoute
     | LinkClicked Browser.UrlRequest
-    | UrlChanged Url.Url
+    -- | UrlChanged Url.Url
     | ClickHappened
     | BucketSaleMsg BucketSale.Types.Msg
-    | Tick Time.Posix
+    
     | CmdUp (CmdUp Msg)
     | ConnectToWeb3
     | WalletStatus WalletSentry
@@ -60,5 +66,20 @@ type Msg
 
 
 type Submodel
-    = NullSubmodel
+    = LoadingSaleModel BucketSaleLoadingModel
     | BucketSaleModel BucketSale.Types.Model
+
+
+type alias BucketSaleLoadingModel =
+    { loadingState : LoadingState
+    , userBalance : Maybe TokenValue
+    }
+
+
+type LoadingState
+    = Loading
+    | Error BucketSaleError
+
+type BucketSaleError
+    = SaleNotDeployed
+    | SaleNotStarted Time.Posix

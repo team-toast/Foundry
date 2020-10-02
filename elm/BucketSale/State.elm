@@ -36,15 +36,15 @@ import Utils
 import Wallet
 
 
-init : Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
-init maybeReferrer testMode wallet now =
+init : BucketSale -> Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
+init bucketSale maybeReferrer testMode wallet now =
     ( { wallet = verifyWalletCorrectNetwork wallet testMode
       , extraUserInfo = Nothing
       , testMode = testMode
       , now = now
       , fastGasPrice = Nothing
       , saleStartTime = Nothing
-      , bucketSale = Nothing
+      , bucketSale = bucketSale
       , totalTokensExited = Nothing
       , bucketView = ViewCurrent
       , jurisdictionCheckStatus = WaitingForClick
@@ -58,14 +58,22 @@ init maybeReferrer testMode wallet now =
             initFeedbackUXModel
       }
     , Cmd.batch
-        [ fetchSaleStartTimestampCmd testMode
-        , fetchFastGasPriceCmd
+        [ fetchFastGasPriceCmd
         , fetchStateUpdateInfoCmd
             (Wallet.userInfo wallet)
             Nothing
             testMode
+        , fetchBucketDataCmd
+            (getCurrentBucketId
+                bucketSale
+                now
+                testMode
+            )
+            (Wallet.userInfo wallet)
+            testMode
         ]
     )
+
 
 
 initConfirmTosModel : ConfirmTosModel
@@ -108,7 +116,6 @@ initEnterUXModel : Maybe Address -> EnterUXModel
 initEnterUXModel maybeReferrer =
     { input = ""
     , amount = Nothing
-    , referrer = maybeReferrer
     }
 
 
@@ -130,13 +137,7 @@ update msg prevModel =
                 fetchStateCmd =
                     fetchStateUpdateInfoCmd
                         (Wallet.userInfo prevModel.wallet)
-                        (case prevModel.bucketSale of
-                            Just (Ok bucketSale) ->
-                                Just <| getFocusedBucketId bucketSale prevModel.bucketView prevModel.now prevModel.testMode
-
-                            _ ->
-                                Nothing
-                        )
+                        (Just <| getFocusedBucketId prevModel.bucketSale prevModel.bucketView prevModel.now prevModel.testMode)
                         prevModel.testMode
 
                 checkTxsCmd =
@@ -169,42 +170,21 @@ update msg prevModel =
                 ChainCmd.none
                 []
 
-        FetchUserEnteringTokenBalance ->
-            let
-                fetchCmd =
-                    Wallet.userInfo prevModel.wallet
-                        |> Maybe.map .address
-                        |> Maybe.map (fetchUserEnteringTokenBalanceCmd prevModel.testMode)
-                        |> Maybe.withDefault Cmd.none
-            in
-            UpdateResult
-                prevModel
-                fetchCmd
-                ChainCmd.none
-                []
-
-        UserEnteringtokenBalanceFetched address fetchResult ->
-            Debug.todo ""
+        
 
         UpdateNow newNow ->
             let
                 cmd =
-                    case ( prevModel.bucketSale, prevModel.bucketView ) of
-                        ( Nothing, _ ) ->
+                    case prevModel.bucketView of
+                        ViewId _ ->
                             Cmd.none
 
-                        ( Just (Err _), _ ) ->
-                            Cmd.none
-
-                        ( _, ViewId _ ) ->
-                            Cmd.none
-
-                        ( Just (Ok bucketSale), ViewCurrent ) ->
+                        ViewCurrent ->
                             let
                                 newFocusedId =
-                                    getCurrentBucketId bucketSale newNow prevModel.testMode
+                                    getCurrentBucketId prevModel.bucketSale newNow prevModel.testMode
                             in
-                            if newFocusedId /= getCurrentBucketId bucketSale prevModel.now prevModel.testMode then
+                            if newFocusedId /= getCurrentBucketId prevModel.bucketSale prevModel.now prevModel.testMode then
                                 fetchBucketDataCmd
                                     newFocusedId
                                     (Wallet.userInfo prevModel.wallet)
@@ -481,63 +461,7 @@ update msg prevModel =
                         ]
                 )
 
-        SaleStartTimestampFetched fetchResult ->
-            case fetchResult of
-                Ok startTimestampBigInt ->
-                    let
-                        startTimestamp =
-                            TimeHelpers.secondsBigIntToPosixWithWarning startTimestampBigInt
-                    in
-                    if BigInt.compare startTimestampBigInt (BigInt.fromInt 0) == EQ then
-                        justModelUpdate
-                            { prevModel
-                                | bucketSale = Just <| Err <| SaleNotDeployed -- A zero value indicates a dud deploy or not deployed
-                            }
-
-                    else
-                        let
-                            ( newMaybeResultBucketSale, cmd ) =
-                                case prevModel.bucketSale of
-                                    Nothing ->
-                                        case initBucketSale prevModel.testMode startTimestamp prevModel.now of
-                                            Ok sale ->
-                                                ( Just <| Ok sale
-                                                , fetchBucketDataCmd
-                                                    (getCurrentBucketId
-                                                        sale
-                                                        prevModel.now
-                                                        prevModel.testMode
-                                                    )
-                                                    (Wallet.userInfo prevModel.wallet)
-                                                    prevModel.testMode
-                                                )
-
-                                            Err err ->
-                                                ( Just <| Err err
-                                                , Cmd.none
-                                                )
-
-                                    _ ->
-                                        ( prevModel.bucketSale
-                                        , Cmd.none
-                                        )
-                        in
-                        UpdateResult
-                            { prevModel
-                                | bucketSale = newMaybeResultBucketSale
-                                , saleStartTime = Just startTimestamp
-                            }
-                            cmd
-                            ChainCmd.none
-                            []
-
-                Err httpErr ->
-                    let
-                        _ =
-                            Debug.log "http error when fetching sale startTime" httpErr
-                    in
-                    justModelUpdate prevModel
-
+        
         BucketValueEnteredFetched bucketId fetchResult ->
             case fetchResult of
                 Err httpErr ->
@@ -548,38 +472,29 @@ update msg prevModel =
                     justModelUpdate prevModel
 
                 Ok valueEntered ->
-                    case prevModel.bucketSale of
-                        Just (Ok oldBucketSale) ->
-                            let
-                                maybeNewBucketSale =
-                                    oldBucketSale
-                                        |> updateBucketAt
-                                            bucketId
-                                            (\bucket ->
-                                                { bucket | totalValueEntered = Just valueEntered }
-                                            )
-                            in
-                            case maybeNewBucketSale of
-                                Nothing ->
-                                    let
-                                        _ =
-                                            Debug.log "Warning! Somehow trying to update a bucket that doesn't exist!" ""
-                                    in
-                                    justModelUpdate prevModel
-
-                                Just newBucketSale ->
-                                    justModelUpdate
-                                        { prevModel
-                                            | bucketSale =
-                                                Just (Ok newBucketSale)
-                                        }
-
-                        somethingElse ->
+                    let
+                        maybeNewBucketSale =
+                            prevModel.bucketSale
+                                |> updateBucketAt
+                                    bucketId
+                                    (\bucket ->
+                                        { bucket | totalValueEntered = Just valueEntered }
+                                    )
+                    in
+                    case maybeNewBucketSale of
+                        Nothing ->
                             let
                                 _ =
-                                    Debug.log "Warning! Bucket value fetched but there is no bucketSale present!" somethingElse
+                                    Debug.log "Warning! Somehow trying to update a bucket that doesn't exist!" ""
                             in
                             justModelUpdate prevModel
+
+                        Just newBucketSale ->
+                            justModelUpdate
+                                { prevModel
+                                    | bucketSale =
+                                        newBucketSale
+                                }
 
         UserBuyFetched userAddress bucketId fetchResult ->
             if (Wallet.userInfo prevModel.wallet |> Maybe.map .address) /= Just userAddress then
@@ -599,37 +514,28 @@ update msg prevModel =
                             buy =
                                 buyFromBindingBuy bindingBuy
                         in
-                        case prevModel.bucketSale of
-                            Just (Ok oldBucketSale) ->
-                                let
-                                    maybeNewBucketSale =
-                                        oldBucketSale
-                                            |> updateBucketAt
-                                                bucketId
-                                                (\bucket ->
-                                                    { bucket
-                                                        | userBuy = Just buy
-                                                    }
-                                                )
-                                in
-                                case maybeNewBucketSale of
-                                    Nothing ->
-                                        let
-                                            _ =
-                                                Debug.log "Warning! Somehow trying to update a bucket that does not exist or is in the future!" ""
-                                        in
-                                        justModelUpdate prevModel
-
-                                    Just newBucketSale ->
-                                        justModelUpdate
-                                            { prevModel | bucketSale = Just <| Ok newBucketSale }
-
-                            somethingElse ->
+                        let
+                            maybeNewBucketSale =
+                                prevModel.bucketSale
+                                    |> updateBucketAt
+                                        bucketId
+                                        (\bucket ->
+                                            { bucket
+                                                | userBuy = Just buy
+                                            }
+                                        )
+                        in
+                        case maybeNewBucketSale of
+                            Nothing ->
                                 let
                                     _ =
-                                        Debug.log "Warning! Bucket value fetched but there is no bucketSale present!" somethingElse
+                                        Debug.log "Warning! Somehow trying to update a bucket that does not exist or is in the future!" ""
                                 in
                                 justModelUpdate prevModel
+
+                            Just newBucketSale ->
+                                justModelUpdate
+                                    { prevModel | bucketSale = newBucketSale }
 
         StateUpdateInfoFetched fetchResult ->
             case fetchResult of
@@ -672,37 +578,32 @@ update msg prevModel =
                                                             }
                                    )
                                 |> (\model ->
-                                        case prevModel.bucketSale of
-                                            Just (Ok oldBucketSale) ->
+                                        let
+                                            maybeNewBucketSale =
+                                                prevModel.bucketSale
+                                                    |> updateBucketAt
+                                                        stateUpdateInfo.bucketInfo.bucketId
+                                                        (\bucket ->
+                                                            { bucket
+                                                                | userBuy =
+                                                                    Just <|
+                                                                        { valueEntered = stateUpdateInfo.bucketInfo.userTokensEntered
+                                                                        , hasExited = not <| TokenValue.isZero stateUpdateInfo.bucketInfo.userTokensExited
+                                                                        }
+                                                                , totalValueEntered = Just stateUpdateInfo.bucketInfo.totalTokensEntered
+                                                            }
+                                                        )
+                                        in
+                                        case maybeNewBucketSale of
+                                            Nothing ->
                                                 let
-                                                    maybeNewBucketSale =
-                                                        oldBucketSale
-                                                            |> updateBucketAt
-                                                                stateUpdateInfo.bucketInfo.bucketId
-                                                                (\bucket ->
-                                                                    { bucket
-                                                                        | userBuy =
-                                                                            Just <|
-                                                                                { valueEntered = stateUpdateInfo.bucketInfo.userTokensEntered
-                                                                                , hasExited = not <| TokenValue.isZero stateUpdateInfo.bucketInfo.userTokensExited
-                                                                                }
-                                                                        , totalValueEntered = Just stateUpdateInfo.bucketInfo.totalTokensEntered
-                                                                    }
-                                                                )
+                                                    _ =
+                                                        Debug.log "Warning! Somehow trying to update a bucket that does not exist or is in the future!" ""
                                                 in
-                                                case maybeNewBucketSale of
-                                                    Nothing ->
-                                                        let
-                                                            _ =
-                                                                Debug.log "Warning! Somehow trying to update a bucket that does not exist or is in the future!" ""
-                                                        in
-                                                        model
-
-                                                    Just newBucketSale ->
-                                                        { model | bucketSale = Just <| Ok newBucketSale }
-
-                                            _ ->
                                                 model
+
+                                            Just newBucketSale ->
+                                                { model | bucketSale = newBucketSale }
                                    )
                                 |> (\model ->
                                         { model
@@ -766,67 +667,58 @@ update msg prevModel =
                         }
 
         FocusToBucket bucketId ->
-            case prevModel.bucketSale of
-                Just (Ok bucketSale) ->
-                    let
-                        newBucketView =
-                            if bucketId == getCurrentBucketId bucketSale prevModel.now prevModel.testMode then
-                                ViewCurrent
+            let
+                newBucketView =
+                    if bucketId == getCurrentBucketId prevModel.bucketSale prevModel.now prevModel.testMode then
+                        ViewCurrent
 
-                            else
-                                ViewId
-                                    (bucketId
-                                        |> min Config.bucketSaleNumBuckets
-                                        |> max
-                                            (getCurrentBucketId
-                                                bucketSale
-                                                prevModel.now
-                                                prevModel.testMode
-                                            )
-                                    )
-
-                        maybeFetchBucketDataCmd =
-                            let
-                                bucketInfo =
-                                    getBucketInfo
-                                        bucketSale
-                                        (getFocusedBucketId
-                                            bucketSale
-                                            newBucketView
-                                            prevModel.now
-                                            prevModel.testMode
-                                        )
+                    else
+                        ViewId
+                            (bucketId
+                                |> min Config.bucketSaleNumBuckets
+                                |> max
+                                    (getCurrentBucketId
+                                        prevModel.bucketSale
                                         prevModel.now
                                         prevModel.testMode
-                            in
-                            case bucketInfo of
-                                ValidBucket bucketData ->
-                                    fetchBucketDataCmd
-                                        bucketId
-                                        (Wallet.userInfo prevModel.wallet)
-                                        prevModel.testMode
+                                    )
+                            )
 
-                                _ ->
-                                    Cmd.none
-                    in
-                    UpdateResult
-                        { prevModel
-                            | bucketView = newBucketView
-                        }
-                        maybeFetchBucketDataCmd
-                        ChainCmd.none
-                        [ CmdUp.gTag "focus to bucket"
-                            "navigation"
-                            (String.fromInt bucketId)
-                            1
-                        ]
-
-                somethingElse ->
+                maybeFetchBucketDataCmd =
                     let
-                        _ =
-                            Debug.log "Bucket clicked, but bucketSale isn't loaded! What??" somethingElse
+                        bucketInfo =
+                            getBucketInfo
+                                prevModel.bucketSale
+                                (getFocusedBucketId
+                                    prevModel.bucketSale
+                                    newBucketView
+                                    prevModel.now
+                                    prevModel.testMode
+                                )
+                                prevModel.now
+                                prevModel.testMode
                     in
-                    justModelUpdate prevModel
+                    case bucketInfo of
+                        ValidBucket bucketData ->
+                            fetchBucketDataCmd
+                                bucketId
+                                (Wallet.userInfo prevModel.wallet)
+                                prevModel.testMode
+
+                        _ ->
+                            Cmd.none
+            in
+            UpdateResult
+                { prevModel
+                    | bucketView = newBucketView
+                }
+                maybeFetchBucketDataCmd
+                ChainCmd.none
+                [ CmdUp.gTag "focus to bucket"
+                    "navigation"
+                    (String.fromInt bucketId)
+                    1
+                ]
 
         EnterInputChanged input ->
             UpdateResult
@@ -855,7 +747,7 @@ update msg prevModel =
                     0
                 ]
 
-        ReferralIndicatorClicked ->
+        ReferralIndicatorClicked maybeReferrerAddress ->
             UpdateResult
                 { prevModel
                     | showReferralModal =
@@ -867,16 +759,16 @@ update msg prevModel =
                 }
                 Cmd.none
                 ChainCmd.none
-                [ CmdUp.gTag "modal shown" "referral" (maybeReferrerToString prevModel.enterUXModel.referrer) 0 ]
+                [ CmdUp.gTag "modal shown" "referral" (maybeReferrerToString maybeReferrerAddress) 0 ]
 
-        CloseReferralModal ->
+        CloseReferralModal maybeReferrerAddress ->
             UpdateResult
                 { prevModel
                     | showReferralModal = False
                 }
                 Cmd.none
                 ChainCmd.none
-                [ CmdUp.gTag "modal hidden" "referral" (maybeReferrerToString prevModel.enterUXModel.referrer) 0 ]
+                [ CmdUp.gTag "modal hidden" "referral" (maybeReferrerToString maybeReferrerAddress) 0 ]
 
         GenerateReferralClicked address ->
             UpdateResult
@@ -1227,8 +1119,7 @@ runCmdDown cmdDown prevModel =
             else
                 let
                     newBucketSale =
-                        prevModel.bucketSale
-                            |> (Maybe.map << Result.map) clearBucketSaleExitInfo
+                        prevModel.bucketSale |> clearBucketSaleExitInfo
                 in
                 UpdateResult
                     { prevModel
@@ -1238,17 +1129,12 @@ runCmdDown cmdDown prevModel =
                     }
                     (fetchStateUpdateInfoCmd
                         (Wallet.userInfo newWallet)
-                        (case newBucketSale of
-                            Just (Ok bucketSale) ->
-                                Just <|
-                                    getFocusedBucketId
-                                        bucketSale
-                                        prevModel.bucketView
-                                        prevModel.now
-                                        prevModel.testMode
-
-                            _ ->
-                                Nothing
+                        (Just <|
+                            getFocusedBucketId
+                                prevModel.bucketSale
+                                prevModel.bucketView
+                                prevModel.now
+                                prevModel.testMode
                         )
                         prevModel.testMode
                     )
@@ -1292,21 +1178,21 @@ runCmdDown cmdDown prevModel =
                             ]
                     )
 
-        CmdDown.UpdateReferral address ->
-            UpdateResult
-                { prevModel
-                    | enterUXModel =
-                        let
-                            prevEnterUXModel =
-                                prevModel.enterUXModel
-                        in
-                        { prevEnterUXModel
-                            | referrer = Just address
-                        }
-                }
-                Cmd.none
-                ChainCmd.none
-                []
+        -- CmdDown.UpdateReferral address ->
+        --     UpdateResult
+        --         { prevModel
+        --             | enterUXModel =
+        --                 let
+        --                     prevEnterUXModel =
+        --                         prevModel.enterUXModel
+        --                 in
+        --                 { prevEnterUXModel
+        --                     | referrer = Just address
+        --                 }
+        --         }
+        --         Cmd.none
+        --         ChainCmd.none
+        --         []
 
         CmdDown.CloseAnyDropdownsOrModals ->
             justModelUpdate
@@ -1336,38 +1222,10 @@ toggleAssentForPoint ( pageNum, pointNum ) prevTosModel =
     }
 
 
-initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result BucketSaleError BucketSale
-initBucketSale testMode saleStartTime now =
-    if TimeHelpers.compare saleStartTime now == GT then
-        Err <| SaleNotStarted <| saleStartTime
-
-    else
-        Ok <|
-            BucketSale
-                saleStartTime
-                (List.range 0 (Config.bucketSaleNumBuckets - 1)
-                    |> List.map
-                        (\id ->
-                            BucketData
-                                (TimeHelpers.add
-                                    saleStartTime
-                                    (TimeHelpers.mul
-                                        (Config.bucketSaleBucketInterval testMode)
-                                        id
-                                    )
-                                )
-                                Nothing
-                                Nothing
-                        )
-                )
 
 
-fetchUserEnteringTokenBalanceCmd : TestMode -> Address -> Cmd Msg
-fetchUserEnteringTokenBalanceCmd testMode address =
-    TokenWrappers.getBalanceCmd
-        testMode
-        address
-        (UserEnteringtokenBalanceFetched address)
+
+
 
 
 fetchBucketDataCmd : Int -> Maybe UserInfo -> TestMode -> Cmd Msg
@@ -1400,11 +1258,8 @@ fetchBucketUserBuyCmd id userInfo testMode =
         (UserBuyFetched userInfo.address id)
 
 
-fetchSaleStartTimestampCmd : TestMode -> Cmd Msg
-fetchSaleStartTimestampCmd testMode =
-    BucketSaleWrappers.getSaleStartTimestampCmd
-        testMode
-        SaleStartTimestampFetched
+
+
 
 
 fetchTotalTokensExitedCmd : TestMode -> Cmd Msg
@@ -1571,24 +1426,13 @@ locationInfoDecoder =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.bucketSale of
-        Just (Ok bucketSale) ->
-            Sub.batch
-                [ Time.every 15000 <| always Refresh
-                , Time.every 500 UpdateNow
-                , Time.every (1000 * 60 * 10) <| always FetchFastGasPrice
-                , locationCheckResult
-                    (Json.Decode.decodeValue locationCheckDecoder >> LocationCheckResult)
-                ]
-
-        Just (Err (SaleNotStarted _)) ->
-            Sub.batch
-                [ Time.every 500 UpdateNow
-                , Time.every 5000 (always FetchUserEnteringTokenBalance)
-                ]
-
-        _ ->
-            Sub.none
+    Sub.batch
+        [ Time.every 15000 <| always Refresh
+        , Time.every 500 UpdateNow
+        , Time.every (1000 * 60 * 10) <| always FetchFastGasPrice
+        , locationCheckResult
+            (Json.Decode.decodeValue locationCheckDecoder >> LocationCheckResult)
+        ]
 
 
 port beginLocationCheck : () -> Cmd msg
