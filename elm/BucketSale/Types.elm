@@ -28,7 +28,6 @@ type alias Model =
     , extraUserInfo : Maybe BucketSaleWrappers.UserStateInfo
     , testMode : TestMode
     , now : Time.Posix
-    , timezone : Maybe Time.Zone
     , fastGasPrice : Maybe BigInt
     , saleStartTime : Maybe Time.Posix
     , bucketSale : Maybe (Result BucketSaleError BucketSale)
@@ -48,7 +47,6 @@ type alias Model =
 type Msg
     = NoOp
     | CmdUp (CmdUp Msg)
-    | TimezoneGot Time.Zone
     | Refresh
     | UpdateNow Time.Posix
     | FetchFastGasPrice

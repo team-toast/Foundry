@@ -42,7 +42,6 @@ init maybeReferrer testMode wallet now =
       , extraUserInfo = Nothing
       , testMode = testMode
       , now = now
-      , timezone = Nothing
       , fastGasPrice = Nothing
       , saleStartTime = Nothing
       , bucketSale = Nothing
@@ -61,7 +60,6 @@ init maybeReferrer testMode wallet now =
     , Cmd.batch
         [ fetchSaleStartTimestampCmd testMode
         , fetchFastGasPriceCmd
-        , Task.perform TimezoneGot Time.here
         , fetchStateUpdateInfoCmd
             (Wallet.userInfo wallet)
             Nothing
@@ -126,10 +124,6 @@ update msg prevModel =
                 Cmd.none
                 ChainCmd.none
                 [ cmdUp ]
-
-        TimezoneGot tz ->
-            justModelUpdate
-                { prevModel | timezone = Just tz }
 
         Refresh ->
             let
