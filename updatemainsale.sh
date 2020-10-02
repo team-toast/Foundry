@@ -2,6 +2,15 @@
 
 set -e
 
+branch_name="$(git symbolic-ref HEAD 2>/dev/null)" ||
+branch_name="(unnamed branch / detached head)"
+branch_name=${branch_name##refs/heads/}
+
+if [ $branch_name != "main_sale_live" ]; then
+  echo "Not on the right branch! Exiting."
+  exit 1
+fi
+
 echo "compressing dist/"
 tar -cf dist.tar dist
 
