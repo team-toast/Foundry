@@ -19,7 +19,7 @@ import Time
 import TokenValue exposing (TokenValue)
 
 
-getAllowanceCmd : TestMode -> Address -> Address -> (Result Http.Error BigInt -> msg) -> Cmd msg
+getAllowanceCmd : TestMode -> Address -> Address -> (Result Http.Error TokenValue -> msg) -> Cmd msg
 getAllowanceCmd testMode owner spender msgConstructor =
     Eth.call
         (EthHelpers.appHttpProvider testMode)
@@ -28,4 +28,17 @@ getAllowanceCmd testMode owner spender msgConstructor =
             owner
             spender
         )
+        |> Task.map TokenValue.tokenValue
+        |> Task.attempt msgConstructor
+
+
+getBalanceCmd : TestMode -> Address -> (Result Http.Error TokenValue -> msg) -> Cmd msg
+getBalanceCmd testMode userAddress msgConstructor =
+    Eth.call
+        (EthHelpers.appHttpProvider testMode)
+        (TokenContract.balanceOf
+            (Config.enteringTokenAddress testMode)
+            userAddress
+        )
+        |> Task.map TokenValue.tokenValue
         |> Task.attempt msgConstructor
