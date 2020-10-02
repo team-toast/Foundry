@@ -11,12 +11,12 @@ import TokenValue exposing (TokenValue)
 
 mainnetHttpProviderUrl : String
 mainnetHttpProviderUrl =
-    Debug.todo "https://07a14c9f5130471d81dbe1488f0c22f5.eth.rpc.rivet.cloud/"
+    "https://4eaf7efe792b417e816294ad07d323c4.eth.rpc.rivet.cloud/"
 
 
 kovanHttpProviderUrl : String
 kovanHttpProviderUrl =
-    Debug.todo "https://kovan.infura.io/v3/e3eef0e2435349bf9164e6f465bd7cf9"
+    "https://kovan.infura.io/v3/e3eef0e2435349bf9164e6f465bd7cf9"
 
 
 ganacheProviderUrl : String
@@ -26,14 +26,14 @@ ganacheProviderUrl =
 
 enteringTokenCurrencyLabel : String
 enteringTokenCurrencyLabel =
-    Debug.todo "e.g. DAI"
+    "<LIQ>"
 
 
 enteringTokenAddress : TestMode -> Address
 enteringTokenAddress testMode =
     case testMode of
         None ->
-            Debug.todo ""
+            Eth.Utils.unsafeToAddress "0x5277a42ef95ECa7637fFa9E69B65A12A089FE12b"
 
         TestKovan ->
             Debug.todo ""
@@ -47,7 +47,7 @@ enteringTokenAddress testMode =
 
 exitingTokenCurrencyLabel : String
 exitingTokenCurrencyLabel =
-    Debug.todo "e.g. FRY"
+    "FRY"
 
 
 exitingTokenAddress : TestMode -> Address
@@ -70,7 +70,7 @@ bucketSaleAddress : TestMode -> Address
 bucketSaleAddress testMode =
     case testMode of
         None ->
-            Debug.todo ""
+            Eth.Utils.unsafeToAddress "0x254c2378511a694403c7A8589Ec9D8f0E11D49A7"
 
         TestKovan ->
             Debug.todo ""
@@ -86,13 +86,13 @@ bucketSaleScriptsAddress : TestMode -> Address
 bucketSaleScriptsAddress testMode =
     case testMode of
         None ->
-            Debug.todo "" <| Eth.Utils.unsafeToAddress "0xf0B2B0A7bcd35cc119E12Cf4F04B2739Ac400bef"
+            Eth.Utils.unsafeToAddress "0xf0B2B0A7bcd35cc119E12Cf4F04B2739Ac400bef"
 
         TestKovan ->
             Debug.todo ""
 
         TestMainnet ->
-            Debug.todo "" <| Eth.Utils.unsafeToAddress "0xf0B2B0A7bcd35cc119E12Cf4F04B2739Ac400bef"
+            Eth.Utils.unsafeToAddress "0xf0B2B0A7bcd35cc119E12Cf4F04B2739Ac400bef"
 
         TestGanache ->
             Debug.todo ""
@@ -105,17 +105,17 @@ gasstationApiEndpoint =
 
 bucketSaleBucketInterval : TestMode -> Time.Posix
 bucketSaleBucketInterval testMode =
-    Time.millisToPosix <| 1000 * 60 * 60 * Debug.todo ""
+    Time.millisToPosix <| 1000 * 60 * 60 * 42
 
 
 bucketSaleTokensPerBucket : TestMode -> TokenValue
 bucketSaleTokensPerBucket testMode =
-    TokenValue.fromIntTokenValue (Debug.todo "")
+    TokenValue.fromIntTokenValue 225000
 
 
 bucketSaleNumBuckets : Int
 bucketSaleNumBuckets =
-    Debug.todo ""
+    4
 
 
 feedbackEndpointUrl : String

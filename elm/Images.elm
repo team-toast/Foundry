@@ -32,7 +32,10 @@ image =
 
 enteringTokenSymbol : Image
 enteringTokenSymbol =
-    Debug.todo ""
+    JustImage
+        { src = "img/liq-symbol.svg"
+        , description = "balancer liquidity token"
+        }
 
 
 daiSymbol : Image
