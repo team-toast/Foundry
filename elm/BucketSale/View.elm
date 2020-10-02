@@ -55,14 +55,8 @@ root model dProfile =
                 <|
                     Element.text "Loading..."
 
-            Just (Err errStr) ->
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size 30
-                    , Element.Font.color EH.white
-                    ]
-                <|
-                    Element.text errStr
+            Just (Err error) ->
+                viewBucketSaleError error
 
             Just (Ok bucketSale) ->
                 Element.row
@@ -131,6 +125,17 @@ root model dProfile =
         ]
     , []
     )
+
+
+viewBucketSaleError : BucketSaleError -> Element Msg
+viewBucketSaleError error =
+    Element.el
+        [ Element.centerX
+        , Element.Font.size 30
+        , Element.Font.color EH.white
+        ]
+    <|
+        Element.text "uh oh! D:"
 
 
 commonPaneAttributes : List (Attribute Msg)
@@ -1574,27 +1579,24 @@ viewModals model =
 
 viewYoutubeLinksBlock : Element Msg
 viewYoutubeLinksBlock =
-    Debug.todo ""
-
-
-
--- Element.column
---     (commonPaneAttributes
---         ++ [ Element.padding 20
---            , Element.alignTop
---            , Element.width Element.fill
---            , Element.paddingXY 32 25
---            ]
---     )
---     [ blockTitleText "Not sure where to start?"
---     , viewYoutubeLinksColumn
---         [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf" )
---         , ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
---         , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=gkt-Wv104RU" )
---         , ( "Video 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
---         , ( "Video 4:", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
---         ]
---     ]
+    Element.column
+        (commonPaneAttributes
+            ++ [ Element.padding 20
+               , Element.alignTop
+               , Element.width Element.fill
+               , Element.paddingXY 32 25
+               ]
+        )
+        [ blockTitleText "Not sure where to start?"
+        , blockTitleText "NEED MORE VID LINKS!"
+        , viewYoutubeLinksColumn
+            [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf" )
+            , ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
+            -- , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=gkt-Wv104RU" )
+            -- , ( "Video 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
+            , ( "Video 4:", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
+            ]
+        ]
 
 
 viewYoutubeLinksColumn : List ( String, String, String ) -> Element Msg

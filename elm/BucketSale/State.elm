@@ -8,7 +8,7 @@ import CmdUp exposing (CmdUp)
 import CommonTypes exposing (..)
 import Config exposing (forbiddenJurisdictionCodes)
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers
-import Contracts.Wrappers
+import Contracts.Wrappers as TokenWrappers
 import Dict exposing (Dict)
 import Element exposing (Element)
 import Element.Font
@@ -174,6 +174,23 @@ update msg prevModel =
                 )
                 ChainCmd.none
                 []
+
+        FetchUserEnteringTokenBalance ->
+            let
+                fetchCmd =
+                    Wallet.userInfo prevModel.wallet
+                        |> Maybe.map .address
+                        |> Maybe.map (fetchUserEnteringTokenBalanceCmd prevModel.testMode)
+                        |> Maybe.withDefault Cmd.none
+            in
+            UpdateResult
+                prevModel
+                fetchCmd
+                ChainCmd.none
+                []
+
+        UserEnteringtokenBalanceFetched address fetchResult ->
+            Debug.todo ""
 
         UpdateNow newNow ->
             let
@@ -473,17 +490,18 @@ update msg prevModel =
         SaleStartTimestampFetched fetchResult ->
             case fetchResult of
                 Ok startTimestampBigInt ->
+                    let
+                        startTimestamp =
+                            TimeHelpers.secondsBigIntToPosixWithWarning startTimestampBigInt
+                    in
                     if BigInt.compare startTimestampBigInt (BigInt.fromInt 0) == EQ then
                         justModelUpdate
                             { prevModel
-                                | bucketSale = Just <| Err "The sale has not been initialized yet."
+                                | bucketSale = Just <| Err <| SaleNotDeployed -- A zero value indicates a dud deploy or not deployed
                             }
 
                     else
                         let
-                            startTimestamp =
-                                TimeHelpers.secondsBigIntToPosixWithWarning startTimestampBigInt
-
                             ( newMaybeResultBucketSale, cmd ) =
                                 case prevModel.bucketSale of
                                     Nothing ->
@@ -500,8 +518,8 @@ update msg prevModel =
                                                     prevModel.testMode
                                                 )
 
-                                            Err errStr ->
-                                                ( Just <| Err errStr
+                                            Err err ->
+                                                ( Just <| Err err
                                                 , Cmd.none
                                                 )
 
@@ -1324,11 +1342,10 @@ toggleAssentForPoint ( pageNum, pointNum ) prevTosModel =
     }
 
 
-initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result String BucketSale
+initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result BucketSaleError BucketSale
 initBucketSale testMode saleStartTime now =
     if TimeHelpers.compare saleStartTime now == GT then
-        Err <|
-            "You're a little to early! The sale will start at noon UTC, June 19th."
+        Err <| SaleNotStarted <| saleStartTime
 
     else
         Ok <|
@@ -1349,6 +1366,14 @@ initBucketSale testMode saleStartTime now =
                                 Nothing
                         )
                 )
+
+
+fetchUserEnteringTokenBalanceCmd : TestMode -> Address -> Cmd Msg
+fetchUserEnteringTokenBalanceCmd testMode address =
+    TokenWrappers.getBalanceCmd
+        testMode
+        address
+        (UserEnteringtokenBalanceFetched address)
 
 
 fetchBucketDataCmd : Int -> Maybe UserInfo -> TestMode -> Cmd Msg
@@ -1552,13 +1577,24 @@ locationInfoDecoder =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ Time.every 15000 <| always Refresh
-        , Time.every 500 UpdateNow
-        , Time.every (1000 * 60 * 10) <| always FetchFastGasPrice
-        , locationCheckResult
-            (Json.Decode.decodeValue locationCheckDecoder >> LocationCheckResult)
-        ]
+    case model.bucketSale of
+        Just (Ok bucketSale) ->
+            Sub.batch
+                [ Time.every 15000 <| always Refresh
+                , Time.every 500 UpdateNow
+                , Time.every (1000 * 60 * 10) <| always FetchFastGasPrice
+                , locationCheckResult
+                    (Json.Decode.decodeValue locationCheckDecoder >> LocationCheckResult)
+                ]
+
+        Just (Err (SaleNotStarted _)) ->
+            Sub.batch
+                [ Time.every 500 UpdateNow
+                , Time.every 5000 (always FetchUserEnteringTokenBalance)
+                ]
+
+        _ ->
+            Sub.none
 
 
 port beginLocationCheck : () -> Cmd msg

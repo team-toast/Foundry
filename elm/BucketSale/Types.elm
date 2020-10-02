@@ -31,7 +31,7 @@ type alias Model =
     , timezone : Maybe Time.Zone
     , fastGasPrice : Maybe BigInt
     , saleStartTime : Maybe Time.Posix
-    , bucketSale : Maybe (Result String BucketSale)
+    , bucketSale : Maybe (Result BucketSaleError BucketSale)
     , totalTokensExited : Maybe TokenValue
     , bucketView : BucketView
     , jurisdictionCheckStatus : JurisdictionCheckStatus
@@ -45,11 +45,70 @@ type alias Model =
     }
 
 
+type Msg
+    = NoOp
+    | CmdUp (CmdUp Msg)
+    | TimezoneGot Time.Zone
+    | Refresh
+    | UpdateNow Time.Posix
+    | FetchFastGasPrice
+    | FetchedFastGasPrice (Result Http.Error BigInt)
+    | FetchUserEnteringTokenBalance
+    | UserEnteringtokenBalanceFetched Address (Result Http.Error TokenValue)
+    | TosPreviousPageClicked
+    | TosNextPageClicked
+    | TosCheckboxClicked ( Int, Int )
+    | AddFryToMetaMaskClicked
+    | VerifyJurisdictionClicked
+    | FeedbackButtonClicked
+    | FeedbackEmailChanged String
+    | FeedbackDescriptionChanged String
+    | FeedbackSubmitClicked
+    | FeedbackHttpResponse (Result Http.Error String)
+    | FeedbackBackClicked
+    | FeedbackSendMoreClicked
+    | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
+    | SaleStartTimestampFetched (Result Http.Error BigInt)
+    | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
+    | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
+    | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
+    | TotalTokensExitedFetched (Result Http.Error TokenValue)
+    | FocusToBucket Int
+    | EnterInputChanged String
+    | ReferralIndicatorClicked
+    | CloseReferralModal
+    | GenerateReferralClicked Address
+    | EnableTokenButtonClicked
+    | ClaimClicked UserInfo ExitInfo
+    | CancelClicked
+    | EnterButtonClicked EnterInfo
+    | ConfirmClicked EnterInfo
+    | TxSigned Int ActionData (Result String TxHash)
+    | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
+
+
 type alias ExtraUserInfo =
     { ethBalance : TokenValue
     , enteringTokenBalance : TokenValue
     , exitingTokenBalance : TokenValue
     , enteringTokenAllowance : TokenValue
+    }
+
+
+type alias UpdateResult =
+    { model : Model
+    , cmd : Cmd Msg
+    , chainCmd : ChainCmd Msg
+    , cmdUps : List (CmdUp Msg)
+    }
+
+
+justModelUpdate : Model -> UpdateResult
+justModelUpdate model =
+    { model = model
+    , cmd = Cmd.none
+    , chainCmd = ChainCmd.none
+    , cmdUps = []
     }
 
 
@@ -85,63 +144,6 @@ isAllPointsChecked agreeToTosModel =
 type alias TosCheckbox =
     { textEls : List (Element Msg)
     , maybeCheckedString : Maybe ( String, Bool )
-    }
-
-
-type Msg
-    = NoOp
-    | CmdUp (CmdUp Msg)
-    | TimezoneGot Time.Zone
-    | Refresh
-    | UpdateNow Time.Posix
-    | FetchFastGasPrice
-    | FetchedFastGasPrice (Result Http.Error BigInt)
-    | TosPreviousPageClicked
-    | TosNextPageClicked
-    | TosCheckboxClicked ( Int, Int )
-    | AddFryToMetaMaskClicked
-    | VerifyJurisdictionClicked
-    | FeedbackButtonClicked
-    | FeedbackEmailChanged String
-    | FeedbackDescriptionChanged String
-    | FeedbackSubmitClicked
-    | FeedbackHttpResponse (Result Http.Error String)
-    | FeedbackBackClicked
-    | FeedbackSendMoreClicked
-    | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
-    | SaleStartTimestampFetched (Result Http.Error BigInt)
-    | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
-    | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
-    | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
-    | TotalTokensExitedFetched (Result Http.Error TokenValue)
-    | FocusToBucket Int
-    | EnterInputChanged String
-    | ReferralIndicatorClicked
-    | CloseReferralModal
-    | GenerateReferralClicked Address
-    | EnableTokenButtonClicked
-    | ClaimClicked UserInfo ExitInfo
-    | CancelClicked
-    | EnterButtonClicked EnterInfo
-    | ConfirmClicked EnterInfo
-    | TxSigned Int ActionData (Result String TxHash)
-    | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
-
-
-type alias UpdateResult =
-    { model : Model
-    , cmd : Cmd Msg
-    , chainCmd : ChainCmd Msg
-    , cmdUps : List (CmdUp Msg)
-    }
-
-
-justModelUpdate : Model -> UpdateResult
-justModelUpdate model =
-    { model = model
-    , cmd = Cmd.none
-    , chainCmd = ChainCmd.none
-    , cmdUps = []
     }
 
 
@@ -199,6 +201,10 @@ type alias BucketSale =
     { startTime : Time.Posix
     , buckets : List BucketData
     }
+
+type BucketSaleError
+    = SaleNotDeployed
+    | SaleNotStarted Time.Posix
 
 
 type FetchedBucketInfo
