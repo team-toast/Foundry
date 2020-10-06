@@ -86,7 +86,7 @@ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
 embeddedYoutubeEl : Element Msg
 embeddedYoutubeEl =
     Element.el
-        [ Element.centerX]
+        [ Element.centerX ]
     <|
         Element.html
             (Embed.Youtube.fromString "APW_yTX6Pao"
@@ -141,14 +141,8 @@ countdownTimerEl now saleStartTime =
         , Element.spacing 10
         ]
         [ countdownCell hri.days "DAYS"
-
-        -- , countdownColon
         , countdownCell hri.hours "HOURS"
-
-        -- , countdownColon
         , countdownCell hri.min "MIN"
-
-        -- , countdownColon
         , countdownCell hri.sec "SEC"
         ]
 
@@ -158,9 +152,6 @@ countdownCell num label =
     Element.column
         [ Element.spacing 5
         , Element.width <| Element.px 70
-
-        -- , Element.Border.width 1
-        -- , Element.Border.color <| Element.rgba 1 1 1 0.1
         , Element.Background.color <| Element.rgb255 20 53 138
         , Element.padding 5
         , Element.Border.rounded 5
@@ -187,16 +178,6 @@ countdownCell num label =
           <|
             Element.text label
         ]
-
-
-countdownColon : Element Msg
-countdownColon =
-    Element.el
-        [ Element.Font.size 50
-        , Element.alignTop
-        ]
-    <|
-        Element.text ":"
 
 
 countdownString : Time.Posix -> String
