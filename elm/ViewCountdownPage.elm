@@ -73,10 +73,10 @@ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
               , link "this video" "https://www.youtube.com/watch?v=nR5Hv_-F49s&feature=youtu.be"
               , Element.text ". If you only have ETH, "
               , link "this video" "https://www.youtube.com/watch?v=APW_yTX6Pao&feature=youtu.be"
-              , Element.text " demonstrates an alternate method, but this incurs an extra 10% fee. "
+              , Element.text " demonstrates an alternate method, but this incurs an extra 10% fee."
               ]
+              , [ Element.text "Return to this page to verify you have the right liquidity tokens."]
             ]
-        
         ]
 
 
@@ -100,6 +100,7 @@ paragraphs lists =
         [ Element.spacing 15
         , Element.width Element.fill
         , Element.Font.center
+        , Element.paddingXY 40 0
         ]
         (List.map
             (Element.paragraph
@@ -112,14 +113,68 @@ paragraphs lists =
 
 countdownTimerEl : Time.Posix -> Time.Posix -> Element Msg
 countdownTimerEl now saleStartTime =
+    let
+        hri =
+            TimeHelpers.toHumanReadableInterval
+                (TimeHelpers.sub saleStartTime now)
+    in
+    Element.row
+        [ Element.centerX
+        , Element.spacing 10
+        ]
+        [ countdownCell hri.days "DAYS"
+        -- , countdownColon
+        , countdownCell hri.hours "HOURS"
+        -- , countdownColon
+        , countdownCell hri.min "MIN"
+        -- , countdownColon
+        , countdownCell hri.sec "SEC"
+        ]
+
+
+countdownCell : Int -> String -> Element Msg
+countdownCell num label =
+    Element.column
+        [ Element.spacing 5
+        , Element.width <| Element.px 70
+        -- , Element.Border.width 1
+        -- , Element.Border.color <| Element.rgba 1 1 1 0.1
+        , Element.Background.color <| Element.rgb255 20 53 138
+        , Element.padding 5
+        , Element.Border.rounded 5
+        , Element.Font.color EH.white
+        , Element.Border.shadow
+            {offset = (-3, 3)
+            ,size = 2
+            ,blur = 5
+            ,color = Element.rgba 0 0 0 0.3
+            }
+        ]
+        [ Element.el
+            [ Element.Font.size 50
+            , Element.centerX
+            ]
+          <|
+            Element.text <|
+                String.fromInt num
+        , Element.el
+            [ Element.Font.size 16
+            , Element.centerX
+            , Element.Font.bold
+            ]
+          <|
+            Element.text label
+        ]
+
+
+countdownColon : Element Msg
+countdownColon =
     Element.el
-        [ Element.Font.size 30
-        , Element.centerX
+        [ Element.Font.size 50
+        , Element.alignTop
         ]
     <|
-        Element.text <|
-            countdownString <|
-                TimeHelpers.sub saleStartTime now
+        Element.text ":"
 
 
 countdownString : Time.Posix -> String
@@ -151,7 +206,7 @@ tokenOutputEl maybeUserAddress maybeBalance =
         , Element.Background.color <| Element.rgba 1 1 1 0.14
         , Element.Border.width 1
         , Element.Border.color <| Element.rgba 0 0 0 0.1
-        , Element.Border.innerGlow 
+        , Element.Border.innerGlow
             (Element.rgba 0 0 0 0.1)
             3
         ]
