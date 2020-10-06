@@ -24,24 +24,90 @@ view now saleStartTime maybeUserAddress maybeUserBalance =
         [ Element.paddingXY 0 50
         , Element.width Element.fill
         , Element.spacing 40
-        , Element.Font.color EH.white
         ]
-        [ Element.el
-            [ Element.Font.size 60
+        [ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance
+        ]
+
+
+viewMainBlock : Time.Posix -> Time.Posix -> Maybe Address -> Maybe TokenValue -> Element Msg
+viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
+    Element.column
+        [ Element.centerX
+        , Element.spacing 60
+        , Element.Background.color <| Element.rgb 0.8 0.8 1
+        , Element.Border.rounded 10
+        , Element.paddingXY 20 40
+        , Element.width (Element.shrink |> Element.maximum 1200)
+        , Element.Border.glow
+            (Element.rgba 1 1 1 0.3)
+            5
+        ]
+        [ Element.column
+            [ Element.spacing 25
             , Element.centerX
             ]
-          <|
-            Element.text "Permafrost Sale"
-        , Element.column
-            [ Element.Font.size 40
-            , Element.centerX
-            , Element.spacing 15
-            ]
-            [ Element.el [ Element.centerX ] <| Element.text "starting in"
+            [ Element.el [ Element.Font.size 50 ] <| Element.text "The Permafrost Sale begins in"
             , countdownTimerEl now saleStartTime
             ]
-        , textBlurbEl maybeUserAddress maybeUserBalance
+        , tokenOutputEl maybeUserAddress maybeUserBalance
+        , paragraphs <|
+            [ [ Element.text "This sale will accept "
+              , emphasizedText "ETH/FRY Balancer Liquidity Tokens"
+              , Element.text " in exchange for freshly minted "
+              , link "FRY" "https://foundrydao.com/"
+              , Element.text ", using the same sale mechanism as with the "
+              , link "still-running original FRY sale" "https://sale.foundrydao.com/"
+              , Element.text ". See the videos at that link for more information on how this \"bucket sale\" works. The only difference with this permafrost version is that it will accept deposits of "
+              , emphasizedText "ETH/FRY liqudity"
+              , Element.text " rather than DAI."
+              ]
+            , [ Element.text "This liquidity will then be "
+              , emphasizedText "permanently locked"
+              , Element.text ", resulting in \"unrugpullable\" liquidity. This is achieved by the permafrost sale simply burning the liquidity tokens it receives, and can be verified in lines 819 and 1038 of the "
+              , link "verified permafrost deployer code" "https://etherscan.io/address/0x254c2378511a694403c7A8589Ec9D8f0E11D49A7#code"
+              , Element.text "."
+              ]
+            , [ Element.text "In the meantime, you can get your liquidity tokens ready. If you're familiar with balancer, get liquidity tokens from "
+              , link "this specific balancer pool" "https://pools.balancer.exchange/#/pool/0x5277a42ef95eca7637ffa9e69b65a12a089fe12b/"
+              , Element.text ". For a bit more guidance, if you have both ETH and FRY, see "
+              , link "this video" "https://www.youtube.com/watch?v=nR5Hv_-F49s&feature=youtu.be"
+              , Element.text ". If you only have ETH, "
+              , link "this video" "https://www.youtube.com/watch?v=APW_yTX6Pao&feature=youtu.be"
+              , Element.text " demonstrates an alternate method, but this incurs an extra 10% fee. "
+              ]
+            ]
+        
         ]
+
+
+link : String -> String -> Element Msg
+link label url =
+    Element.newTabLink
+        [ Element.Font.color EH.blue ]
+        { url = url
+        , label = Element.text label
+        }
+
+
+emphasizedText : String -> Element Msg
+emphasizedText =
+    Element.el [ Element.Font.bold ] << Element.text
+
+
+paragraphs : List (List (Element Msg)) -> Element Msg
+paragraphs lists =
+    Element.column
+        [ Element.spacing 15
+        , Element.width Element.fill
+        , Element.Font.center
+        ]
+        (List.map
+            (Element.paragraph
+                [ Element.Font.size 24
+                ]
+            )
+            lists
+        )
 
 
 countdownTimerEl : Time.Posix -> Time.Posix -> Element Msg
@@ -75,87 +141,55 @@ countdownString timeLeft =
         String.fromInt hri.sec ++ "s"
 
 
-textBlurbEl : Maybe Address -> Maybe TokenValue -> Element Msg
-textBlurbEl maybeUserAddress maybeUserBalance =
+tokenOutputEl : Maybe Address -> Maybe TokenValue -> Element Msg
+tokenOutputEl maybeUserAddress maybeBalance =
     Element.column
-        [ Element.Background.color <| Element.rgb 0.8 0.8 1
-        , Element.Border.rounded 10
-        , Element.padding 20
-        , Element.width (Element.shrink |> Element.maximum 1200)
-        , Element.centerX
-        , Element.spacing 30
-        , Element.Border.glow
-            (Element.rgba 1 1 1 0.3)
-            5
-        , Element.Font.color <| EH.black
-        , Element.Font.center
+        [ Element.centerX
+        , Element.spacing 10
+        , Element.padding 10
+        , Element.Border.rounded 5
+        , Element.Background.color <| Element.rgba 1 1 1 0.14
+        , Element.Border.width 1
+        , Element.Border.color <| Element.rgba 0 0 0 0.1
+        , Element.Border.innerGlow 
+            (Element.rgba 0 0 0 0.1)
+            3
         ]
-        (List.map
-            (Element.paragraph
-                [ Element.Font.size 30
-                ]
-            )
-            [ [ Element.text "The permafrost sale will accept liquidity tokens for freshly minted FRY." ]
-            , [ Element.text "This liquidity will then be "
-              , Element.el [ Element.Font.bold ] <| Element.text "permanently locked"
-              , Element.text ", resulting in \"unrugpullable\" liquidity."
-              ]
-            , [ Element.text "While you're waiting for this to start, you can get your liquidity tokens at "
-              , Element.newTabLink
-                [Element.Font.color EH.blue]
-                { url = "https://pools.balancer.exchange/#/pool/0x5277a42ef95eca7637ffa9e69b65a12a089fe12b/"
-                , label = Element.text "this balancer pool"
-                }
-                , Element.text ". "
-              , case maybeUserAddress of
-                    Just userAddress ->
-                        Element.text <|
-                            "Here's how much of these liquidity tokens your wallet ("
-                                ++ Eth.Utils.addressToChecksumString userAddress
-                                ++ ") shows:"
-
+    <|
+        case maybeUserAddress of
+            Just userAddress ->
+                [ case maybeBalance of
                     Nothing ->
-                        Element.text "Connect your wallet to verify you have the right liquidity tokens."
-              ]
-            ]
-            ++ [ tokenOutputEl (maybeUserAddress == Nothing) maybeUserBalance ]
-        )
+                        Element.el [ Element.centerX ] <|
+                            Element.text "Loading balance..."
 
+                    Just balance ->
+                        Element.row
+                            [ Element.spacing 5
+                            , Element.centerX
+                            , Element.Font.size 50
+                            ]
+                            [ Element.text <|
+                                TokenValue.toConciseString balance
+                            , Images.enteringTokenSymbol
+                                |> Images.toElement
+                                    [ Element.height <| Element.px 50 ]
+                            ]
+                , Element.el [ Element.Font.size 16 ] <|
+                    Element.text <|
+                        "Your balance of the accepted ETHFRY Liquidity Tokens"
+                ]
 
-tokenOutputEl : Bool -> Maybe TokenValue -> Element Msg
-tokenOutputEl showConnectButton maybeBalance =
-    if showConnectButton then
-        connectToWeb3Button
-
-    else
-        Element.column
-            [ Element.spacing 10
-            , Element.centerX
-            ]
-            [ case maybeBalance of
-                Nothing ->
-                    Element.el [ Element.centerX ] <|
-                        Element.text "Loading balance..."
-
-                Just balance ->
-                    Element.row
-                        [ Element.spacing 5
-                        , Element.centerX
-                        , Element.Font.size 50
-                        ]
-                        [ Element.text <|
-                            TokenValue.toConciseString balance
-                        , Images.enteringTokenSymbol
-                            |> Images.toElement
-                                [ Element.height <| Element.px 50 ]
-                        ]
-            ]
+            Nothing ->
+                [ Element.text "Connect your wallet to verify you have the right liquidity tokens."
+                , connectToWeb3Button
+                ]
 
 
 connectToWeb3Button : Element Msg
 connectToWeb3Button =
     Element.el
-        [ Element.width Element.fill
+        [ Element.centerX
         , Element.padding 17
         , Element.Border.rounded 4
         , Element.Font.size 20
