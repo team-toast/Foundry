@@ -4,7 +4,7 @@ import BigInt exposing (BigInt)
 import Browser
 import Browser.Events
 import Browser.Navigation
-import BucketSale.State
+import BucketSale.State as BucketSale
 import BucketSale.Types as BucketSale
 import ChainCmd exposing (ChainCmd)
 import CmdDown exposing (CmdDown)
@@ -260,7 +260,7 @@ update msg prevModel =
                                             Ok sale ->
                                                 let
                                                     ( bucketSaleModel, submodelCmd ) =
-                                                        BucketSale.State.init
+                                                        BucketSale.init
                                                             sale
                                                             prevModel.maybeReferrer
                                                             prevModel.testMode
@@ -346,8 +346,42 @@ update msg prevModel =
         --                         )
         --                     ]
         --             )
-        UpdateNow newTime ->
-            ( { prevModel | now = newTime }, Cmd.none )
+        UpdateNow newNow ->
+            let
+                modelWithUpdatedNow =
+                    { prevModel | now = newNow }
+            in
+            case prevModel.submodel of
+                LoadingSaleModel loadingSaleModel ->
+                    case loadingSaleModel.loadingState of
+                        Error (SaleNotStarted startTime) ->
+                            case initBucketSale prevModel.testMode startTime newNow of
+                                Ok bucketSale ->
+                                    let
+                                        ( bucketSaleModel, bucketSaleCmd ) =
+                                            BucketSale.init
+                                                bucketSale
+                                                prevModel.maybeReferrer
+                                                prevModel.testMode
+                                                prevModel.wallet
+                                                newNow
+                                    in
+                                    ( { modelWithUpdatedNow
+                                        | submodel = BucketSaleModel bucketSaleModel
+                                      }
+                                    , Cmd.map BucketSaleMsg bucketSaleCmd
+                                    )
+
+                                Err _ ->
+                                    ( modelWithUpdatedNow
+                                    , Cmd.none
+                                    )
+
+                        _ ->
+                            ( modelWithUpdatedNow, Cmd.none )
+
+                _ ->
+                    ( modelWithUpdatedNow, Cmd.none )
 
         ConnectToWeb3 ->
             case prevModel.wallet of
@@ -421,7 +455,7 @@ update msg prevModel =
                 BucketSaleModel bucketSaleModel ->
                     let
                         updateResult =
-                            BucketSale.State.update bucketSaleMsg bucketSaleModel
+                            BucketSale.update bucketSaleMsg bucketSaleModel
 
                         ( newTxSentry, chainCmd, userNotices ) =
                             ChainCmd.execute prevModel.txSentry (ChainCmd.map BucketSaleMsg updateResult.chainCmd)
@@ -646,7 +680,7 @@ runCmdDown cmdDown prevModel =
         BucketSaleModel bucketSaleModel ->
             let
                 updateResult =
-                    bucketSaleModel |> BucketSale.State.runCmdDown cmdDown
+                    bucketSaleModel |> BucketSale.runCmdDown cmdDown
 
                 ( newTxSentry, chainCmd, userNotices ) =
                     ChainCmd.execute prevModel.txSentry (ChainCmd.map BucketSaleMsg updateResult.chainCmd)
@@ -717,7 +751,7 @@ submodelSubscriptions model =
                     Sub.none
 
         BucketSaleModel bucketSaleModel ->
-            Sub.map BucketSaleMsg <| BucketSale.State.subscriptions bucketSaleModel
+            Sub.map BucketSaleMsg <| BucketSale.subscriptions bucketSaleModel
 
 
 port walletSentryPort : (Json.Decode.Value -> msg) -> Sub msg
