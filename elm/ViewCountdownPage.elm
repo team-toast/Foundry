@@ -7,6 +7,8 @@ import Element.Background
 import Element.Border
 import Element.Events
 import Element.Font
+import Embed.Youtube
+import Embed.Youtube.Attributes
 import Eth.Types exposing (Address)
 import Eth.Utils
 import Helpers.Element as EH
@@ -49,6 +51,7 @@ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
             [ Element.el [ Element.Font.size 50 ] <| Element.text "The Permafrost Sale begins in"
             , countdownTimerEl now saleStartTime
             ]
+        , embeddedYoutubeEl
         , tokenOutputEl maybeUserAddress maybeUserBalance
         , paragraphs <|
             [ [ Element.text "This sale will accept "
@@ -75,9 +78,24 @@ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
               , link "this video" "https://www.youtube.com/watch?v=APW_yTX6Pao&feature=youtu.be"
               , Element.text " demonstrates an alternate method, but this incurs an extra 10% fee."
               ]
-              , [ Element.text "Return to this page to verify you have the right liquidity tokens."]
+            , [ Element.text "Return to this page to verify you have the right liquidity tokens." ]
             ]
         ]
+
+
+embeddedYoutubeEl : Element Msg
+embeddedYoutubeEl =
+    Element.el
+        [ Element.centerX]
+    <|
+        Element.html
+            (Embed.Youtube.fromString "APW_yTX6Pao"
+                |> Embed.Youtube.attributes
+                    [ Embed.Youtube.Attributes.width 1024
+                    , Embed.Youtube.Attributes.height 580
+                    ]
+                |> Embed.Youtube.toHtml
+            )
 
 
 link : String -> String -> Element Msg
@@ -123,10 +141,13 @@ countdownTimerEl now saleStartTime =
         , Element.spacing 10
         ]
         [ countdownCell hri.days "DAYS"
+
         -- , countdownColon
         , countdownCell hri.hours "HOURS"
+
         -- , countdownColon
         , countdownCell hri.min "MIN"
+
         -- , countdownColon
         , countdownCell hri.sec "SEC"
         ]
@@ -137,6 +158,7 @@ countdownCell num label =
     Element.column
         [ Element.spacing 5
         , Element.width <| Element.px 70
+
         -- , Element.Border.width 1
         -- , Element.Border.color <| Element.rgba 1 1 1 0.1
         , Element.Background.color <| Element.rgb255 20 53 138
@@ -144,10 +166,10 @@ countdownCell num label =
         , Element.Border.rounded 5
         , Element.Font.color EH.white
         , Element.Border.shadow
-            {offset = (-3, 3)
-            ,size = 2
-            ,blur = 5
-            ,color = Element.rgba 0 0 0 0.3
+            { offset = ( -3, 3 )
+            , size = 2
+            , blur = 5
+            , color = Element.rgba 0 0 0 0.3
             }
         ]
         [ Element.el

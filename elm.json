@@ -29,7 +29,8 @@
             "pablohirafuji/elm-markdown": "2.0.5",
             "rtfeldman/elm-css": "16.1.0",
             "rtfeldman/elm-validate": "4.0.1",
-            "timjs/elm-collage": "2.0.2"
+            "timjs/elm-collage": "2.0.2",
+            "tricycle/elm-embed-youtube": "1.1.2"
         },
         "indirect": {
             "Chadtech/elm-bool-extra": "2.4.0",
