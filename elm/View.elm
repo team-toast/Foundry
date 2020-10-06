@@ -20,7 +20,7 @@ import Wallet
 
 root : Model -> Browser.Document Msg
 root model =
-    { title = "Foundry Sale"
+    { title = "Foundry Permafrost - Locked Liquidity Experiment"
     , body =
         [ let
             ( pageEl, modalEls ) =
