@@ -24,8 +24,13 @@ ganacheProviderUrl =
     "http://localhost:8545"
 
 
-daiContractAddress : TestMode -> Address
-daiContractAddress testMode =
+enteringTokenCurrencyLabel : String
+enteringTokenCurrencyLabel =
+    Debug.todo ""
+
+
+enteringTokenAddress : TestMode -> Address
+enteringTokenAddress testMode =
     case testMode of
         None ->
             Debug.todo ""
@@ -39,9 +44,13 @@ daiContractAddress testMode =
         TestGanache ->
             Debug.todo ""
 
+exitingTokenCurrencyLabel : String
+exitingTokenCurrencyLabel =
+    "FRY"
 
-fryAddress : TestMode -> Address
-fryAddress testMode =
+
+exitingTokenAddress : TestMode -> Address
+exitingTokenAddress testMode =
     case testMode of
         None ->
             Debug.todo ""
@@ -111,6 +120,7 @@ bucketSaleNumBuckets =
 feedbackEndpointUrl : String
 feedbackEndpointUrl =
     "https://personal-rxyx.outsystemscloud.com/SaleFeedbackUI/rest/General/SubmitFeedback"
+
 
 ipCountryCodeEndpointUrl : String
 ipCountryCodeEndpointUrl =

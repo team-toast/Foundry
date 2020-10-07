@@ -8,7 +8,7 @@ import UserNotice as UN exposing (UserNotice)
 
 type CmdUp msg
     = Web3Connect
-    | GotoRoute Routing.PageRoute
+    -- | GotoRoute Routing.PageRoute
     | GTag GTagData
     | NonRepeatingGTag GTagData
     | UserNotice (UserNotice msg)
@@ -39,8 +39,8 @@ map f cmdUp =
         Web3Connect ->
             Web3Connect
 
-        GotoRoute route ->
-            GotoRoute route
+        -- GotoRoute route ->
+        --     GotoRoute route
 
         GTag data ->
             GTag data

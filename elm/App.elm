@@ -4,6 +4,7 @@ import Browser.Hash as Hash
 import State
 import Types exposing (..)
 import View
+import Browser
 
 
 main : Program Flags Model Msg
@@ -14,5 +15,5 @@ main =
         , update = State.update
         , subscriptions = State.subscriptions
         , onUrlRequest = LinkClicked
-        , onUrlChange = UrlChanged
+        , onUrlChange = always NoOp
         }
