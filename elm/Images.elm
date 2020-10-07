@@ -1,5 +1,6 @@
 module Images exposing (..)
 
+import Config
 import Element exposing (Attribute, Element)
 import Time
 
@@ -32,7 +33,8 @@ image =
 
 enteringTokenSymbol : Image
 enteringTokenSymbol =
-    daiSymbol
+    JustImage
+        Config.enteringTokenImageInfo
 
 
 daiSymbol : Image

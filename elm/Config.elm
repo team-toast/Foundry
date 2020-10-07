@@ -29,6 +29,13 @@ enteringTokenCurrencyLabel =
     "DAI"
 
 
+enteringTokenImageInfo : { src : String, description : String }
+enteringTokenImageInfo =
+    { src = "img/dai-symbol.png"
+    , description = "DAI"
+    }
+
+
 enteringTokenAddress : TestMode -> Address
 enteringTokenAddress testMode =
     case testMode of
@@ -43,6 +50,7 @@ enteringTokenAddress testMode =
 
         TestGanache ->
             Eth.Utils.unsafeToAddress "0x2612Af3A521c2df9EAF28422Ca335b04AdF3ac66"
+
 
 exitingTokenCurrencyLabel : String
 exitingTokenCurrencyLabel =
@@ -115,7 +123,7 @@ bucketSaleTokensPerBucket testMode =
 bucketSaleNumBuckets : Int
 bucketSaleNumBuckets =
     2000
- 
+
 
 feedbackEndpointUrl : String
 feedbackEndpointUrl =
