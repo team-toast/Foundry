@@ -26,7 +26,7 @@ ganacheProviderUrl =
 
 enteringTokenCurrencyLabel : String
 enteringTokenCurrencyLabel =
-    "FRY"
+    "DAI"
 
 
 enteringTokenAddress : TestMode -> Address
