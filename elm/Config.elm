@@ -26,7 +26,7 @@ ganacheProviderUrl =
 
 appTitle : String
 appTitle =
-    Debug.todo ""
+    "FRY Sale - Join Foundry and become a FRY holder!"
 
 
 enteringTokenCurrencyLabel : String
