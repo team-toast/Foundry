@@ -14,7 +14,6 @@ import Routing
 import Time
 import Types exposing (..)
 import UserNotice as UN exposing (UserNotice)
-import ViewCountdownPage
 import Wallet
 
 

@@ -46,69 +46,69 @@ root model maybeReferrer dProfile =
                )
         )
         [ Element.row
-                    [ Element.centerX
-                    , Element.spacing 50
-                    ]
-                    [ Element.column
-                        [ Element.width <| Element.fillPortion 1
-                        , Element.alignTop
-                        , Element.spacing 20
-                        ]
-                        ([ viewYoutubeLinksBlock
-                         , closedBucketsPane model
-                         ]
-                            ++ (if dProfile == SmallDesktop then
+            [ Element.centerX
+            , Element.spacing 50
+            ]
+            [ Element.column
+                [ Element.width <| Element.fillPortion 1
+                , Element.alignTop
+                , Element.spacing 20
+                ]
+                ([ viewYoutubeLinksBlock
+                 , closedBucketsPane model
+                 ]
+                    ++ (if dProfile == SmallDesktop then
                             [ futureBucketsPane model
-                                    , trackedTxsElement model.trackedTxs
-                                    ]
-
-                                else
-                                    []
-                               )
-                        )
-                    , Element.column
-                        [ Element.width <| Element.fillPortion 2
-                        , Element.spacing 20
-                        , Element.alignTop
-                        ]
-                        [ focusedBucketPane
-                            dProfile
-                    maybeReferrer
-                    model.bucketSale
-                            (getFocusedBucketId
-                        model.bucketSale
-                                model.bucketView
-                                model.now
-                                model.testMode
-                            )
-                            model.wallet
-                            model.extraUserInfo
-                            model.enterUXModel
-                            model.jurisdictionCheckStatus
-                            model.trackedTxs
-                            model.showReferralModal
-                            model.now
-                            model.testMode
-                        , if dProfile == SmallDesktop then
-                            feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-
-                          else
-                            Element.none
-                        ]
-                    , if dProfile == Desktop then
-                        Element.column
-                            [ Element.spacing 20
-                            , Element.width Element.fill
-                            , Element.alignTop
-                            ]
-                            [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-                    , futureBucketsPane model
                             , trackedTxsElement model.trackedTxs
                             ]
 
-                      else
-                        Element.none
+                        else
+                            []
+                       )
+                )
+            , Element.column
+                [ Element.width <| Element.fillPortion 2
+                , Element.spacing 20
+                , Element.alignTop
+                ]
+                [ focusedBucketPane
+                    dProfile
+                    maybeReferrer
+                    model.bucketSale
+                    (getFocusedBucketId
+                        model.bucketSale
+                        model.bucketView
+                        model.now
+                        model.testMode
+                    )
+                    model.wallet
+                    model.extraUserInfo
+                    model.enterUXModel
+                    model.jurisdictionCheckStatus
+                    model.trackedTxs
+                    model.showReferralModal
+                    model.now
+                    model.testMode
+                , if dProfile == SmallDesktop then
+                    feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+
+                  else
+                    Element.none
+                ]
+            , if dProfile == Desktop then
+                Element.column
+                    [ Element.spacing 20
+                    , Element.width Element.fill
+                    , Element.alignTop
                     ]
+                    [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+                    , futureBucketsPane model
+                    , trackedTxsElement model.trackedTxs
+                    ]
+
+              else
+                Element.none
+            ]
         ]
     , []
     )
