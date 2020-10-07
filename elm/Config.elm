@@ -28,6 +28,12 @@ enteringTokenCurrencyLabel : String
 enteringTokenCurrencyLabel =
     Debug.todo ""
 
+enteringTokenImageInfo : {src : String, description : String}
+enteringTokenImageInfo =
+    { src = Debug.todo ""
+    , description = Debug.todo ""
+    }
+
 
 enteringTokenAddress : TestMode -> Address
 enteringTokenAddress testMode =
