@@ -1,19 +1,24 @@
 port module State exposing (init, subscriptions, update)
 
+import BigInt exposing (BigInt)
 import Browser
 import Browser.Events
 import Browser.Navigation
-import BucketSale.State
+import BucketSale.State as BucketSale
+import BucketSale.Types as BucketSale
 import ChainCmd exposing (ChainCmd)
 import CmdDown exposing (CmdDown)
 import CmdUp exposing (CmdUp)
 import CommonTypes exposing (..)
 import Config
+import Contracts.BucketSale.Wrappers as BucketSaleWrappers
+import Contracts.Wrappers as TokenWrappers
 import Eth.Net
 import Eth.Sentry.Tx as TxSentry
 import Eth.Sentry.Wallet as WalletSentry
 import Eth.Types exposing (Address)
 import Eth.Utils
+import Helpers.Time as TimeHelpers
 import Json.Decode
 import Json.Encode
 import List.Extra
@@ -99,27 +104,30 @@ init flags url key =
                         Nothing ->
                             ( Nothing, Cmd.none )
 
-        newUrlCmd =
-            let
-                urlStringWithoutRefAddr =
-                    Routing.routeToString
-                        { fullRoute | maybeReferrer = Nothing }
-            in
-            if urlStringWithoutRefAddr /= Routing.routeToString fullRoute then
-                Browser.Navigation.pushUrl key urlStringWithoutRefAddr
+        -- newUrlCmd =
+        --     let
+        --         urlStringWithoutRefAddr =
+        --             Routing.routeToString
+        --                 { fullRoute | maybeReferrer = Nothing }
+        --     in
+        --     if urlStringWithoutRefAddr /= Routing.routeToString fullRoute then
+        --         Browser.Navigation.pushUrl key urlStringWithoutRefAddr
+        --     else
+        --         Cmd.none
+        initSubmodel =
+            LoadingSaleModel
+                { loadingState = Loading
+                , userBalance = Nothing
+                }
 
-            else
-                Cmd.none
-
-        ( model, fromUrlCmd ) =
+        model =
             { key = key
             , testMode = fullRoute.testing
             , wallet = wallet
             , userAddress = Nothing
             , now = Time.millisToPosix flags.nowInMillis
             , txSentry = txSentry
-            , submodel = NullSubmodel
-            , pageRoute = Routing.NotFound
+            , submodel = initSubmodel
             , userNotices = []
             , dProfile = dProfile
             , maybeReferrer = maybeReferrer
@@ -127,14 +135,16 @@ init flags url key =
                 flags.width < 1024
             , nonRepeatingGTagsSent = []
             }
-                |> updateFromPageRoute fullRoute.pageRoute
+
+        -- |> updateFromPageRoute fullRoute.pageRoute
     in
     ( model
         |> addUserNotices userNotices
     , Cmd.batch
-        [ fromUrlCmd
-        , maybeReferrerStoreCmd
-        , newUrlCmd
+        [ maybeReferrerStoreCmd
+        , fetchSaleStartTimestampCmd model.testMode
+
+        -- , newUrlCmd
         ]
     )
 
@@ -156,10 +166,9 @@ update msg prevModel =
                     prevModel
                         |> update ConnectToWeb3
 
-                CmdUp.GotoRoute newRoute ->
-                    prevModel
-                        |> update (GotoRoute newRoute)
-
+                -- CmdUp.GotoRoute newRoute ->
+                --     prevModel
+                --         |> update (GotoRoute newRoute)
                 CmdUp.GTag gtag ->
                     ( prevModel
                     , gTagOut (encodeGTag gtag)
@@ -199,17 +208,11 @@ update msg prevModel =
                     )
 
                 CmdUp.NewReferralGenerated address ->
-                    { prevModel
+                    ( { prevModel
                         | maybeReferrer = Just address
-                    }
-                        |> runCmdDown (CmdDown.UpdateReferral address)
-                        |> Tuple.mapSecond
-                            (\submodelCmd ->
-                                Cmd.batch
-                                    [ submodelCmd
-                                    , storeNewReferrerCmd address
-                                    ]
-                            )
+                      }
+                    , storeNewReferrerCmd address
+                    )
 
         Resize width _ ->
             ( { prevModel
@@ -230,26 +233,155 @@ update msg prevModel =
             in
             ( prevModel, cmd )
 
-        UrlChanged url ->
-            prevModel |> updateFromPageRoute (url |> Routing.urlToFullRoute |> .pageRoute)
+        SaleStartTimestampFetched fetchResult ->
+            case prevModel.submodel of
+                LoadingSaleModel loadingSaleModel ->
+                    case loadingSaleModel.loadingState of
+                        Loading ->
+                            case fetchResult of
+                                Ok startTimestampBigInt ->
+                                    let
+                                        startTimestamp =
+                                            TimeHelpers.secondsBigIntToPosixWithWarning startTimestampBigInt
+                                    in
+                                    if BigInt.compare startTimestampBigInt (BigInt.fromInt 0) == EQ then
+                                        ( { prevModel
+                                            | submodel =
+                                                LoadingSaleModel <|
+                                                    { loadingSaleModel
+                                                        | loadingState = Error SaleNotDeployed -- A zero value indicates a dud deploy or not deployed
+                                                    }
+                                          }
+                                        , Cmd.none
+                                        )
 
-        GotoRoute pageRoute ->
-            prevModel
-                |> gotoPageRoute pageRoute
-                |> Tuple.mapSecond
-                    (\cmd ->
-                        Cmd.batch
-                            [ cmd
-                            , Browser.Navigation.pushUrl
-                                prevModel.key
-                                (Routing.routeToString
-                                    (Routing.FullRoute prevModel.testMode pageRoute Nothing)
-                                )
-                            ]
-                    )
+                                    else
+                                        case initBucketSale prevModel.testMode startTimestamp prevModel.now of
+                                            Ok sale ->
+                                                let
+                                                    ( bucketSaleModel, submodelCmd ) =
+                                                        BucketSale.init
+                                                            sale
+                                                            prevModel.maybeReferrer
+                                                            prevModel.testMode
+                                                            prevModel.wallet
+                                                            prevModel.now
+                                                in
+                                                ( { prevModel
+                                                    | submodel =
+                                                        BucketSaleModel bucketSaleModel
+                                                  }
+                                                , Cmd.map BucketSaleMsg submodelCmd
+                                                )
 
-        Tick newTime ->
-            ( { prevModel | now = newTime }, Cmd.none )
+                                            Err loadError ->
+                                                ( { prevModel
+                                                    | submodel =
+                                                        LoadingSaleModel
+                                                            { loadingSaleModel
+                                                                | loadingState = Error loadError
+                                                            }
+                                                  }
+                                                , Cmd.none
+                                                )
+
+                                Err httpErr ->
+                                    let
+                                        _ =
+                                            Debug.log "http error when fetching sale startTime" httpErr
+                                    in
+                                    ( prevModel, Cmd.none )
+
+                        Error _ ->
+                            -- ignore, we shouldn't get another timestamp fetched
+                            ( prevModel, Cmd.none )
+
+                BucketSaleModel _ ->
+                    -- ignore, we shouldn't get another timestamp fetched
+                    ( prevModel, Cmd.none )
+
+        FetchUserEnteringTokenBalance address ->
+            ( prevModel
+            , fetchUserEnteringTokenBalanceCmd prevModel.testMode address
+            )
+
+        UserEnteringTokenBalanceFetched address fetchResult ->
+            case prevModel.submodel of
+                LoadingSaleModel loadingSaleModel ->
+                    case fetchResult of
+                        Ok newBalance ->
+                            ( { prevModel
+                                | submodel =
+                                    LoadingSaleModel <|
+                                        { loadingSaleModel
+                                            | userBalance = Just newBalance
+                                        }
+                              }
+                            , Cmd.none
+                            )
+
+                        Err fetchError ->
+                            ( prevModel
+                                |> addUserNotice (UN.web3FetchError "token balance fetch" fetchError)
+                            , Cmd.none
+                            )
+
+                BucketSaleModel _ ->
+                    -- ignore, we shouldn't get another timestamp fetched
+                    ( prevModel, Cmd.none )
+
+        -- UrlChanged url ->
+        --     prevModel |> updateFromPageRoute (url |> Routing.urlToFullRoute |> .pageRoute)
+        -- GotoRoute pageRoute ->
+        --     prevModel
+        --         |> gotoPageRoute pageRoute
+        --         |> Tuple.mapSecond
+        --             (\cmd ->
+        --                 Cmd.batch
+        --                     [ cmd
+        --                     , Browser.Navigation.pushUrl
+        --                         prevModel.key
+        --                         (Routing.routeToString
+        --                             (Routing.FullRoute prevModel.testMode pageRoute Nothing)
+        --                         )
+        --                     ]
+        --             )
+        UpdateNow newNow ->
+            let
+                modelWithUpdatedNow =
+                    { prevModel | now = newNow }
+            in
+            case prevModel.submodel of
+                LoadingSaleModel loadingSaleModel ->
+                    case loadingSaleModel.loadingState of
+                        Error (SaleNotStarted startTime) ->
+                            case initBucketSale prevModel.testMode startTime newNow of
+                                Ok bucketSale ->
+                                    let
+                                        ( bucketSaleModel, bucketSaleCmd ) =
+                                            BucketSale.init
+                                                bucketSale
+                                                prevModel.maybeReferrer
+                                                prevModel.testMode
+                                                prevModel.wallet
+                                                newNow
+                                    in
+                                    ( { modelWithUpdatedNow
+                                        | submodel = BucketSaleModel bucketSaleModel
+                                      }
+                                    , Cmd.map BucketSaleMsg bucketSaleCmd
+                                    )
+
+                                Err _ ->
+                                    ( modelWithUpdatedNow
+                                    , Cmd.none
+                                    )
+
+                        _ ->
+                            ( modelWithUpdatedNow, Cmd.none )
+
+                _ ->
+                    ( modelWithUpdatedNow, Cmd.none )
 
         ConnectToWeb3 ->
             case prevModel.wallet of
@@ -323,7 +455,7 @@ update msg prevModel =
                 BucketSaleModel bucketSaleModel ->
                     let
                         updateResult =
-                            BucketSale.State.update bucketSaleMsg bucketSaleModel
+                            BucketSale.update bucketSaleMsg bucketSaleModel
 
                         ( newTxSentry, chainCmd, userNotices ) =
                             ChainCmd.execute prevModel.txSentry (ChainCmd.map BucketSaleMsg updateResult.chainCmd)
@@ -378,6 +510,32 @@ update msg prevModel =
                     Debug.log "test" s
             in
             ( prevModel, Cmd.none )
+
+
+initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result BucketSaleError BucketSale.BucketSale
+initBucketSale testMode saleStartTime now =
+    if TimeHelpers.compare saleStartTime now == GT then
+        Err <| SaleNotStarted <| saleStartTime
+
+    else
+        Ok <|
+            BucketSale.BucketSale
+                saleStartTime
+                (List.range 0 (Config.bucketSaleNumBuckets - 1)
+                    |> List.map
+                        (\id ->
+                            BucketSale.BucketData
+                                (TimeHelpers.add
+                                    saleStartTime
+                                    (TimeHelpers.mul
+                                        (Config.bucketSaleBucketInterval testMode)
+                                        id
+                                    )
+                                )
+                                Nothing
+                                Nothing
+                        )
+                )
 
 
 runCmdUps : List (CmdUp.CmdUp Msg) -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -454,52 +612,75 @@ encodeGenPrivkeyArgs address signMsg =
         ]
 
 
-updateFromPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )
-updateFromPageRoute pageRoute prevModel =
-    if prevModel.pageRoute == pageRoute then
-        ( prevModel
-        , Cmd.none
-        )
 
-    else
-        gotoPageRoute pageRoute prevModel
-
-
-gotoPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )
-gotoPageRoute route prevModel =
-    (case route of
-        Routing.Sale ->
-            let
-                ( bucketSaleModel, bucketSaleCmd ) =
-                    BucketSale.State.init prevModel.maybeReferrer prevModel.testMode prevModel.wallet prevModel.now
-            in
-            ( { prevModel
-                | submodel = BucketSaleModel bucketSaleModel
-              }
-            , Cmd.batch
-                [ Cmd.map BucketSaleMsg bucketSaleCmd
-                ]
-            )
-
-        Routing.NotFound ->
-            ( prevModel |> addUserNotice UN.invalidUrl
-            , Cmd.none
-            )
-    )
-        |> Tuple.mapFirst
-            (\model -> { model | pageRoute = route })
+-- updateFromPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )
+-- updateFromPageRoute pageRoute prevModel =
+--     if prevModel.pageRoute == pageRoute then
+--         ( prevModel
+--         , Cmd.none
+--         )
+--     else
+--         gotoPageRoute pageRoute prevModel
+-- gotoPageRoute : Routing.PageRoute -> Model -> ( Model, Cmd Msg )
+-- gotoPageRoute route prevModel =
+--     (case route of
+--         Routing.Sale ->
+--             let
+--                 ( bucketSaleModel, bucketSaleCmd ) =
+--                     BucketSale.State.init prevModel.maybeReferrer prevModel.testMode prevModel.wallet prevModel.now
+--             in
+--             ( { prevModel
+--                 | submodel = BucketSaleModel bucketSaleModel
+--               }
+--             , Cmd.batch
+--                 [ Cmd.map BucketSaleMsg bucketSaleCmd
+--                 ]
+--             )
+--         Routing.NotFound ->
+--             ( prevModel |> addUserNotice UN.invalidUrl
+--             , Cmd.none
+--             )
+--     )
+--         |> Tuple.mapFirst
+--             (\model -> { model | pageRoute = route })
 
 
 runCmdDown : CmdDown.CmdDown -> Model -> ( Model, Cmd Msg )
 runCmdDown cmdDown prevModel =
     case prevModel.submodel of
-        NullSubmodel ->
-            ( prevModel, Cmd.none )
+        LoadingSaleModel bucketSaleLoadingModel ->
+            case cmdDown of
+                CmdDown.UpdateWallet newWallet ->
+                    let
+                        newSubmodel =
+                            LoadingSaleModel <|
+                                { bucketSaleLoadingModel
+                                    | userBalance = Nothing
+                                }
+
+                        cmd =
+                            case Wallet.userInfo newWallet of
+                                Just userInfo ->
+                                    fetchUserEnteringTokenBalanceCmd
+                                        prevModel.testMode
+                                        userInfo.address
+
+                                Nothing ->
+                                    Cmd.none
+                    in
+                    ( { prevModel
+                        | submodel = newSubmodel
+                      }
+                    , cmd
+                    )
+
+                CmdDown.CloseAnyDropdownsOrModals ->
+                    ( prevModel, Cmd.none )
 
         BucketSaleModel bucketSaleModel ->
             let
                 updateResult =
-                    bucketSaleModel |> BucketSale.State.runCmdDown cmdDown
+                    bucketSaleModel |> BucketSale.runCmdDown cmdDown
 
                 ( newTxSentry, chainCmd, userNotices ) =
                     ChainCmd.execute prevModel.txSentry (ChainCmd.map BucketSaleMsg updateResult.chainCmd)
@@ -519,6 +700,21 @@ runCmdDown cmdDown prevModel =
                     )
 
 
+fetchUserEnteringTokenBalanceCmd : TestMode -> Address -> Cmd Msg
+fetchUserEnteringTokenBalanceCmd testMode address =
+    TokenWrappers.getBalanceCmd
+        testMode
+        address
+        (UserEnteringTokenBalanceFetched address)
+
+
+fetchSaleStartTimestampCmd : TestMode -> Cmd Msg
+fetchSaleStartTimestampCmd testMode =
+    BucketSaleWrappers.getSaleStartTimestampCmd
+        testMode
+        SaleStartTimestampFetched
+
+
 storeNewReferrerCmd : Address -> Cmd Msg
 storeNewReferrerCmd refAddress =
     storeReferrerAddress <|
@@ -533,7 +729,7 @@ subscriptions model =
             UN.walletError >> CmdUp.UserNotice >> CmdUp
     in
     Sub.batch
-        ([ Time.every 1000 Tick
+        ([ Time.every 1000 UpdateNow
          , walletSentryPort (WalletSentry.decodeToMsg failedWalletDecodeToMsg WalletStatus)
          , Maybe.map TxSentry.listen model.txSentry
             |> Maybe.withDefault Sub.none
@@ -546,11 +742,16 @@ subscriptions model =
 submodelSubscriptions : Model -> Sub Msg
 submodelSubscriptions model =
     case model.submodel of
-        NullSubmodel ->
-            Sub.none
+        LoadingSaleModel bucketSaleLoadingModel ->
+            case Wallet.userInfo model.wallet of
+                Just userInfo ->
+                    Time.every 5000 <| always (FetchUserEnteringTokenBalance userInfo.address)
+
+                Nothing ->
+                    Sub.none
 
         BucketSaleModel bucketSaleModel ->
-            Sub.map BucketSaleMsg <| BucketSale.State.subscriptions bucketSaleModel
+            Sub.map BucketSaleMsg <| BucketSale.subscriptions bucketSaleModel
 
 
 port walletSentryPort : (Json.Decode.Value -> msg) -> Sub msg

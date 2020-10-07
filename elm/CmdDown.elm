@@ -6,5 +6,4 @@ import Eth.Types exposing (Address)
 
 type CmdDown
     = UpdateWallet Wallet.State
-    | UpdateReferral Address
     | CloseAnyDropdownsOrModals

@@ -28,10 +28,9 @@ type alias Model =
     , extraUserInfo : Maybe BucketSaleWrappers.UserStateInfo
     , testMode : TestMode
     , now : Time.Posix
-    , timezone : Maybe Time.Zone
     , fastGasPrice : Maybe BigInt
     , saleStartTime : Maybe Time.Posix
-    , bucketSale : Maybe (Result String BucketSale)
+    , bucketSale : BucketSale
     , totalTokensExited : Maybe TokenValue
     , bucketView : BucketView
     , jurisdictionCheckStatus : JurisdictionCheckStatus
@@ -45,18 +44,72 @@ type alias Model =
     }
 
 
+type Msg
+    = NoOp
+    | CmdUp (CmdUp Msg)
+    | Refresh
+    | UpdateNow Time.Posix
+    | FetchFastGasPrice
+    | FetchedFastGasPrice (Result Http.Error BigInt)
+    | TosPreviousPageClicked
+    | TosNextPageClicked
+    | TosCheckboxClicked ( Int, Int )
+    | AddFryToMetaMaskClicked
+    | VerifyJurisdictionClicked
+    | FeedbackButtonClicked
+    | FeedbackEmailChanged String
+    | FeedbackDescriptionChanged String
+    | FeedbackSubmitClicked
+    | FeedbackHttpResponse (Result Http.Error String)
+    | FeedbackBackClicked
+    | FeedbackSendMoreClicked
+    | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
+    | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
+    | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
+    | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
+    | TotalTokensExitedFetched (Result Http.Error TokenValue)
+    | FocusToBucket Int
+    | EnterInputChanged String
+    | ReferralIndicatorClicked (Maybe Address)
+    | CloseReferralModal (Maybe Address)
+    | GenerateReferralClicked Address
+    | EnableTokenButtonClicked
+    | ClaimClicked UserInfo ExitInfo
+    | CancelClicked
+    | EnterButtonClicked EnterInfo
+    | ConfirmClicked EnterInfo
+    | TxSigned Int ActionData (Result String TxHash)
+    | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
+
+
 type alias ExtraUserInfo =
     { ethBalance : TokenValue
-    , daiBalance : TokenValue
-    , fryBalance : TokenValue
-    , daiAllowance : TokenValue
+    , enteringTokenBalance : TokenValue
+    , exitingTokenBalance : TokenValue
+    , enteringTokenAllowance : TokenValue
+    }
+
+
+type alias UpdateResult =
+    { model : Model
+    , cmd : Cmd Msg
+    , chainCmd : ChainCmd Msg
+    , cmdUps : List (CmdUp Msg)
+    }
+
+
+justModelUpdate : Model -> UpdateResult
+justModelUpdate model =
+    { model = model
+    , cmd = Cmd.none
+    , chainCmd = ChainCmd.none
+    , cmdUps = []
     }
 
 
 type alias EnterUXModel =
-    { daiInput : String
-    , daiAmount : Maybe (Result String TokenValue)
-    , referrer : Maybe Address
+    { input : String
+    , amount : Maybe (Result String TokenValue)
     }
 
 
@@ -85,63 +138,6 @@ isAllPointsChecked agreeToTosModel =
 type alias TosCheckbox =
     { textEls : List (Element Msg)
     , maybeCheckedString : Maybe ( String, Bool )
-    }
-
-
-type Msg
-    = NoOp
-    | CmdUp (CmdUp Msg)
-    | TimezoneGot Time.Zone
-    | Refresh
-    | UpdateNow Time.Posix
-    | FetchFastGasPrice
-    | FetchedFastGasPrice (Result Http.Error BigInt)
-    | TosPreviousPageClicked
-    | TosNextPageClicked
-    | TosCheckboxClicked ( Int, Int )
-    | AddFryToMetaMaskClicked
-    | VerifyJurisdictionClicked
-    | FeedbackButtonClicked
-    | FeedbackEmailChanged String
-    | FeedbackDescriptionChanged String
-    | FeedbackSubmitClicked
-    | FeedbackHttpResponse (Result Http.Error String)
-    | FeedbackBackClicked
-    | FeedbackSendMoreClicked
-    | LocationCheckResult (Result Json.Decode.Error (Result String LocationInfo))
-    | SaleStartTimestampFetched (Result Http.Error BigInt)
-    | BucketValueEnteredFetched Int (Result Http.Error TokenValue)
-    | UserBuyFetched Address Int (Result Http.Error BucketSaleBindings.Buy)
-    | StateUpdateInfoFetched (Result Http.Error (Maybe BucketSaleWrappers.StateUpdateInfo))
-    | TotalTokensExitedFetched (Result Http.Error TokenValue)
-    | FocusToBucket Int
-    | DaiInputChanged String
-    | ReferralIndicatorClicked
-    | CloseReferralModal
-    | GenerateReferralClicked Address
-    | UnlockDaiButtonClicked
-    | ClaimClicked UserInfo ExitInfo
-    | CancelClicked
-    | EnterButtonClicked EnterInfo
-    | ConfirmClicked EnterInfo
-    | TxSigned Int ActionData (Result String TxHash)
-    | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
-
-
-type alias UpdateResult =
-    { model : Model
-    , cmd : Cmd Msg
-    , chainCmd : ChainCmd Msg
-    , cmdUps : List (CmdUp Msg)
-    }
-
-
-justModelUpdate : Model -> UpdateResult
-justModelUpdate model =
-    { model = model
-    , cmd = Cmd.none
-    , chainCmd = ChainCmd.none
-    , cmdUps = []
     }
 
 
@@ -347,8 +343,8 @@ buyFromBindingBuy bindingBuy =
 
 
 calcClaimableTokens : TokenValue -> TokenValue -> TestMode -> TokenValue
-calcClaimableTokens totalValueEntered daiIn testMode =
-    if TokenValue.isZero daiIn then
+calcClaimableTokens totalValueEntered tokensIn testMode =
+    if TokenValue.isZero tokensIn then
         TokenValue.zero
 
     else if TokenValue.isZero totalValueEntered then
@@ -357,7 +353,7 @@ calcClaimableTokens totalValueEntered daiIn testMode =
     else
         let
             claimableRatio =
-                TokenValue.toFloatWithWarning daiIn
+                TokenValue.toFloatWithWarning tokensIn
                     / TokenValue.toFloatWithWarning totalValueEntered
         in
         TokenValue.mulFloatWithWarning

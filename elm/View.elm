@@ -11,13 +11,15 @@ import Element.Font
 import Helpers.Element as EH
 import Images exposing (Image)
 import Routing
+import Time
 import Types exposing (..)
 import UserNotice as UN exposing (UserNotice)
+import Wallet
 
 
 root : Model -> Browser.Document Msg
 root model =
-    { title = "Foundry Sale"
+    { title = Debug.todo "title"
     , body =
         [ let
             ( pageEl, modalEls ) =
@@ -161,7 +163,7 @@ brandAndLogo dProfile =
         ]
         [ Images.toElement
             [ Element.centerY ]
-            Images.fryIcon
+            Images.exitingTokenIcon
         , Element.column
             [ Element.spacing 5 ]
             [ Element.el
@@ -293,8 +295,6 @@ logoElement dProfile =
         , Element.Font.color EH.white
         , Element.Font.bold
         , Element.centerX
-        , Element.pointer
-        , Element.Events.onClick <| GotoRoute Routing.Sale
         , EH.noSelectText
         ]
         (Element.el [ Element.Font.color EH.softRed ] <| Element.text "Foundry")
@@ -315,13 +315,13 @@ submodelElementAndModal model =
     let
         ( submodelEl, modalEls ) =
             case model.submodel of
-                NullSubmodel ->
-                    ( Element.none
+                LoadingSaleModel bucketSaleLoadingModel ->
+                    ( viewBucketSaleLoading bucketSaleLoadingModel model.wallet model.now
                     , []
                     )
 
                 BucketSaleModel bucketSaleModel ->
-                    BucketSale.View.root bucketSaleModel model.dProfile
+                    BucketSale.View.root bucketSaleModel model.maybeReferrer model.dProfile
                         |> Tuple.mapBoth
                             (Element.map BucketSaleMsg)
                             (List.map (Element.map BucketSaleMsg))
@@ -437,3 +437,33 @@ userNotice dProfile ( id, notice ) =
                 , Element.width Element.fill
                 ]
         )
+
+
+viewBucketSaleLoading : BucketSaleLoadingModel -> Wallet.State -> Time.Posix -> Element Msg
+viewBucketSaleLoading bucketSaleLoadingModel wallet now =
+    case bucketSaleLoadingModel.loadingState of
+        Loading ->
+            bigCenteredText "Fetching Sale Contract State..."
+
+        Error SaleNotDeployed ->
+            bigCenteredText "The sale contract doesn't seem to be deployed yet."
+
+        Error (SaleNotStarted startTime) ->
+            Debug.todo "viewCountdownPage must be designed"
+            -- ViewCountdownPage.view
+            --     now
+            --     startTime
+            --     (Wallet.userInfo wallet |> Maybe.map .address)
+            --     bucketSaleLoadingModel.userBalance
+
+
+bigCenteredText : String -> Element Msg
+bigCenteredText text =
+    Element.paragraph
+        [ Element.centerX
+        , Element.paddingXY 50 20
+        , Element.Font.size 30
+        , Element.Font.color EH.white
+        , Element.Font.center
+        ]
+        [ Element.text text ]

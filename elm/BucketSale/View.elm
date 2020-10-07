@@ -26,13 +26,12 @@ import Maybe.Extra
 import Result.Extra
 import Routing
 import Time
-import TokenValue exposing (TokenValue)
+import TokenValue exposing (TokenValue, toConciseString)
 import Wallet
-import TokenValue exposing (toConciseString)
 
 
-root : Model -> DisplayProfile -> ( Element Msg, List (Element Msg) )
-root model dProfile =
+root : Model -> Maybe Address -> DisplayProfile -> ( Element Msg, List (Element Msg) )
+root model maybeReferrer dProfile =
     ( Element.column
         ([ Element.width Element.fill
          , Element.paddingEach
@@ -43,92 +42,73 @@ root model dProfile =
             }
          ]
             ++ (List.map Element.inFront <|
-                    viewModals model
+                    viewModals model maybeReferrer
                )
         )
-        [ case model.bucketSale of
-            Nothing ->
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size 30
-                    , Element.Font.color EH.white
-                    ]
-                <|
-                    Element.text "Loading..."
-
-            Just (Err errStr) ->
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size 30
-                    , Element.Font.color EH.white
-                    ]
-                <|
-                    Element.text errStr
-
-            Just (Ok bucketSale) ->
-                Element.row
-                    [ Element.centerX
-                    , Element.spacing 50
-                    ]
-                    [ Element.column
-                        [ Element.width <| Element.fillPortion 1
-                        , Element.alignTop
-                        , Element.spacing 20
-                        ]
-                        ([ viewYoutubeLinksBlock
-                         , closedBucketsPane model
-                         ]
-                            ++ (if dProfile == SmallDesktop then
-                                    [ futureBucketsPane model bucketSale
-                                    , trackedTxsElement model.trackedTxs
-                                    ]
-
-                                else
-                                    []
-                               )
-                        )
-                    , Element.column
-                        [ Element.width <| Element.fillPortion 2
-                        , Element.spacing 20
-                        , Element.alignTop
-                        ]
-                        [ focusedBucketPane
-                            dProfile
-                            bucketSale
-                            (getFocusedBucketId
-                                bucketSale
-                                model.bucketView
-                                model.now
-                                model.testMode
-                            )
-                            model.wallet
-                            model.extraUserInfo
-                            model.enterUXModel
-                            model.jurisdictionCheckStatus
-                            model.trackedTxs
-                            model.showReferralModal
-                            model.now
-                            model.testMode
-                        , if dProfile == SmallDesktop then
-                            feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-
-                          else
-                            Element.none
-                        ]
-                    , if dProfile == Desktop then
-                        Element.column
-                            [ Element.spacing 20
-                            , Element.width Element.fill
-                            , Element.alignTop
-                            ]
-                            [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-                            , futureBucketsPane model bucketSale
+        [ Element.row
+            [ Element.centerX
+            , Element.spacing 50
+            ]
+            [ Element.column
+                [ Element.width <| Element.fillPortion 1
+                , Element.alignTop
+                , Element.spacing 20
+                ]
+                ([ viewYoutubeLinksBlock
+                 , closedBucketsPane model
+                 ]
+                    ++ (if dProfile == SmallDesktop then
+                            [ futureBucketsPane model
                             , trackedTxsElement model.trackedTxs
                             ]
 
-                      else
-                        Element.none
+                        else
+                            []
+                       )
+                )
+            , Element.column
+                [ Element.width <| Element.fillPortion 2
+                , Element.spacing 20
+                , Element.alignTop
+                ]
+                [ focusedBucketPane
+                    dProfile
+                    maybeReferrer
+                    model.bucketSale
+                    (getFocusedBucketId
+                        model.bucketSale
+                        model.bucketView
+                        model.now
+                        model.testMode
+                    )
+                    model.wallet
+                    model.extraUserInfo
+                    model.enterUXModel
+                    model.jurisdictionCheckStatus
+                    model.trackedTxs
+                    model.showReferralModal
+                    model.now
+                    model.testMode
+                , if dProfile == SmallDesktop then
+                    feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+
+                  else
+                    Element.none
+                ]
+            , if dProfile == Desktop then
+                Element.column
+                    [ Element.spacing 20
+                    , Element.width Element.fill
+                    , Element.alignTop
                     ]
+                    [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+                    , futureBucketsPane model
+                    , trackedTxsElement model.trackedTxs
+                    ]
+
+              else
+                Element.none
+            ]
         ]
     , []
     )
@@ -173,7 +153,7 @@ closedBucketsPane model =
             [ Element.Font.color grayTextColor
             , Element.Font.size 15
             ]
-            [ Element.text "These are the concluded buckets of FRY that have been claimed. If you have FRY to claim it will show below." ]
+            [ Element.text <| "These are the concluded buckets of " ++ Config.exitingTokenCurrencyLabel ++ " that have been claimed. If you have " ++ Config.exitingTokenCurrencyLabel ++ " to claim it will show below." ]
         , maybeUserBalanceBlock
             model.wallet
             model.extraUserInfo
@@ -184,8 +164,8 @@ closedBucketsPane model =
         ]
 
 
-focusedBucketPane : DisplayProfile -> BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
-focusedBucketPane dProfile bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
+focusedBucketPane : DisplayProfile -> Maybe Address -> BucketSale -> Int -> Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> JurisdictionCheckStatus -> List TrackedTx -> Bool -> Time.Posix -> TestMode -> Element Msg
+focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
@@ -197,7 +177,7 @@ focusedBucketPane dProfile bucketSale bucketId wallet maybeExtraUserInfo enterUX
             dProfile
             bucketId
             (Wallet.userInfo wallet)
-            enterUXModel.referrer
+            maybeReferrer
             referralModalActive
             testMode
          ]
@@ -215,20 +195,20 @@ focusedBucketPane dProfile bucketSale bucketId wallet maybeExtraUserInfo enterUX
                         , focusedBucketTimeLeftEl
                             (getRelevantTimingInfo bucketInfo now testMode)
                             testMode
-                        , enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
+                        , enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
                         ]
                )
         )
 
 
-futureBucketsPane : Model -> BucketSale -> Element Msg
-futureBucketsPane model bucketSale =
+futureBucketsPane : Model -> Element Msg
+futureBucketsPane model =
     let
         fetchedNextBucketInfo =
             getBucketInfo
-                bucketSale
+                model.bucketSale
                 (getCurrentBucketId
-                    bucketSale
+                    model.bucketSale
                     model.now
                     model.testMode
                     + 1
@@ -260,11 +240,11 @@ futureBucketsPane model bucketSale =
                                 model.now
                     ]
                 , maybeBucketsLeftBlock
-                    bucketSale
+                    model.bucketSale
                     model.now
                     model.testMode
-                , maybeFryInFutureBucketsBlock
-                    bucketSale
+                , maybeSoldTokenInFutureBucketsBlock
+                    model.bucketSale
                     model.now
                     model.testMode
                 ]
@@ -420,8 +400,8 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
             sidepaneBlockContainer PassiveStyle
                 [ bigNumberElement
                     [ Element.centerX ]
-                    (TokenNum extraUserInfo.fryBalance)
-                    "FRY"
+                    (TokenNum extraUserInfo.exitingTokenBalance)
+                    Config.exitingTokenCurrencyLabel
                     PassiveStyle
                 , Element.paragraph
                     [ Element.centerX
@@ -429,7 +409,7 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
                     ]
                     [ Element.text "in your wallet"
                     ]
-                , if TokenValue.isZero extraUserInfo.fryBalance then
+                , if TokenValue.isZero extraUserInfo.exitingTokenBalance then
                     Element.none
 
                   else
@@ -439,9 +419,9 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
                         , Element.Font.color EH.lightBlue
                         , Element.pointer
                         , Element.Events.onClick AddFryToMetaMaskClicked
-                        , EH.withTitle "Add FRY to Metamask or another EIP 747 compliant Web3 wallet"
+                        , EH.withTitle <| "Add " ++ Config.exitingTokenCurrencyLabel ++ " to Metamask or another EIP 747 compliant Web3 wallet"
                         ]
-                        [ Element.text "List FRY in your wallet"
+                        [ Element.text <| "List " ++ Config.exitingTokenCurrencyLabel ++ " in your wallet"
                         ]
                 ]
 
@@ -468,7 +448,7 @@ maybeClaimBlock wallet maybeExitInfo =
                 [ bigNumberElement
                     [ Element.centerX ]
                     (TokenNum exitInfo.totalExitable)
-                    "FRY"
+                    Config.exitingTokenCurrencyLabel
                     blockStyle
                 , Element.paragraph
                     [ Element.centerX
@@ -496,7 +476,7 @@ totalExitedBlock maybeTotalExited =
                 [ bigNumberElement
                     [ Element.centerX ]
                     (TokenNum totalExited)
-                    "FRY"
+                    Config.exitingTokenCurrencyLabel
                     PassiveStyle
                 , Element.paragraph
                     [ Element.centerX
@@ -569,7 +549,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                             [ EH.moveToFront ]
                         <|
                             referralBonusIndicator
-                                (maybeReferrer /= Nothing)
+                                maybeReferrer
                                 True
 
                     else
@@ -577,7 +557,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                 ]
             <|
                 referralBonusIndicator
-                    (maybeReferrer /= Nothing)
+                    maybeReferrer
                     referralModalActive
 
 
@@ -591,7 +571,7 @@ focusedBucketSubheaderEl bucketInfo =
                 ]
                 [ emphasizedText PassiveStyle <|
                     TokenValue.toConciseString totalValueEntered
-                , Element.text " DAI has been bid on this bucket so far. All bids are irreversible."
+                , Element.text <| " " ++ Config.enteringTokenCurrencyLabel ++ " has been bid on this bucket so far. All bids are irreversible."
                 ]
 
         _ ->
@@ -660,8 +640,8 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Wallet.State -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
-enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
+enterBidUX : Wallet.State -> Maybe Address -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
+enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
     let
         miningEnters =
             trackedTxs
@@ -703,7 +683,7 @@ enterBidUX wallet maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckSt
         [ bidInputBlock enterUXModel bucketInfo testMode
         , bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode
         , otherBidsImpactMsg
-        , actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode
+        , actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode
         ]
 
 
@@ -726,8 +706,8 @@ bidInputBlock enterUXModel bucketInfo testMode =
                 , Element.width Element.fill
                 , Element.Background.color EH.transparent
                 ]
-                { onChange = DaiInputChanged
-                , text = enterUXModel.daiInput
+                { onChange = EnterInputChanged
+                , text = enterUXModel.input
                 , placeholder =
                     Just <|
                         Element.Input.placeholder
@@ -741,16 +721,16 @@ bidInputBlock enterUXModel bucketInfo testMode =
                 [ Element.centerY
                 , Element.spacing 10
                 ]
-                [ Images.daiSymbol
+                [ Images.enteringTokenSymbol
                     |> Images.toElement [ Element.height <| Element.px 30 ]
-                , Element.text "DAI"
+                , Element.text Config.enteringTokenCurrencyLabel
                 ]
             ]
         , Maybe.map
             (\totalValueEntered ->
                 pricePerTokenMsg
                     totalValueEntered
-                    (enterUXModel.daiAmount
+                    (enterUXModel.amount
                         |> Maybe.map Result.toMaybe
                         |> Maybe.Extra.join
                     )
@@ -762,21 +742,27 @@ bidInputBlock enterUXModel bucketInfo testMode =
 
 
 pricePerTokenMsg : TokenValue -> Maybe TokenValue -> TestMode -> Element Msg
-pricePerTokenMsg totalValueEntered maybeDaiAmount testMode =
+pricePerTokenMsg totalValueEntered maybeEnterAmount testMode =
     Element.paragraph
         [ Element.Font.size 14
         , Element.Font.medium
         ]
         ([ Element.text <|
-            "The current FRY price is "
+            "The current "
+                ++ Config.exitingTokenCurrencyLabel
+                ++ " price is "
                 ++ (calcEffectivePricePerToken
                         totalValueEntered
                         testMode
                         |> TokenValue.toConciseString
                    )
-                ++ " DAI/FRY."
+                ++ " "
+                ++ Config.enteringTokenCurrencyLabel
+                ++ "/"
+                ++ Config.exitingTokenCurrencyLabel
+                ++ "."
          ]
-            ++ (case maybeDaiAmount of
+            ++ (case maybeEnterAmount of
                     Just amount ->
                         [ Element.text " This bid will increase the price to "
                         , emphasizedText ActiveStyle <|
@@ -788,7 +774,11 @@ pricePerTokenMsg totalValueEntered maybeDaiAmount testMode =
                                 testMode
                                 |> TokenValue.toConciseString
                             )
-                                ++ " DAI/FRY."
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                                ++ "/"
+                                ++ Config.exitingTokenCurrencyLabel
+                                ++ "."
                         ]
 
                     _ ->
@@ -828,7 +818,7 @@ bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode =
                                             |> List.foldl TokenValue.add TokenValue.zero
 
                                     extraUserBidAmount =
-                                        enterUXModel.daiAmount
+                                        enterUXModel.amount
                                             |> Maybe.map Result.toMaybe
                                             |> Maybe.Extra.join
                                             |> Maybe.withDefault TokenValue.zero
@@ -865,7 +855,9 @@ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmo
                     [ Element.text "You have entered "
                     , emphasizedText PassiveStyle <|
                         TokenValue.toConciseString existingUserBidAmount
-                            ++ " DAI"
+                            ++ " "
+                            ++ Config.enteringTokenCurrencyLabel
+                            ++ ""
                     , Element.text " into this bucket."
                     ]
 
@@ -881,7 +873,9 @@ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmo
                                 [ Element.text "your submitted bid of "
                                 , emphasizedText PassiveStyle <|
                                     TokenValue.toConciseString miningUserBidAmount
-                                        ++ " DAI"
+                                        ++ " "
+                                        ++ Config.enteringTokenCurrencyLabel
+                                        ++ ""
                                 , Element.text " is mined before this bucket ends"
                                 ]
                     , if TokenValue.isZero extraUserBidAmount then
@@ -893,7 +887,9 @@ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmo
                                 [ Element.text "you submit a further bid of "
                                 , emphasizedText PassiveStyle <|
                                     TokenValue.toConciseString extraUserBidAmount
-                                        ++ " DAI"
+                                        ++ " "
+                                        ++ Config.enteringTokenCurrencyLabel
+                                        ++ ""
                                 ]
                     ]
                         |> Maybe.Extra.values
@@ -940,11 +936,15 @@ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmo
                             testMode
                             |> TokenValue.toConciseString
                         )
-                            ++ " FRY"
+                            ++ " "
+                            ++ Config.exitingTokenCurrencyLabel
+                            ++ ""
                     , Element.text <|
                         " out of "
                             ++ TokenValue.toConciseString (Config.bucketSaleTokensPerBucket testMode)
-                            ++ " FRY available."
+                            ++ " "
+                            ++ Config.exitingTokenCurrencyLabel
+                            ++ " available."
                     ]
     in
     Element.column
@@ -1020,10 +1020,10 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
                          )
                             |> (\els ->
                                     if List.length els > 0 then
-                                        els ++ [ Element.text " DAI" ]
+                                        els ++ [ Element.text Config.enteringTokenCurrencyLabel ]
 
                                     else
-                                        [ Element.text "0 DAI"]
+                                        [ Element.text <| "0 " ++ Config.enteringTokenCurrencyLabel ]
                                )
                         )
                     ]
@@ -1046,7 +1046,9 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
                         [ Element.alignRight ]
                         (Element.text <|
                             TokenValue.toConciseString totalValueEnteredAfterBidAndMining
-                                ++ " DAI"
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                                ++ ""
                         )
                     ]
                 ]
@@ -1076,7 +1078,7 @@ otherBidsImpactMsg =
             [ Element.width Element.fill
             , Element.Font.color grayTextColor
             ]
-            [ Element.text "The price per token will increase further, and the amount of FRY you can claim from the bucket will decrease proportionally. For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve." ]
+            [ Element.text <| "The price per token will increase further, and the amount of " ++ Config.exitingTokenCurrencyLabel ++ " you can claim from the bucket will decrease proportionally. For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve." ]
         ]
 
 
@@ -1129,13 +1131,13 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
             msgInsteadOfButton "Jurisdiction Verified." green
 
 
-unlockDaiButton : Element Msg
-unlockDaiButton =
+enableTokenButton : Element Msg
+enableTokenButton =
     EH.redButton
         Desktop
         [ Element.width Element.fill ]
-        [ "Unlock Dai" ]
-        UnlockDaiButtonClicked
+        [ "Unlock " ++ Config.enteringTokenCurrencyLabel ]
+        EnableTokenButtonClicked
 
 
 disabledButton : String -> Element Msg
@@ -1157,21 +1159,21 @@ successButton text =
 
 
 continueButton : UserInfo -> Int -> TokenValue -> Maybe Address -> TokenValue -> TokenValue -> Element Msg
-continueButton userInfo bucketId daiAmount referrer minedTotal miningTotal =
+continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal =
     let
         maybeMining =
             if miningTotal == TokenValue.zero then
                 Nothing
 
             else
-                Just <| TokenValue.toFloatString (Just 2) miningTotal ++ " DAI currently mining"
+                Just <| TokenValue.toFloatString (Just 2) miningTotal ++ " " ++ Config.enteringTokenCurrencyLabel ++ " currently mining"
 
         maybeMined =
             if minedTotal == TokenValue.zero then
                 Nothing
 
             else
-                Just <| TokenValue.toFloatString (Just 2) minedTotal ++ " DAI already entered"
+                Just <| TokenValue.toFloatString (Just 2) minedTotal ++ " " ++ Config.enteringTokenCurrencyLabel ++ " already entered"
 
         maybeAlreadyEnteredString =
             case ( maybeMining, maybeMined ) of
@@ -1203,22 +1205,22 @@ continueButton userInfo bucketId daiAmount referrer minedTotal miningTotal =
     EH.redButton
         Desktop
         [ Element.width Element.fill ]
-        [ "Enter with " ++ TokenValue.toFloatString (Just 2) daiAmount ++ " DAI" ++ alreadyEnteredWithDescription ]
+        [ "Enter with " ++ TokenValue.toFloatString (Just 2) enterAmount ++ " " ++ Config.enteringTokenCurrencyLabel ++ "" ++ alreadyEnteredWithDescription ]
         (EnterButtonClicked <|
             EnterInfo
                 userInfo
                 bucketId
-                daiAmount
+                enterAmount
                 referrer
         )
 
 
-alreadyEnteredBucketButton daiAmount =
+alreadyEnteredBucketButton enterAmount =
     Element.none
 
 
-actionButton : JurisdictionCheckStatus -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> Element Msg
-actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
+actionButton : JurisdictionCheckStatus -> Maybe Address -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> Element Msg
+actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
     case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
@@ -1232,10 +1234,10 @@ actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining ente
 
                         Just extraUserInfo ->
                             if unlockMining then
-                                msgInsteadOfButton "Mining Dai unlock..." grayTextColor
+                                msgInsteadOfButton "Mining token enable..." grayTextColor
 
-                            else if extraUserInfo.daiAllowance == TokenValue.zero then
-                                unlockDaiButton
+                            else if TokenValue.isZero extraUserInfo.enteringTokenAllowance then
+                                enableTokenButton
 
                             else
                                 let
@@ -1293,19 +1295,19 @@ actionButton jurisdictionCheckStatus wallet maybeExtraUserInfo unlockMining ente
                                             |> Maybe.withDefault TokenValue.zero
                                 in
                                 -- Allowance is loaded and nonzero, and we are not mining an Unlock
-                                case enterUXModel.daiAmount of
-                                    Just (Ok daiAmount) ->
+                                case enterUXModel.amount of
+                                    Just (Ok enterAmount) ->
                                         if List.any (\tx -> tx.status == Signing) trackedTxs then
                                             disabledButton "Sign or reject pending transactions to continue"
 
-                                        else if TokenValue.compare daiAmount extraUserInfo.daiAllowance /= GT && TokenValue.compare daiAmount extraUserInfo.daiBalance /= LT then
-                                            disabledButton <| "You only have " ++ (toConciseString extraUserInfo.daiBalance) ++ " DAI"
+                                        else if TokenValue.compare enterAmount extraUserInfo.enteringTokenAllowance /= GT && TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= LT then
+                                            disabledButton <| "You only have " ++ toConciseString extraUserInfo.enteringTokenBalance ++ " " ++ Config.enteringTokenCurrencyLabel ++ ""
 
-                                        else if TokenValue.compare daiAmount extraUserInfo.daiAllowance /= GT then
-                                            continueButton userInfo bucketInfo.id daiAmount enterUXModel.referrer enteredIntoThisBucket miningTotalForThisBucket
+                                        else if TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= GT then
+                                            continueButton userInfo bucketInfo.id enterAmount maybeReferrer enteredIntoThisBucket miningTotalForThisBucket
 
                                         else
-                                            unlockDaiButton
+                                            enableTokenButton
 
                                     _ ->
                                         if lastTransactionsForThisBucketWasSuccessful then
@@ -1355,8 +1357,8 @@ maybeBucketsLeftBlock bucketSale now testMode =
         ]
 
 
-maybeFryInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
-maybeFryInFutureBucketsBlock bucketSale now testMode =
+maybeSoldTokenInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
+maybeSoldTokenInFutureBucketsBlock bucketSale now testMode =
     let
         currentBucketId =
             getCurrentBucketId
@@ -1375,7 +1377,7 @@ maybeFryInFutureBucketsBlock bucketSale now testMode =
                     )
                 )
             )
-            "FRY"
+            Config.exitingTokenCurrencyLabel
             PassiveStyle
         , Element.paragraph
             [ Element.centerX
@@ -1507,21 +1509,22 @@ makeDescription : ActionData -> String
 makeDescription action =
     case action of
         Unlock ->
-            "Unlock DAI"
+            "Enable " ++ Config.enteringTokenCurrencyLabel
 
         Enter enterInfo ->
             "Bid on bucket "
                 ++ String.fromInt enterInfo.bucketId
                 ++ " with "
                 ++ TokenValue.toConciseString enterInfo.amount
-                ++ " DAI"
+                ++ " "
+                ++ Config.enteringTokenCurrencyLabel
 
         Exit ->
-            "Claim FRY"
+            "Claim " ++ Config.exitingTokenCurrencyLabel ++ ""
 
 
-viewModals : Model -> List (Element Msg)
-viewModals model =
+viewModals : Model -> Maybe Address -> List (Element Msg)
+viewModals model maybeReferrer =
     Maybe.Extra.values
         [ case model.enterInfoToConfirm of
             Just enterInfo ->
@@ -1541,8 +1544,8 @@ viewModals model =
                 EH.modal
                     (Element.rgba 0 0 0 0.25)
                     False
-                    CloseReferralModal
-                    CloseReferralModal
+                    (CloseReferralModal maybeReferrer)
+                    (CloseReferralModal maybeReferrer)
                     Element.none
 
           else
@@ -1809,7 +1812,9 @@ viewTosPageNavigationButtons confirmTosModel enterInfo =
                     [ Element.width Element.fill ]
                     [ "Confirm & deposit "
                         ++ TokenValue.toConciseString enterInfo.amount
-                        ++ " DAI"
+                        ++ " "
+                        ++ Config.enteringTokenCurrencyLabel
+                        ++ ""
                     ]
                     (ConfirmClicked enterInfo)
 
@@ -1818,14 +1823,18 @@ viewTosPageNavigationButtons confirmTosModel enterInfo =
         ]
 
 
-referralBonusIndicator : Bool -> Bool -> Element Msg
-referralBonusIndicator hasReferral focusedStyle =
+referralBonusIndicator : Maybe Address -> Bool -> Element Msg
+referralBonusIndicator maybeReferrer focusedStyle =
+    let
+        hasReferral =
+            maybeReferrer /= Nothing
+    in
     Element.el
         [ Element.paddingXY 16 7
         , Element.Font.bold
         , Element.Font.size 18
         , Element.pointer
-        , Element.Events.onClick ReferralIndicatorClicked
+        , Element.Events.onClick (ReferralIndicatorClicked maybeReferrer)
         , Element.Background.color
             ((if hasReferral then
                 green
@@ -1899,7 +1908,7 @@ referralModal userInfo maybeReferrer testMode =
                                 , highlightedText "10% bonus"
                                 , Element.text " on their purchase. In addition, you can earn "
                                 , highlightedText "10%-20%"
-                                , Element.text " extra FRY tokens, based on how much DAI you refer with this code."
+                                , Element.text <| " extra " ++ Config.exitingTokenCurrencyLabel ++ " tokens, based on how much " ++ Config.enteringTokenCurrencyLabel ++ " you refer with this code."
                                 ]
                             , Element.paragraph []
                                 [ Element.text "You can also use your own reference code and get both benefits." ]
@@ -1969,7 +1978,7 @@ referralModal userInfo maybeReferrer testMode =
                           , Element.paragraph []
                                 [ Element.text "Every bid you make will result in a bonus bid into the next bucket, at 10% of the first bid amount. Check the next bucket after you enter your bid!" ]
                           , Element.paragraph []
-                                [ Element.text "Share your own referral code with others to earn FRY! More info "
+                                [ Element.text <| "Share your own referral code with others to earn " ++ Config.exitingTokenCurrencyLabel ++ "! More info "
                                 , Element.newTabLink [ Element.Font.color EH.lightBlue ]
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
@@ -2204,7 +2213,7 @@ makeClaimButton userInfo exitInfo =
     EH.lightBlueButton
         Desktop
         [ Element.width Element.fill ]
-        [ "Claim your FRY" ]
+        [ "Claim your " ++ Config.exitingTokenCurrencyLabel ++ "" ]
         (ClaimClicked userInfo exitInfo)
 
 

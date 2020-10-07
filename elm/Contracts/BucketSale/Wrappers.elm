@@ -46,10 +46,10 @@ getTotalExitedTokens testMode msgConstructor =
         |> Task.attempt msgConstructor
 
 
-getFryBalance : TestMode -> Address -> (Result Http.Error TokenValue -> msg) -> Cmd msg
-getFryBalance testMode userAddress msgConstructor =
+getSoldTokenBalance : TestMode -> Address -> (Result Http.Error TokenValue -> msg) -> Cmd msg
+getSoldTokenBalance testMode userAddress msgConstructor =
     Token.balanceOf
-        (Config.fryAddress testMode)
+        (Config.exitingTokenAddress testMode)
         userAddress
         |> Eth.call (EthHelpers.appHttpProvider testMode)
         |> Task.map TokenValue.tokenValue
@@ -82,17 +82,17 @@ type alias StateUpdateInfo =
 
 type alias BucketInfo =
     { bucketId : Int
-    , totalDaiEntered : TokenValue
-    , userDaiEntered : TokenValue
-    , userFryExited : TokenValue
+    , totalTokensEntered : TokenValue
+    , userTokensEntered : TokenValue
+    , userTokensExited : TokenValue
     }
 
 
 type alias UserStateInfo =
     { ethBalance : TokenValue
-    , daiBalance : TokenValue
-    , daiAllowance : TokenValue
-    , fryBalance : TokenValue
+    , enteringTokenBalance : TokenValue
+    , enteringTokenAllowance : TokenValue
+    , exitingTokenBalance : TokenValue
     , exitInfo : ExitInfo
     }
 
@@ -121,27 +121,27 @@ getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId bindingStruct =
                             (\userAddress ->
                                 ( userAddress
                                 , { ethBalance = TokenValue.tokenValue bindingStruct.ethBalance
-                                  , daiBalance = TokenValue.tokenValue bindingStruct.tokenSoldForBalance
-                                  , daiAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
-                                  , fryBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
+                                  , enteringTokenBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
+                                  , enteringTokenAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
+                                  , exitingTokenBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
                                   , exitInfo = exitInfo
                                   }
                                 )
                             )
                 , bucketInfo =
                     { bucketId = bucketId
-                    , totalDaiEntered = TokenValue.tokenValue bindingStruct.bucket_totalValueEntered
-                    , userDaiEntered = TokenValue.tokenValue bindingStruct.buy_valueEntered
-                    , userFryExited = TokenValue.tokenValue bindingStruct.buy_buyerTokensExited
+                    , totalTokensEntered = TokenValue.tokenValue bindingStruct.bucket_totalValueEntered
+                    , userTokensEntered = TokenValue.tokenValue bindingStruct.buy_valueEntered
+                    , userTokensExited = TokenValue.tokenValue bindingStruct.buy_buyerTokensExited
                     }
                 }
             )
 
 
-unlockDai : TestMode -> Call Bool
-unlockDai testMode =
+approveTransfer : TestMode -> Call Bool
+approveTransfer testMode =
     Token.approve
-        (Config.daiContractAddress testMode)
+        (Config.enteringTokenAddress testMode)
         (Config.bucketSaleAddress testMode)
         EthHelpers.maxUintValue
 

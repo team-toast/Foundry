@@ -30,6 +30,11 @@ image =
     JustImage
 
 
+enteringTokenSymbol : Image
+enteringTokenSymbol =
+    daiSymbol
+
+
 daiSymbol : Image
 daiSymbol =
     JustImage
@@ -62,8 +67,8 @@ qmarkCircle =
         }
 
 
-fryIcon : Image
-fryIcon =
+exitingTokenIcon : Image
+exitingTokenIcon =
     JustImage
         { src = "img/fry-icon.svg"
         , description = "Foundry"

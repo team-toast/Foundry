@@ -24,8 +24,13 @@ ganacheProviderUrl =
     "http://localhost:8545"
 
 
-daiContractAddress : TestMode -> Address
-daiContractAddress testMode =
+enteringTokenCurrencyLabel : String
+enteringTokenCurrencyLabel =
+    "FRY"
+
+
+enteringTokenAddress : TestMode -> Address
+enteringTokenAddress testMode =
     case testMode of
         None ->
             Eth.Utils.unsafeToAddress "0x6B175474E89094C44Da98b954EedeAC495271d0F"
@@ -39,9 +44,13 @@ daiContractAddress testMode =
         TestGanache ->
             Eth.Utils.unsafeToAddress "0x2612Af3A521c2df9EAF28422Ca335b04AdF3ac66"
 
+exitingTokenCurrencyLabel : String
+exitingTokenCurrencyLabel =
+    "FRY"
 
-fryAddress : TestMode -> Address
-fryAddress testMode =
+
+exitingTokenAddress : TestMode -> Address
+exitingTokenAddress testMode =
     case testMode of
         None ->
             Eth.Utils.unsafeToAddress "0x6c972b70c533E2E045F333Ee28b9fFb8D717bE69"
@@ -111,6 +120,7 @@ bucketSaleNumBuckets =
 feedbackEndpointUrl : String
 feedbackEndpointUrl =
     "https://personal-rxyx.outsystemscloud.com/SaleFeedbackUI/rest/General/SubmitFeedback"
+
 
 ipCountryCodeEndpointUrl : String
 ipCountryCodeEndpointUrl =
