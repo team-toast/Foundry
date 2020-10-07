@@ -8,6 +8,7 @@ import Element.Background
 import Element.Border
 import Element.Events
 import Element.Font
+import Config
 import Helpers.Element as EH
 import Images exposing (Image)
 import Routing
@@ -19,7 +20,7 @@ import Wallet
 
 root : Model -> Browser.Document Msg
 root model =
-    { title = Debug.todo "title"
+    { title = Config.appTitle
     , body =
         [ let
             ( pageEl, modalEls ) =
@@ -449,7 +450,7 @@ viewBucketSaleLoading bucketSaleLoadingModel wallet now =
             bigCenteredText "The sale contract doesn't seem to be deployed yet."
 
         Error (SaleNotStarted startTime) ->
-            Debug.todo "viewCountdownPage must be designed"
+            bigCenteredText "The sale hasn't started yet!"
             -- ViewCountdownPage.view
             --     now
             --     startTime
