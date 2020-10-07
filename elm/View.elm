@@ -8,6 +8,7 @@ import Element.Background
 import Element.Border
 import Element.Events
 import Element.Font
+import Config
 import Helpers.Element as EH
 import Images exposing (Image)
 import Routing
@@ -20,7 +21,7 @@ import Wallet
 
 root : Model -> Browser.Document Msg
 root model =
-    { title = "Foundry Permafrost - Locked Liquidity Experiment"
+    { title = Config.appTitle
     , body =
         [ let
             ( pageEl, modalEls ) =

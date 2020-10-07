@@ -1,5 +1,6 @@
 module Images exposing (..)
 
+import Config
 import Element exposing (Attribute, Element)
 import Time
 
@@ -33,9 +34,7 @@ image =
 enteringTokenSymbol : Image
 enteringTokenSymbol =
     JustImage
-        { src = "img/liq-symbol.svg"
-        , description = "balancer liquidity token"
-        }
+        Config.enteringTokenImageInfo
 
 
 daiSymbol : Image

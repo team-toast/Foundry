@@ -24,9 +24,21 @@ ganacheProviderUrl =
     "http://localhost:8545"
 
 
+appTitle : String
+appTitle =
+    "Foundry Permafrost - Locked Liquidity Experiment"
+
+
 enteringTokenCurrencyLabel : String
 enteringTokenCurrencyLabel =
     "<LIQ>"
+
+
+enteringTokenImageInfo : { src : String, description : String }
+enteringTokenImageInfo =
+    { src = "img/liq-symbol.svg"
+    , description = "balancer liquidity token"
+    }
 
 
 enteringTokenAddress : TestMode -> Address
