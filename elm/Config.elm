@@ -24,6 +24,11 @@ ganacheProviderUrl =
     "http://localhost:8545"
 
 
+appTitle : String
+appTitle =
+    Debug.todo ""
+
+
 enteringTokenCurrencyLabel : String
 enteringTokenCurrencyLabel =
     Debug.todo ""
