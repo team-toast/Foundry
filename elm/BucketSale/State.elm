@@ -631,8 +631,8 @@ update msg prevModel =
                             [ CmdUp.nonRepeatingGTag
                                 "2a - has ETH"
                                 "funnel"
-                                (TokenValue.toConciseString ethBalance)
-                                0
+                                ""
+                                (ethBalance |> TokenValue.toFloatWithWarning |> floor)
                             ]
 
                           else
@@ -640,10 +640,10 @@ update msg prevModel =
                          )
                             ++ (if not <| TokenValue.isZero enteringTokenBalance then
                                     [ CmdUp.nonRepeatingGTag
-                                        "2b - has enteringToken"
+                                        ("2b - has " ++ Config.enteringTokenCurrencyLabel)
                                         "funnel"
-                                        (TokenValue.toConciseString enteringTokenBalance)
-                                        0
+                                        ""
+                                        (enteringTokenBalance |> TokenValue.toFloatWithWarning |> floor)
                                     ]
 
                                 else
