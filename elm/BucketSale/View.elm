@@ -722,8 +722,9 @@ bidInputBlock enterUXModel bucketInfo testMode =
                 [ Element.centerY
                 , Element.spacing 10
                 ]
-                [ Images.enteringTokenSymbol
-                    |> Images.toElement [ Element.height <| Element.px 30 ]
+                [ Images.toElement
+                    [ Element.height <| Element.px 30 ]
+                    Images.enteringTokenSymbol
                 , Element.text Config.enteringTokenCurrencyLabel
                 ]
             ]
