@@ -218,7 +218,7 @@ futureBucketsPane model =
     in
     case fetchedNextBucketInfo of
         InvalidBucket ->
-            noBucketsLeftBlock
+            Element.none
 
         ValidBucket nextBucketInfo ->
             Element.column
@@ -521,45 +521,45 @@ focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModa
 maybeReferralIndicatorAndModal : DisplayProfile -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
 maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.none
-    -- case maybeUserInfo of
-    --     Nothing ->
-    --         Element.none
 
-    --     Just userInfo ->
-    --         let
-    --             maybeModalAttribute =
-    --                 responsiveVal dProfile Element.onRight Element.onLeft <|
-    --                     if referralModalActive then
-    --                         Element.el
-    --                             [ responsiveVal dProfile Element.alignLeft Element.alignRight
-    --                             , responsiveVal dProfile Element.moveRight Element.moveLeft 25
-    --                             , Element.moveUp 50
-    --                             , EH.moveToFront
-    --                             ]
-    --                             (referralModal userInfo maybeReferrer testMode)
 
-    --                     else
-    --                         Element.none
-    --         in
-    --         Element.el
-    --             [ Element.alignRight
-    --             , maybeModalAttribute
-    --             , Element.inFront <|
-    --                 if referralModalActive then
-    --                     Element.el
-    --                         [ EH.moveToFront ]
-    --                     <|
-    --                         referralBonusIndicator
-    --                             maybeReferrer
-    --                             True
 
-    --                 else
-    --                     Element.none
-    --             ]
-    --         <|
-    --             referralBonusIndicator
-    --                 maybeReferrer
-    --                 referralModalActive
+-- case maybeUserInfo of
+--     Nothing ->
+--         Element.none
+--     Just userInfo ->
+--         let
+--             maybeModalAttribute =
+--                 responsiveVal dProfile Element.onRight Element.onLeft <|
+--                     if referralModalActive then
+--                         Element.el
+--                             [ responsiveVal dProfile Element.alignLeft Element.alignRight
+--                             , responsiveVal dProfile Element.moveRight Element.moveLeft 25
+--                             , Element.moveUp 50
+--                             , EH.moveToFront
+--                             ]
+--                             (referralModal userInfo maybeReferrer testMode)
+--                     else
+--                         Element.none
+--         in
+--         Element.el
+--             [ Element.alignRight
+--             , maybeModalAttribute
+--             , Element.inFront <|
+--                 if referralModalActive then
+--                     Element.el
+--                         [ EH.moveToFront ]
+--                     <|
+--                         referralBonusIndicator
+--                             maybeReferrer
+--                             True
+--                 else
+--                     Element.none
+--             ]
+--         <|
+--             referralBonusIndicator
+--                 maybeReferrer
+--                 referralModalActive
 
 
 focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
@@ -1324,11 +1324,6 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
 lastElem : List a -> Maybe a
 lastElem =
     List.foldl (Just >> always) Nothing
-
-
-noBucketsLeftBlock : Element Msg
-noBucketsLeftBlock =
-    Element.text "There are no more future blocks."
 
 
 maybeBucketsLeftBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
