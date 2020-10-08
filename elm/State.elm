@@ -355,7 +355,7 @@ update msg prevModel =
                 LoadingSaleModel loadingSaleModel ->
                     case loadingSaleModel.loadingState of
                         Error (SaleNotStarted startTime) ->
-                            case initBucketSale prevModel.testMode startTime newNow of
+                            case initBucketSale prevModel.testMode startTime modelWithUpdatedNow.now of
                                 Ok bucketSale ->
                                     let
                                         ( bucketSaleModel, bucketSaleCmd ) =
@@ -364,7 +364,7 @@ update msg prevModel =
                                                 prevModel.maybeReferrer
                                                 prevModel.testMode
                                                 prevModel.wallet
-                                                newNow
+                                                modelWithUpdatedNow.now
                                     in
                                     ( { modelWithUpdatedNow
                                         | submodel = BucketSaleModel bucketSaleModel
