@@ -1588,7 +1588,7 @@ viewYoutubeLinksColumn linkInfoList =
                         ]
                         [ Element.el
                             [ Element.Font.bold
-                            , Element.width <| Element.px 70
+                            , Element.width <| Element.px 75
                             ]
                           <|
                             Element.text preTitle
