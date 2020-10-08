@@ -31,7 +31,7 @@ appTitle =
 
 enteringTokenCurrencyLabel : String
 enteringTokenCurrencyLabel =
-    "<LIQ>"
+    "ETHFRY"
 
 
 enteringTokenImageInfo : { src : String, description : String }
