@@ -1561,14 +1561,12 @@ viewYoutubeLinksBlock =
                ]
         )
         [ blockTitleText "Not sure where to start?"
-        , blockTitleText "NEED MORE VID LINKS!"
         , viewYoutubeLinksColumn
             [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf" )
-            , ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
-
-            -- , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=gkt-Wv104RU" )
-            -- , ( "Video 3:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
-            , ( "Video 4:", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
+            , ( "Step 1a:", "Get ETHFRY with only (10% fee)", "https://www.youtube.com/watch?v=APW_yTX6Pao" )
+            , ( "Step 1b:", "Get ETHFRY with ETH and FRY", "https://www.youtube.com/watch?v=nR5Hv_-F49s" )
+            , ( "Step 2:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
+            , ( "Step 3:", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
             ]
         ]
 
