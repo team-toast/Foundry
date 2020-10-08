@@ -25,6 +25,7 @@ import List.Extra
 import Maybe.Extra
 import Routing
 import Time
+import TokenValue exposing (TokenValue)
 import Types exposing (..)
 import Url exposing (Url)
 import UserNotice as UN exposing (UserNotice)
@@ -310,15 +311,25 @@ update msg prevModel =
                 LoadingSaleModel loadingSaleModel ->
                     case fetchResult of
                         Ok newBalance ->
-                            ( { prevModel
+                            { prevModel
                                 | submodel =
                                     LoadingSaleModel <|
                                         { loadingSaleModel
                                             | userBalance = Just newBalance
                                         }
-                              }
-                            , Cmd.none
-                            )
+                            }
+                                |> update
+                                    (if not <| TokenValue.isZero newBalance then
+                                        CmdUp <|
+                                            CmdUp.nonRepeatingGTag
+                                                ("0 - has " ++ Config.enteringTokenCurrencyLabel)
+                                                "funnel"
+                                                ""
+                                                (newBalance |> TokenValue.toFloatWithWarning |> floor)
+
+                                     else
+                                        NoOp
+                                    )
 
                         Err fetchError ->
                             ( prevModel
