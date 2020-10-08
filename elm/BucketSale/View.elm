@@ -520,45 +520,46 @@ focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModa
 
 maybeReferralIndicatorAndModal : DisplayProfile -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
 maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModalActive testMode =
-    case maybeUserInfo of
-        Nothing ->
-            Element.none
+    Element.none
+    -- case maybeUserInfo of
+    --     Nothing ->
+    --         Element.none
 
-        Just userInfo ->
-            let
-                maybeModalAttribute =
-                    responsiveVal dProfile Element.onRight Element.onLeft <|
-                        if referralModalActive then
-                            Element.el
-                                [ responsiveVal dProfile Element.alignLeft Element.alignRight
-                                , responsiveVal dProfile Element.moveRight Element.moveLeft 25
-                                , Element.moveUp 50
-                                , EH.moveToFront
-                                ]
-                                (referralModal userInfo maybeReferrer testMode)
+    --     Just userInfo ->
+    --         let
+    --             maybeModalAttribute =
+    --                 responsiveVal dProfile Element.onRight Element.onLeft <|
+    --                     if referralModalActive then
+    --                         Element.el
+    --                             [ responsiveVal dProfile Element.alignLeft Element.alignRight
+    --                             , responsiveVal dProfile Element.moveRight Element.moveLeft 25
+    --                             , Element.moveUp 50
+    --                             , EH.moveToFront
+    --                             ]
+    --                             (referralModal userInfo maybeReferrer testMode)
 
-                        else
-                            Element.none
-            in
-            Element.el
-                [ Element.alignRight
-                , maybeModalAttribute
-                , Element.inFront <|
-                    if referralModalActive then
-                        Element.el
-                            [ EH.moveToFront ]
-                        <|
-                            referralBonusIndicator
-                                maybeReferrer
-                                True
+    --                     else
+    --                         Element.none
+    --         in
+    --         Element.el
+    --             [ Element.alignRight
+    --             , maybeModalAttribute
+    --             , Element.inFront <|
+    --                 if referralModalActive then
+    --                     Element.el
+    --                         [ EH.moveToFront ]
+    --                     <|
+    --                         referralBonusIndicator
+    --                             maybeReferrer
+    --                             True
 
-                    else
-                        Element.none
-                ]
-            <|
-                referralBonusIndicator
-                    maybeReferrer
-                    referralModalActive
+    --                 else
+    --                     Element.none
+    --             ]
+    --         <|
+    --             referralBonusIndicator
+    --                 maybeReferrer
+    --                 referralModalActive
 
 
 focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
