@@ -51,6 +51,27 @@ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
             [ Element.el [ Element.Font.size 50 ] <| Element.text "The Permafrost Sale begins in"
             , countdownTimerEl now saleStartTime
             ]
+        , Element.newTabLink
+            [ Element.centerX
+            , Element.Border.rounded 10
+            , Element.padding 15
+            , Element.Background.color EH.blue
+            , Element.Border.shadow
+                { offset = ( -3, 3 )
+                , size = 0
+                , blur = 3
+                , color = Element.rgba 0 0 0 0.3
+                }
+            ]
+            { url = "https://medium.com/@coinop.logan/permafrost-un-rug-pullable-liquidity-9aa98ecf33c8"
+            , label =
+                Element.el
+                    [ Element.Font.color EH.white
+                    , Element.Font.size 36
+                    ]
+                <|
+                    Element.text "What's the Permafrost Sale?"
+            }
         , embeddedYoutubeEl
         , tokenOutputEl maybeUserAddress maybeUserBalance
         , paragraphs <|
@@ -178,25 +199,6 @@ countdownCell num label =
           <|
             Element.text label
         ]
-
-
-countdownString : Time.Posix -> String
-countdownString timeLeft =
-    let
-        hri =
-            TimeHelpers.toHumanReadableInterval timeLeft
-    in
-    if hri.days > 0 then
-        String.fromInt hri.days ++ "d " ++ String.fromInt hri.hours ++ "h " ++ String.fromInt hri.min ++ "m " ++ String.fromInt hri.sec ++ "s"
-
-    else if hri.hours > 0 then
-        String.fromInt hri.hours ++ "h " ++ String.fromInt hri.min ++ "m " ++ String.fromInt hri.sec ++ "s"
-
-    else if hri.min > 0 then
-        String.fromInt hri.min ++ "m " ++ String.fromInt hri.sec ++ "s"
-
-    else
-        String.fromInt hri.sec ++ "s"
 
 
 tokenOutputEl : Maybe Address -> Maybe TokenValue -> Element Msg
