@@ -1064,7 +1064,7 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
                          )
                             |> (\els ->
                                     if List.length els > 0 then
-                                        els ++ [ Element.text Config.enteringTokenCurrencyLabel ]
+                                        els ++ [ Element.text <| " " ++ Config.enteringTokenCurrencyLabel ]
 
                                     else
                                         [ Element.text <| "0 " ++ Config.enteringTokenCurrencyLabel ]
@@ -1605,7 +1605,7 @@ viewYoutubeLinksBlock =
         [ blockTitleText "Not sure where to start?"
         , viewYoutubeLinksColumn
             [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf" )
-            , ( "Step 1a:", "Get ETHFRY with only (10% fee)", "https://www.youtube.com/watch?v=APW_yTX6Pao" )
+            , ( "Step 1a:", "Get ETHFRY with ETH (10% fee)", "https://www.youtube.com/watch?v=APW_yTX6Pao" )
             , ( "Step 1b:", "Get ETHFRY with ETH and FRY", "https://www.youtube.com/watch?v=nR5Hv_-F49s" )
             , ( "Step 2:", "Participate in the sale", "https://www.youtube.com/watch?v=jwqAvGYsIrE" )
             , ( "Step 3:", "Claim your FRY", "https://www.youtube.com/watch?v=-7yJMku7GPs" )
