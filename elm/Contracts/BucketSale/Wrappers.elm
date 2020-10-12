@@ -121,7 +121,7 @@ getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId bindingStruct =
                             (\userAddress ->
                                 ( userAddress
                                 , { ethBalance = TokenValue.tokenValue bindingStruct.ethBalance
-                                  , enteringTokenBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
+                                  , enteringTokenBalance = TokenValue.tokenValue bindingStruct.tokenSoldForBalance
                                   , enteringTokenAllowance = TokenValue.tokenValue bindingStruct.tokenSoldForAllowance
                                   , exitingTokenBalance = TokenValue.tokenValue bindingStruct.tokenOnSaleBalance
                                   , exitInfo = exitInfo
