@@ -77,6 +77,14 @@ exitingTokenIcon =
         }
 
 
+frozenFry : Image
+frozenFry =
+    JustImage
+        { src = "img/frozen-fry.png"
+        , description = "permafrost"
+        }
+
+
 loadingArrows : Image
 loadingArrows =
     JustImage

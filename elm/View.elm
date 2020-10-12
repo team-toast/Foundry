@@ -177,8 +177,9 @@ brandAndLogo dProfile =
         , Element.spacing 10
         ]
         [ Images.toElement
-            [ Element.centerY ]
-            Images.exitingTokenIcon
+            [ Element.centerY
+            , Element.height <| Element.px 60]
+            Images.frozenFry
         , Element.column
             [ Element.spacing 5 ]
             [ Element.el
@@ -188,7 +189,7 @@ brandAndLogo dProfile =
                 , Element.centerY
                 ]
               <|
-                Element.text "Foundry Sale"
+                Element.text "Permafrost Sale"
             , Element.newTabLink
                 [ Element.alignLeft
                 , Element.Background.color EH.lightBlue
