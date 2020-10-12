@@ -176,7 +176,10 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
         ([ focusedBucketHeaderEl
             dProfile
             bucketId
-            (Wallet.userInfo wallet)
+            wallet
+            (maybeExtraUserInfo
+                |> Maybe.map .enteringTokenBalance
+            )
             maybeReferrer
             referralModalActive
             testMode
@@ -488,8 +491,8 @@ totalExitedBlock maybeTotalExited =
                 ]
 
 
-focusedBucketHeaderEl : DisplayProfile -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
-focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
+focusedBucketHeaderEl : DisplayProfile -> Int -> Wallet.State -> Maybe TokenValue -> Maybe Address -> Bool -> TestMode -> Element Msg
+focusedBucketHeaderEl dProfile bucketId wallet maybeBalance maybeReferrer referralModalActive testMode =
     Element.column
         [ Element.spacing 8
         , Element.width Element.fill
@@ -508,12 +511,51 @@ focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModa
                         ++ String.fromInt bucketId
                 , nextBucketArrow bucketId
                 ]
-            , maybeReferralIndicatorAndModal
-                dProfile
-                maybeUserInfo
-                maybeReferrer
-                referralModalActive
-                testMode
+            , case Wallet.userInfo wallet of
+                Nothing ->
+                    Element.el [ Element.alignRight ] <| connectToWeb3Button False wallet
+
+                Just userInfo ->
+                    let
+                        balanceEl =
+                            Element.el [ Element.centerX ] <|
+                                case maybeBalance of
+                                    Nothing ->
+                                        Element.text "(loading...)"
+
+                                    Just balance ->
+                                        Element.row
+                                            [ Element.spacing 5
+                                            , Element.Font.size 30
+                                            ]
+                                            [ Element.text <|
+                                                TokenValue.toConciseString balance
+                                            , Images.enteringTokenSymbol
+                                                |> Images.toElement
+                                                    [ Element.height <| Element.px 30 ]
+                                            ]
+                    in
+                    Element.column
+                        [ Element.alignRight
+                        , Element.spacing 5
+                        ]
+                        [ balanceEl
+                        , Element.el
+                            [ Element.Font.color grayTextColor
+                            , Element.Font.size 14
+                            ]
+                          <|
+                            Element.text <|
+                                Config.enteringTokenCurrencyLabel
+                                    ++ " in your wallet"
+                        ]
+
+            -- , maybeReferralIndicatorAndModal
+            --     dProfile
+            --     maybeUserInfo
+            --     maybeReferrer
+            --     referralModalActive
+            --     testMode
             ]
         ]
 
@@ -1227,7 +1269,7 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
                 Nothing ->
-                    connectToWeb3Button wallet
+                    connectToWeb3Button True wallet
 
                 Just userInfo ->
                     case maybeExtraUserInfo of
@@ -2260,8 +2302,8 @@ green =
     Element.rgb255 0 162 149
 
 
-connectToWeb3Button : Wallet.State -> Element Msg
-connectToWeb3Button wallet =
+connectToWeb3Button : Bool -> Wallet.State -> Element Msg
+connectToWeb3Button fillWidth wallet =
     let
         commonButtonStyles =
             [ Element.width Element.fill
@@ -2274,6 +2316,12 @@ connectToWeb3Button wallet =
             , Element.Font.color EH.white
             , Element.pointer
             ]
+                ++ (if fillWidth then
+                        [ Element.width Element.fill ]
+
+                    else
+                        []
+                   )
 
         commonTextStyles =
             [ Element.Font.bold
