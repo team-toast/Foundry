@@ -1,6 +1,7 @@
 module ViewCountdownPage exposing (..)
 
 import CmdUp
+import CommonTypes exposing (..)
 import Config
 import Element exposing (Element)
 import Element.Background
@@ -20,26 +21,40 @@ import Types exposing (..)
 import Wallet
 
 
-view : Time.Posix -> Time.Posix -> Maybe Address -> Maybe TokenValue -> Element Msg
-view now saleStartTime maybeUserAddress maybeUserBalance =
+view : Time.Posix -> Time.Posix -> Maybe Address -> Maybe TokenValue -> DisplayProfile -> Element Msg
+view now saleStartTime maybeUserAddress maybeUserBalance dProfile =
     Element.column
-        [ Element.paddingXY 0 50
+        [ responsiveVal dProfile
+            (Element.paddingXY 0 50)
+            (Element.paddingXY 0 0)
         , Element.width Element.fill
         , Element.spacing 40
         ]
-        [ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance
+        [ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance dProfile
         ]
 
 
-viewMainBlock : Time.Posix -> Time.Posix -> Maybe Address -> Maybe TokenValue -> Element Msg
-viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
+viewMainBlock : Time.Posix -> Time.Posix -> Maybe Address -> Maybe TokenValue -> DisplayProfile -> Element Msg
+viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance dProfile =
     Element.column
         [ Element.centerX
-        , Element.spacing 60
+        , Element.spacing <| responsiveVal dProfile 60 30
         , Element.Background.color <| Element.rgb 0.8 0.8 1
         , Element.Border.rounded 10
-        , Element.paddingXY 20 40
-        , Element.width (Element.shrink |> Element.maximum 1200)
+        , responsiveVal
+            dProfile
+            (Element.paddingXY 20 40)
+            (Element.paddingEach
+                { right = 5
+                , left = 5
+                , top = 20
+                , bottom = 40
+                }
+            )
+        , Element.width <|
+            responsiveVal dProfile
+                (Element.shrink |> Element.maximum 1200)
+                Element.fill
         , Element.Border.glow
             (Element.rgba 1 1 1 0.3)
             5
@@ -48,13 +63,29 @@ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
             [ Element.spacing 25
             , Element.centerX
             ]
-            [ Element.el [ Element.Font.size 50 ] <| Element.text "The Permafrost Sale begins in"
+            [ case dProfile of
+                Desktop ->
+                    Element.el [ Element.Font.size 50 ] <| Element.text "The Permafrost Sale begins in"
+
+                _ ->
+                    Element.column
+                        [ Element.spacing 3
+                        , Element.centerX
+                        ]
+                        [ Element.el
+                            [ Element.centerX
+                            , Element.Font.size 30
+                            ]
+                          <|
+                            Element.text "The Permafrost Sale"
+                        , Element.el [ Element.centerX ] <| Element.text "begins in"
+                        ]
             , countdownTimerEl now saleStartTime
             ]
         , Element.newTabLink
             [ Element.centerX
             , Element.Border.rounded 10
-            , Element.padding 15
+            , Element.padding <| responsiveVal dProfile 15 5
             , Element.Background.color EH.blue
             , Element.Border.shadow
                 { offset = ( -3, 3 )
@@ -67,14 +98,14 @@ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
             , label =
                 Element.el
                     [ Element.Font.color EH.white
-                    , Element.Font.size 36
+                    , Element.Font.size <| responsiveVal dProfile 36 26
                     ]
                 <|
                     Element.text "What's the Permafrost Sale?"
             }
-        , embeddedYoutubeEl
-        , tokenOutputEl maybeUserAddress maybeUserBalance
-        , paragraphs <|
+        , embeddedYoutubeElOrMobileWarning dProfile
+        , tokenOutputEl dProfile maybeUserAddress maybeUserBalance
+        , paragraphs dProfile <|
             [ [ Element.text "This sale will accept "
               , emphasizedText "ETH/FRY Balancer Liquidity Tokens"
               , Element.text " in exchange for freshly minted "
@@ -100,24 +131,34 @@ viewMainBlock now saleStartTime maybeUserAddress maybeUserBalance =
               , link "this video" "https://www.youtube.com/watch?v=APW_yTX6Pao&feature=youtu.be"
               , Element.text " demonstrates an alternate method, but this incurs an extra 10% fee."
               ]
-            , [ Element.text "Return to this page to verify you have the right liquidity tokens." ]
+            , [ Element.text "Return to this page to verify you have the right liquidity tokens."
+              , responsiveVal dProfile
+                    Element.none
+                    (Element.el [ Element.Font.color EH.softRed ] <| Element.text " But again, note that this sale won't work on mobile. When the sale starts you'll need to use a bigger screen.")
+              ]
             ]
         ]
 
 
-embeddedYoutubeEl : Element Msg
-embeddedYoutubeEl =
+embeddedYoutubeElOrMobileWarning : DisplayProfile -> Element Msg
+embeddedYoutubeElOrMobileWarning dProfile =
     Element.el
         [ Element.centerX ]
     <|
-        Element.html
-            (Embed.Youtube.fromString "APW_yTX6Pao"
-                |> Embed.Youtube.attributes
-                    [ Embed.Youtube.Attributes.width 1024
-                    , Embed.Youtube.Attributes.height 580
-                    ]
-                |> Embed.Youtube.toHtml
-            )
+        case dProfile of
+            Desktop ->
+                Element.html
+                    (Embed.Youtube.fromString "APW_yTX6Pao"
+                        |> Embed.Youtube.attributes
+                            [ Embed.Youtube.Attributes.width 1024
+                            , Embed.Youtube.Attributes.height 580
+                            ]
+                        |> Embed.Youtube.toHtml
+                    )
+
+            _ ->
+                paragraphs dProfile
+                    [ [ Element.el [ Element.Font.color EH.softRed ] <| Element.text "Note that the sale won't work on mobile. When the sale starts you'll need to use a bigger screen." ] ]
 
 
 link : String -> String -> Element Msg
@@ -134,17 +175,19 @@ emphasizedText =
     Element.el [ Element.Font.bold ] << Element.text
 
 
-paragraphs : List (List (Element Msg)) -> Element Msg
-paragraphs lists =
+paragraphs : DisplayProfile -> List (List (Element Msg)) -> Element Msg
+paragraphs dProfile lists =
     Element.column
         [ Element.spacing 15
         , Element.width Element.fill
         , Element.Font.center
-        , Element.paddingXY 40 0
+        , responsiveVal dProfile
+            (Element.paddingXY 40 0)
+            (Element.paddingXY 10 0)
         ]
         (List.map
             (Element.paragraph
-                [ Element.Font.size 24
+                [ Element.Font.size 18
                 ]
             )
             lists
@@ -202,10 +245,11 @@ countdownCell num label =
         ]
 
 
-tokenOutputEl : Maybe Address -> Maybe TokenValue -> Element Msg
-tokenOutputEl maybeUserAddress maybeBalance =
+tokenOutputEl : DisplayProfile -> Maybe Address -> Maybe TokenValue -> Element Msg
+tokenOutputEl dProfile maybeUserAddress maybeBalance =
     Element.column
         [ Element.centerX
+        , Element.width Element.fill
         , Element.spacing 10
         , Element.padding 10
         , Element.Border.rounded 5
@@ -236,24 +280,34 @@ tokenOutputEl maybeUserAddress maybeBalance =
                                 |> Images.toElement
                                     [ Element.height <| Element.px 50 ]
                             ]
-                , Element.el [ Element.Font.size 16 ] <|
-                    Element.text <|
+                , Element.paragraph
+                    [ Element.width Element.fill
+                    , Element.Font.center
+                    , Element.Font.size 16
+                    ]
+                    [ Element.text <|
                         "Your balance of the accepted ETHFRY Liquidity Tokens"
+                    ]
                 ]
 
             Nothing ->
-                [ Element.text "Connect your wallet to verify you have the right liquidity tokens."
-                , connectToWeb3Button
+                [ Element.paragraph
+                    [ Element.width Element.fill
+                    , Element.Font.center
+                    , Element.Font.size 16
+                    ]
+                    [ Element.text "Connect your wallet to verify you have the right liquidity tokens." ]
+                , connectToWeb3Button dProfile
                 ]
 
 
-connectToWeb3Button : Element Msg
-connectToWeb3Button =
+connectToWeb3Button : DisplayProfile -> Element Msg
+connectToWeb3Button dProfile =
     Element.el
         [ Element.centerX
-        , Element.padding 17
+        , Element.padding <| responsiveVal dProfile 17 10
         , Element.Border.rounded 4
-        , Element.Font.size 20
+        , Element.Font.size <| responsiveVal dProfile 20 16
         , Element.Font.semiBold
         , Element.Font.center
         , Element.Background.color EH.softRed

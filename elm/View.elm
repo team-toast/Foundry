@@ -3,12 +3,12 @@ module View exposing (root)
 import Browser
 import BucketSale.View
 import CommonTypes exposing (..)
+import Config
 import Element exposing (Attribute, Element)
 import Element.Background
 import Element.Border
 import Element.Events
 import Element.Font
-import Config
 import Helpers.Element as EH
 import Images exposing (Image)
 import Routing
@@ -55,75 +55,88 @@ root model =
 
 pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
 pageElementAndModal model =
-    if model.dProfile /= Desktop && model.displayMobileWarning then
-        ( Element.column
-            [ Element.width Element.fill
-            , Element.height Element.fill
-            , Element.Background.color <| Element.rgb255 20 53 138
-            , Element.spacing 30
-            , Element.paddingXY 10 30
-            , Element.Font.size 22
-            , Element.Font.color EH.white
-            ]
-            [ Element.paragraph [ Element.Font.center ]
-                [ Element.text "This interface is not designed for screens this small. To participate in this sale, visit on a larger screen. Alternatively, some mobile browsers have a \"desktop mode\" that might help." ]
-            , Element.paragraph [ Element.Font.center ]
-                [ Element.text "If you're just looking for info on Foundry, FRY, or the sale, check out "
-                , Element.newTabLink
-                    [ Element.Font.color EH.lightBlue
-                    ]
-                    { url = "https://foundrydao.com"
-                    , label = Element.text "foundrydao.com"
-                    }
-                , Element.text "."
-                ]
-            ]
-        , []
-        )
-
-    else
-        let
-            ( submodelEl, modalEls ) =
-                submodelElementAndModal model
-
-            maybeTestnetIndicator =
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size 24
-                    , Element.Font.bold
-                    , Element.Font.italic
-                    , Element.Font.color EH.softRed
-                    ]
-                <|
-                    case model.testMode of
-                        None ->
-                            Element.none
-
-                        TestMainnet ->
-                            Element.text "In Test (Mainnet) mode"
-
-                        TestKovan ->
-                            Element.text "In Test (Kovan) mode"
-
-                        TestGanache ->
-                            Element.text "In Test (Local) mode"
-        in
-        ( Element.column
-            [ Element.width Element.fill
-            , Element.height Element.fill
-            , Element.spacing 20
-            , Element.behindContent <| headerBackground model.dProfile
-            ]
-            [ header model.dProfile
-            , maybeTestnetIndicator
-            , Element.el
+    let
+        mobileSorryMsg =
+            ( Element.column
                 [ Element.width Element.fill
-                , Element.paddingXY 20 0
+                , Element.height Element.fill
+                , Element.Background.color <| Element.rgb255 20 53 138
+                , Element.spacing 30
+                , Element.paddingXY 10 30
+                , Element.Font.size 22
+                , Element.Font.color EH.white
                 ]
-                submodelEl
-            ]
-        , modalEls ++ userNoticeEls model.dProfile model.userNotices
-        )
+                [ Element.paragraph [ Element.Font.center ]
+                    [ Element.text "This interface is not designed for screens this small. To participate in this sale, visit on a larger screen. Alternatively, some mobile browsers have a \"desktop mode\" that might help." ]
+                , Element.paragraph [ Element.Font.center ]
+                    [ Element.text "If you're just looking for info on Foundry, FRY, or the sale, check out "
+                    , Element.newTabLink
+                        [ Element.Font.color EH.lightBlue
+                        ]
+                        { url = "https://foundrydao.com"
+                        , label = Element.text "foundrydao.com"
+                        }
+                    , Element.text "."
+                    ]
+                ]
+            , []
+            )
+
+        normalView =
+            let
+                ( submodelEl, modalEls ) =
+                    submodelElementAndModal model
+
+                maybeTestnetIndicator =
+                    Element.el
+                        [ Element.centerX
+                        , Element.Font.size 24
+                        , Element.Font.bold
+                        , Element.Font.italic
+                        , Element.Font.color EH.softRed
+                        ]
+                    <|
+                        case model.testMode of
+                            None ->
+                                Element.none
+
+                            TestMainnet ->
+                                Element.text "In Test (Mainnet) mode"
+
+                            TestKovan ->
+                                Element.text "In Test (Kovan) mode"
+
+                            TestGanache ->
+                                Element.text "In Test (Local) mode"
+            in
+            ( Element.column
+                [ Element.width Element.fill
+                , Element.height Element.fill
+                , Element.spacing 20
+                , Element.behindContent <| headerBackground model.dProfile
+                ]
+                [ header model.dProfile
+                , maybeTestnetIndicator
+                , Element.el
+                    [ Element.width Element.fill
+                    , Element.paddingXY 20 0
+                    ]
+                    submodelEl
+                ]
+            , modalEls ++ userNoticeEls model.dProfile model.userNotices
+            )
+    in
+    -- A bit sloppy here, just to get an okay mobile view up
+    case model.submodel of
+        LoadingSaleModel _ ->
+            normalView
+
+        _ ->
+            if model.dProfile /= Desktop && model.displayMobileWarning then
+                mobileSorryMsg
+
+            else
+                normalView
 
 
 headerBackground : DisplayProfile -> Element Msg
@@ -318,7 +331,7 @@ submodelElementAndModal model =
         ( submodelEl, modalEls ) =
             case model.submodel of
                 LoadingSaleModel bucketSaleLoadingModel ->
-                    ( viewBucketSaleLoading bucketSaleLoadingModel model.wallet model.now
+                    ( viewBucketSaleLoading bucketSaleLoadingModel model.wallet model.now model.dProfile
                     , []
                     )
 
@@ -441,14 +454,14 @@ userNotice dProfile ( id, notice ) =
         )
 
 
-viewBucketSaleLoading : BucketSaleLoadingModel -> Wallet.State -> Time.Posix -> Element Msg
-viewBucketSaleLoading bucketSaleLoadingModel wallet now =
+viewBucketSaleLoading : BucketSaleLoadingModel -> Wallet.State -> Time.Posix -> DisplayProfile -> Element Msg
+viewBucketSaleLoading bucketSaleLoadingModel wallet now dProfile =
     case bucketSaleLoadingModel.loadingState of
         Loading ->
-            bigCenteredText "Fetching Sale Contract State..."
+            bigCenteredText "Fetching Sale Contract State..." dProfile
 
         Error SaleNotDeployed ->
-            bigCenteredText "The sale contract doesn't seem to be deployed yet."
+            bigCenteredText "The sale contract doesn't seem to be deployed yet." dProfile
 
         Error (SaleNotStarted startTime) ->
             ViewCountdownPage.view
@@ -456,13 +469,16 @@ viewBucketSaleLoading bucketSaleLoadingModel wallet now =
                 startTime
                 (Wallet.userInfo wallet |> Maybe.map .address)
                 bucketSaleLoadingModel.userBalance
+                dProfile
 
 
-bigCenteredText : String -> Element Msg
-bigCenteredText text =
+bigCenteredText : String -> DisplayProfile -> Element Msg
+bigCenteredText text dProfile =
     Element.paragraph
         [ Element.centerX
-        , Element.paddingXY 50 20
+        , responsiveVal dProfile
+            (Element.paddingXY 50 20)
+            (Element.paddingXY 10 10)
         , Element.Font.size 30
         , Element.Font.color EH.white
         , Element.Font.center
