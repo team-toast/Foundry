@@ -628,6 +628,7 @@ nextBucketArrow currentBucketId =
         , Element.pointer
         , Element.Events.onClick (FocusToBucket (currentBucketId + 1))
         , Element.Font.extraBold
+        , EH.noSelectText
         ]
         (Element.text ">")
 
