@@ -675,7 +675,7 @@ update msg prevModel =
                     else
                         ViewId
                             (bucketId
-                                |> min Config.bucketSaleNumBuckets
+                                |> min (Config.bucketSaleNumBuckets - 1)
                                 |> max
                                     (getCurrentBucketId
                                         prevModel.bucketSale
