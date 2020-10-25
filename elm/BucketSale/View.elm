@@ -336,7 +336,15 @@ viewFeedbackForm feedbackUXModel =
                         [ Element.spacing 5
                         , Element.width Element.fill
                         ]
-                        [ textElInsteadOfButton EH.green "Sent! We'll be in contact."
+                        [ textElInsteadOfButton EH.green
+                            ("Sent!"
+                                ++ (if feedbackUXModel.email == "" then
+                                        ""
+
+                                    else
+                                        " We'll be in contact."
+                                   )
+                            )
                         , Element.el
                             [ Element.Font.color EH.lightBlue
                             , Element.pointer
