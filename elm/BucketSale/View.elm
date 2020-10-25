@@ -804,15 +804,7 @@ bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode =
     <|
         case Wallet.userInfo wallet of
             Nothing ->
-                [ Element.el
-                    [ Element.Font.italic
-                    , Element.Font.color grayTextColor
-                    , Element.centerX
-                    , Element.centerY
-                    ]
-                  <|
-                    Element.text "Wallet not connected."
-                ]
+                [ connectToWeb3Button wallet ]
 
             Just _ ->
                 [ emphasizedText PassiveStyle "Your current bid standing:" ]
