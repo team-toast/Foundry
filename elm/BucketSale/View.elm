@@ -355,7 +355,7 @@ viewFeedbackForm feedbackUXModel =
         [ Element.width Element.fill
         , Element.spacing 20
         ]
-        ([ withHeader "Email (optional)" <|
+        ([ withHeader "Email address (optional)" <|
             Element.Input.text
                 [ Element.width Element.fill ]
                 { onChange = FeedbackEmailChanged
