@@ -1138,7 +1138,7 @@ enableTokenButton =
     EH.redButton
         Desktop
         [ Element.width Element.fill ]
-        [ "Unlock " ++ Config.enteringTokenCurrencyLabel ]
+        [ "Enable " ++ Config.enteringTokenCurrencyLabel ]
         EnableTokenButtonClicked
 
 
