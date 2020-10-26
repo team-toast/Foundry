@@ -336,7 +336,15 @@ viewFeedbackForm feedbackUXModel =
                         [ Element.spacing 5
                         , Element.width Element.fill
                         ]
-                        [ textElInsteadOfButton EH.green "Sent! We'll be in contact."
+                        [ textElInsteadOfButton EH.green
+                            ("Sent!"
+                                ++ (if feedbackUXModel.email == "" then
+                                        ""
+
+                                    else
+                                        " We'll be in contact."
+                                   )
+                            )
                         , Element.el
                             [ Element.Font.color EH.lightBlue
                             , Element.pointer
@@ -355,7 +363,7 @@ viewFeedbackForm feedbackUXModel =
         [ Element.width Element.fill
         , Element.spacing 20
         ]
-        ([ withHeader "Email (optional)" <|
+        ([ withHeader "Email address (optional)" <|
             Element.Input.text
                 [ Element.width Element.fill ]
                 { onChange = FeedbackEmailChanged
@@ -796,15 +804,7 @@ bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode =
     <|
         case Wallet.userInfo wallet of
             Nothing ->
-                [ Element.el
-                    [ Element.Font.italic
-                    , Element.Font.color grayTextColor
-                    , Element.centerX
-                    , Element.centerY
-                    ]
-                  <|
-                    Element.text "Wallet not connected."
-                ]
+                [ connectToWeb3Button wallet ]
 
             Just _ ->
                 [ emphasizedText PassiveStyle "Your current bid standing:" ]
@@ -1138,7 +1138,7 @@ enableTokenButton =
     EH.redButton
         Desktop
         [ Element.width Element.fill ]
-        [ "Unlock " ++ Config.enteringTokenCurrencyLabel ]
+        [ "Enable " ++ Config.enteringTokenCurrencyLabel ]
         EnableTokenButtonClicked
 
 

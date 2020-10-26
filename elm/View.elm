@@ -3,12 +3,12 @@ module View exposing (root)
 import Browser
 import BucketSale.View
 import CommonTypes exposing (..)
+import Config
 import Element exposing (Attribute, Element)
 import Element.Background
 import Element.Border
 import Element.Events
 import Element.Font
-import Config
 import Helpers.Element as EH
 import Images exposing (Image)
 import Routing
@@ -195,6 +195,7 @@ smLinks : DisplayProfile -> Element Msg
 smLinks dProfile =
     [ ( Images.twitter, "https://twitter.com/FoundryDAO" )
     , ( Images.github, "https://github.com/burnable-tech/foundry/" )
+    , ( Images.telegram, "https://t.me/FoundryCommunity" )
     ]
         |> List.map
             (\( image, url ) ->
@@ -451,11 +452,14 @@ viewBucketSaleLoading bucketSaleLoadingModel wallet now =
 
         Error (SaleNotStarted startTime) ->
             bigCenteredText "The sale hasn't started yet!"
-            -- ViewCountdownPage.view
-            --     now
-            --     startTime
-            --     (Wallet.userInfo wallet |> Maybe.map .address)
-            --     bucketSaleLoadingModel.userBalance
+
+
+
+-- ViewCountdownPage.view
+--     now
+--     startTime
+--     (Wallet.userInfo wallet |> Maybe.map .address)
+--     bucketSaleLoadingModel.userBalance
 
 
 bigCenteredText : String -> Element Msg
