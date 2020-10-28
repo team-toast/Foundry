@@ -1452,7 +1452,7 @@ tosLines =
     [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
           , Element.newTabLink
                 [ Element.Font.color EH.blue ]
-                { url = "https://foundrydao.com/contact"
+                { url = "https://foundrydao.com/contact-us"
                 , label = Element.text "Contact info"
                 }
           , Element.text ")."
@@ -1465,7 +1465,7 @@ tosLines =
       , ( [ Element.text "A text version if this agreement can be found "
           , Element.newTabLink
                 [ Element.Font.color EH.blue ]
-                { url = "https://foundrydao.com/sale/terms/"
+                { url = "https://foundrydao.com/?sale-terms/"
                 , label = Element.text "here"
                 }
           , Element.text "."
