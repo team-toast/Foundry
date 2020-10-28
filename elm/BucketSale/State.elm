@@ -75,7 +75,6 @@ init bucketSale maybeReferrer testMode wallet now =
     )
 
 
-
 initConfirmTosModel : ConfirmTosModel
 initConfirmTosModel =
     { points =
@@ -169,8 +168,6 @@ update msg prevModel =
                 )
                 ChainCmd.none
                 []
-
-        
 
         UpdateNow newNow ->
             let
@@ -461,7 +458,6 @@ update msg prevModel =
                         ]
                 )
 
-        
         BucketValueEnteredFetched bucketId fetchResult ->
             case fetchResult of
                 Err httpErr ->
@@ -676,12 +672,7 @@ update msg prevModel =
                         ViewId
                             (bucketId
                                 |> min (Config.bucketSaleNumBuckets - 1)
-                                |> max
-                                    (getCurrentBucketId
-                                        prevModel.bucketSale
-                                        prevModel.now
-                                        prevModel.testMode
-                                    )
+                                |> max 0
                             )
 
                 maybeFetchBucketDataCmd =
@@ -1193,7 +1184,6 @@ runCmdDown cmdDown prevModel =
         --         Cmd.none
         --         ChainCmd.none
         --         []
-
         CmdDown.CloseAnyDropdownsOrModals ->
             justModelUpdate
                 prevModel
@@ -1220,12 +1210,6 @@ toggleAssentForPoint ( pageNum, pointNum ) prevTosModel =
                         )
                     )
     }
-
-
-
-
-
-
 
 
 fetchBucketDataCmd : Int -> Maybe UserInfo -> TestMode -> Cmd Msg
@@ -1256,10 +1240,6 @@ fetchBucketUserBuyCmd id userInfo testMode =
         userInfo.address
         id
         (UserBuyFetched userInfo.address id)
-
-
-
-
 
 
 fetchTotalTokensExitedCmd : TestMode -> Cmd Msg
