@@ -176,6 +176,7 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
         ([ focusedBucketHeaderEl
             dProfile
             bucketId
+            (getCurrentBucketId bucketSale now testMode)
             (Wallet.userInfo wallet)
             maybeReferrer
             referralModalActive
@@ -496,8 +497,8 @@ totalExitedBlock maybeTotalExited =
                 ]
 
 
-focusedBucketHeaderEl : DisplayProfile -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
-focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
+focusedBucketHeaderEl : DisplayProfile -> Int -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
+focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
         [ Element.spacing 8
         , Element.width Element.fill
@@ -510,11 +511,13 @@ focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModa
                 , Element.alignLeft
                 , Element.spacing 10
                 ]
-                [ prevBucketArrow bucketId
+                [ firstBucketArrow
+                , prevBucketArrow bucketId
                 , Element.text <|
                     "Bucket #"
                         ++ String.fromInt bucketId
                 , nextBucketArrow bucketId
+                , currentBucketArrow currentBucketId
                 ]
             , maybeReferralIndicatorAndModal
                 dProfile
@@ -586,28 +589,36 @@ focusedBucketSubheaderEl bucketInfo =
             loadingElement
 
 
-nextBucketArrow : Int -> Element Msg
-nextBucketArrow currentBucketId =
+navigateElementDetail : Int -> String -> Element Msg
+navigateElementDetail bucketToFocusOn buttonText =
     Element.el
         [ Element.padding 4
         , Element.pointer
-        , Element.Events.onClick (FocusToBucket (currentBucketId + 1))
+        , Element.Events.onClick (FocusToBucket bucketToFocusOn)
         , Element.Font.extraBold
         , EH.noSelectText
         ]
-        (Element.text ">")
+        (Element.text buttonText)
+
+
+nextBucketArrow : Int -> Element Msg
+nextBucketArrow currentBucketId =
+    navigateElementDetail (currentBucketId + 1) ">"
 
 
 prevBucketArrow : Int -> Element Msg
 prevBucketArrow currentBucketId =
-    Element.el
-        [ Element.padding 4
-        , Element.pointer
-        , Element.Events.onClick (FocusToBucket (currentBucketId - 1))
-        , Element.Font.extraBold
-        , EH.noSelectText
-        ]
-        (Element.text "<")
+    navigateElementDetail (currentBucketId - 1) "<"
+
+
+firstBucketArrow : Element Msg
+firstBucketArrow =
+    navigateElementDetail 0 "<<"
+
+
+currentBucketArrow : Int -> Element Msg
+currentBucketArrow currentBucketId =
+    navigateElementDetail currentBucketId ">|"
 
 
 focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> Element Msg
