@@ -522,14 +522,19 @@ focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeRefer
                 [ Element.text <|
                     "Bucket #"
                         ++ String.fromInt bucketId
-                , if currentBucketId /= bucketId then
-                    jumpToCurrentBucketButton currentBucketId
-
-                  else
-                    Element.text ""
                 ]
             , nextBucketArrow bucketId
             , nextTenBucketArrow bucketId
+            ]
+        , Element.row
+            [ Element.centerX
+            , Element.Font.size 20
+            ]
+            [ if currentBucketId /= bucketId then
+                jumpToCurrentBucketButton currentBucketId
+
+              else
+                Element.none
             ]
         ]
 
@@ -2249,40 +2254,11 @@ makeClaimButton userInfo exitInfo =
 jumpToCurrentBucketButton : Int -> Element Msg
 jumpToCurrentBucketButton currentBucketId =
     Element.el
-        [ tooltip Element.above (myTooltip "Jump to current bucket")
-        , Element.pointer
+        [ Element.pointer
         , Element.Events.onClick (FocusToBucket currentBucketId)
+        , Element.Font.color EH.lightBlue
         ]
-        (Element.text "■")
-
-
-myTooltip : String -> Element msg
-myTooltip str =
-    Element.el
-        [ Element.Background.color (Element.rgb 0 0 0)
-        , Element.Font.color (Element.rgb 1 1 1)
-        , Element.padding 4
-        , Element.Border.rounded 5
-        , Element.Font.size 14
-        , Element.Border.shadow
-            { offset = ( 0, 3 ), blur = 6, size = 0, color = Element.rgba 0 0 0 0.32 }
-        ]
-        (Element.text str)
-
-
-tooltip : (Element msg -> Attribute msg) -> Element Never -> Attribute msg
-tooltip usher tooltip_ =
-    Element.inFront <|
-        Element.el
-            [ Element.width Element.fill
-            , Element.height Element.fill
-            , Element.transparent True
-            , Element.mouseOver [ Element.transparent False ]
-            , (usher << Element.map never) <|
-                -- Element.el [ Element.htmlAttribute (Html.Attributes.style "pointerEvents" "none") ]
-                tooltip_
-            ]
-            Element.none
+        (Element.text "Current Bucket")
 
 
 loadingElement : Element Msg
