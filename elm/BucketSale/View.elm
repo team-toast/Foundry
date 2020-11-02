@@ -234,7 +234,7 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
             Element.paragraph
                 [ Element.width Element.fill
                 , Element.Font.color grayTextColor
-                , Element.padding 5
+                , Element.paddingXY 0 10
                 ]
     in
     centerpaneBlockContainer PassiveStyle
@@ -247,7 +247,8 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
             Just _ ->
                 [ Element.column
                     [ Element.padding 5
-                    , Element.Font.size 18
+                    , Element.Font.size 16
+                    , Element.width Element.fill
                     ]
                     [ para <|
                         [ Element.text "Bucket "
@@ -258,22 +259,7 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
                             intervalString
                         , Element.text " ago."
                         ]
-                    , para <|
-                        [ Element.text <|
-                            "Your bid for this bucket was "
-                        , emphasizedText PassiveStyle <|
-                            TokenValue.toConciseString userBuy
-                                ++ " "
-                                ++ Config.enteringTokenCurrencyLabel
-                        ]
-                    , para <|
-                        [ Element.text
-                            "Total amount bid on this bucket was "
-                        , emphasizedText PassiveStyle <|
-                            TokenValue.toConciseString totalValueEntered
-                                ++ " "
-                                ++ Config.enteringTokenCurrencyLabel
-                        ]
+                    , bidBarEl totalValueEntered ( userBuy, TokenValue.zero, TokenValue.zero ) testMode
                     , para <|
                         [ Element.text <|
                             "The price for "
@@ -2364,7 +2350,7 @@ jumpToCurrentBucketButton currentBucketId =
         , Element.Events.onClick (FocusToBucket currentBucketId)
         , Element.Font.color EH.lightBlue
         ]
-        (Element.text "Current Bucket")
+        (Element.text "Return to Current Bucket")
 
 
 loadingElement : Element Msg
