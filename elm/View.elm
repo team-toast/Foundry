@@ -196,6 +196,9 @@ smLinks dProfile =
     [ ( Images.twitter, "https://twitter.com/FoundryDAO" )
     , ( Images.github, "https://github.com/burnable-tech/foundry/" )
     , ( Images.telegram, "https://t.me/FoundryCommunity" )
+    , ( Images.medium, "https://medium.com/daihard-buidlers" )
+    , ( Images.reddit, "https://www.reddit.com/r/FoundryDAO/" )
+    , ( Images.forum, "https://forum.foundrydao.com/" )
     ]
         |> List.map
             (\( image, url ) ->
