@@ -169,7 +169,7 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
-               , Element.paddingXY 35 31
+               , Element.paddingXY 35 15
                , Element.spacing 7
                ]
         )
@@ -500,33 +500,46 @@ totalExitedBlock maybeTotalExited =
 focusedBucketHeaderEl : DisplayProfile -> Int -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
 focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
-        [ Element.spacing 8
-        , Element.width Element.fill
-        ]
-        [ Element.row
-            [ Element.width Element.fill ]
-            [ Element.row
-                [ Element.Font.size 30
-                , Element.Font.bold
-                , Element.alignLeft
-                , Element.spacing 10
+        [ Element.width Element.fill ]
+        [ maybeReferralIndicatorAndModal
+            dProfile
+            maybeUserInfo
+            maybeReferrer
+            referralModalActive
+            testMode
+        , Element.row
+            [ Element.Font.size 30
+            , Element.Font.bold
+            , Element.alignLeft
+            , Element.spacing 10
+            , Element.centerX
+            ]
+            [ prevTenBucketArrow bucketId
+            , prevBucketArrow bucketId
+            , Element.row
+                [ Element.centerX
                 ]
-                [ firstBucketArrow
-                , prevBucketArrow bucketId
-                , Element.text <|
+                [ Element.text <|
                     "Bucket #"
                         ++ String.fromInt bucketId
-                , nextBucketArrow bucketId
-                , currentBucketArrow currentBucketId
+                , if currentBucketId /= bucketId then
+                    jumpToCurrentBucketButton currentBucketId
+
+                  else
+                    Element.text ""
                 ]
-            , maybeReferralIndicatorAndModal
-                dProfile
-                maybeUserInfo
-                maybeReferrer
-                referralModalActive
-                testMode
+            , nextBucketArrow bucketId
+            , nextTenBucketArrow bucketId
             ]
         ]
+
+
+edges =
+    { top = 0
+    , right = 0
+    , bottom = 0
+    , left = 0
+    }
 
 
 maybeReferralIndicatorAndModal : DisplayProfile -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
@@ -541,7 +554,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                     responsiveVal dProfile Element.onRight Element.onLeft <|
                         if referralModalActive then
                             Element.el
-                                [ responsiveVal dProfile Element.alignLeft Element.alignRight
+                                [ responsiveVal dProfile Element.centerX Element.alignRight
                                 , responsiveVal dProfile Element.moveRight Element.moveLeft 25
                                 , Element.moveUp 50
                                 , EH.moveToFront
@@ -552,7 +565,8 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                             Element.none
             in
             Element.el
-                [ Element.alignRight
+                [ Element.centerX
+                , Element.paddingEach { edges | bottom = 10 }
                 , maybeModalAttribute
                 , Element.inFront <|
                     if referralModalActive then
@@ -603,22 +617,22 @@ navigateElementDetail bucketToFocusOn buttonText =
 
 nextBucketArrow : Int -> Element Msg
 nextBucketArrow currentBucketId =
-    navigateElementDetail (currentBucketId + 1) ">"
+    navigateElementDetail (currentBucketId + 1) "►"
 
 
 prevBucketArrow : Int -> Element Msg
 prevBucketArrow currentBucketId =
-    navigateElementDetail (currentBucketId - 1) "<"
+    navigateElementDetail (currentBucketId - 1) "◄"
 
 
-firstBucketArrow : Element Msg
-firstBucketArrow =
-    navigateElementDetail 0 "<<"
+prevTenBucketArrow : Int -> Element Msg
+prevTenBucketArrow currentBucketId =
+    navigateElementDetail (currentBucketId - 10) "◄◄"
 
 
-currentBucketArrow : Int -> Element Msg
-currentBucketArrow currentBucketId =
-    navigateElementDetail currentBucketId ">|"
+nextTenBucketArrow : Int -> Element Msg
+nextTenBucketArrow currentBucketId =
+    navigateElementDetail (currentBucketId + 10) "►►"
 
 
 focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> Element Msg
@@ -1128,7 +1142,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 [ Element.spacing 10
                 , Element.width Element.fill
                 ]
-                [ msgInsteadOfButton "Error verifying jurisdiction." red
+                [ msgInsteadOfButton "Error verifying jurisdiction." EH.red
                 , Element.paragraph
                     [ Element.Font.color grayTextColor ]
                     [ Element.text errStr ]
@@ -1138,7 +1152,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 ]
 
         Checked ForbiddenJurisdictions ->
-            msgInsteadOfButton "Sorry, US citizens and residents are excluded." red
+            msgInsteadOfButton "Sorry, US citizens and residents are excluded." EH.red
 
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             msgInsteadOfButton "Jurisdiction Verified." green
@@ -1248,6 +1262,9 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
                         Just extraUserInfo ->
                             if unlockMining then
                                 msgInsteadOfButton "Mining token enable..." grayTextColor
+
+                            else if TokenValue.isZero extraUserInfo.ethBalance then
+                                msgInsteadOfButton "You have no Ethereum in your wallet..." orangeWarningColor
 
                             else if TokenValue.isZero extraUserInfo.enteringTokenAllowance then
                                 enableTokenButton
@@ -1849,29 +1866,28 @@ referralBonusIndicator maybeReferrer focusedStyle =
         , Element.pointer
         , Element.Events.onClick (ReferralIndicatorClicked maybeReferrer)
         , Element.Background.color
-            ((if hasReferral then
-                green
+            (if hasReferral then
+                EH.green
 
-              else
-                red
-             )
-                |> EH.addAlpha
-                    (if focusedStyle then
-                        1
+             else
+                EH.red
+                    |> EH.addAlpha
+                        (if focusedStyle then
+                            1
 
-                     else
-                        0.05
-                    )
+                         else
+                            0.05
+                        )
             )
         , Element.Font.color
             (if focusedStyle then
                 EH.white
 
              else if hasReferral then
-                green
+                EH.white
 
              else
-                red
+                EH.red
             )
         ]
         (Element.text <|
@@ -1908,7 +1924,7 @@ referralModal userInfo maybeReferrer testMode =
                     ( [ Element.paragraph
                             [ Element.Font.size 24
                             , Element.Font.bold
-                            , Element.Font.color red
+                            , Element.Font.color EH.red
                             ]
                             [ Element.text "Oh no! You’ve haven’t got a referral bonus." ]
                       , Element.column
@@ -2230,6 +2246,45 @@ makeClaimButton userInfo exitInfo =
         (ClaimClicked userInfo exitInfo)
 
 
+jumpToCurrentBucketButton : Int -> Element Msg
+jumpToCurrentBucketButton currentBucketId =
+    Element.el
+        [ tooltip Element.above (myTooltip "Jump to current bucket")
+        , Element.pointer
+        , Element.Events.onClick (FocusToBucket currentBucketId)
+        ]
+        (Element.text "■")
+
+
+myTooltip : String -> Element msg
+myTooltip str =
+    Element.el
+        [ Element.Background.color (Element.rgb 0 0 0)
+        , Element.Font.color (Element.rgb 1 1 1)
+        , Element.padding 4
+        , Element.Border.rounded 5
+        , Element.Font.size 14
+        , Element.Border.shadow
+            { offset = ( 0, 3 ), blur = 6, size = 0, color = Element.rgba 0 0 0 0.32 }
+        ]
+        (Element.text str)
+
+
+tooltip : (Element msg -> Attribute msg) -> Element Never -> Attribute msg
+tooltip usher tooltip_ =
+    Element.inFront <|
+        Element.el
+            [ Element.width Element.fill
+            , Element.height Element.fill
+            , Element.transparent True
+            , Element.mouseOver [ Element.transparent False ]
+            , (usher << Element.map never) <|
+                -- Element.el [ Element.htmlAttribute (Html.Attributes.style "pointerEvents" "none") ]
+                tooltip_
+            ]
+            Element.none
+
+
 loadingElement : Element Msg
 loadingElement =
     Element.text "Loading"
@@ -2266,9 +2321,9 @@ grayTextColor =
     Element.rgba255 1 31 52 0.75
 
 
-red : Element.Color
-red =
-    Element.rgb255 226 1 79
+orangeWarningColor : Element.Color
+orangeWarningColor =
+    Element.rgb255 252 106 3
 
 
 green : Element.Color
