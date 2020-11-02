@@ -1,4 +1,4 @@
-module BucketSale.View exposing (root)
+module BucketSale.View exposing (bidImpactParagraphEl, root)
 
 import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
@@ -192,14 +192,107 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                         ]
 
                     ValidBucket bucketInfo ->
-                        [ focusedBucketSubheaderEl bucketInfo
-                        , focusedBucketTimeLeftEl
-                            (getRelevantTimingInfo bucketInfo now testMode)
-                            testMode
-                        , enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
-                        ]
+                        case bucketInfo.state of
+                            Closed ->
+                                [ focusedBucketClosedPane bucketInfo (getRelevantTimingInfo bucketInfo now testMode) wallet testMode
+                                ]
+
+                            _ ->
+                                [ focusedBucketSubheaderEl bucketInfo
+                                , focusedBucketTimeLeftEl
+                                    (getRelevantTimingInfo bucketInfo now testMode)
+                                    testMode
+                                , enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
+                                ]
                )
         )
+
+
+focusedBucketClosedPane : ValidBucketInfo -> RelevantTimingInfo -> Wallet.State -> TestMode -> Element Msg
+focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
+    let
+        intervalString =
+            TimeHelpers.toConciseIntervalString timingInfo.relevantTimeFromNow
+
+        totalValueEntered =
+            case bucketInfo.bucketData.totalValueEntered of
+                Just totalEntered ->
+                    totalEntered
+
+                _ ->
+                    TokenValue.zero
+
+        userBuy =
+            case bucketInfo.bucketData.userBuy of
+                Just buy ->
+                    buy.valueEntered
+
+                _ ->
+                    TokenValue.zero
+
+        para =
+            Element.paragraph
+                [ Element.width Element.fill
+                , Element.Font.color grayTextColor
+                , Element.padding 5
+                ]
+    in
+    centerpaneBlockContainer PassiveStyle
+        [ Element.height <| Element.px 310 ]
+    <|
+        case Wallet.userInfo wallet of
+            Nothing ->
+                [ connectToWeb3Button wallet ]
+
+            Just _ ->
+                [ Element.column
+                    [ Element.padding 5
+                    , Element.Font.size 18
+                    ]
+                    [ para <|
+                        [ Element.text "Bucket "
+                        , emphasizedText PassiveStyle <|
+                            String.fromInt bucketInfo.id
+                        , Element.text " ended "
+                        , emphasizedText PassiveStyle <|
+                            intervalString
+                        , Element.text " ago."
+                        ]
+                    , para <|
+                        [ Element.text <|
+                            "Your bid for this bucket was "
+                        , emphasizedText PassiveStyle <|
+                            TokenValue.toConciseString userBuy
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                        ]
+                    , para <|
+                        [ Element.text
+                            "Total amount bid on this bucket was "
+                        , emphasizedText PassiveStyle <|
+                            TokenValue.toConciseString totalValueEntered
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                        ]
+                    , para <|
+                        [ Element.text <|
+                            "The price for "
+                                ++ Config.exitingTokenCurrencyLabel
+                                ++ " on this bucket was "
+                        , emphasizedText PassiveStyle <|
+                            (calcEffectivePricePerToken
+                                totalValueEntered
+                                testMode
+                                |> TokenValue.toConciseString
+                            )
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                                ++ "/"
+                                ++ Config.exitingTokenCurrencyLabel
+                                ++ "."
+                        ]
+                    ]
+                ]
 
 
 futureBucketsPane : Model -> Element Msg
@@ -593,6 +686,15 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
 
 focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
 focusedBucketSubheaderEl bucketInfo =
+    let
+        bidText =
+            case bucketInfo.state of
+                Closed ->
+                    " was bid on this bucket."
+
+                _ ->
+                    " has been bid on this bucket so far. All bids are irreversible."
+    in
     case bucketInfo.bucketData.totalValueEntered of
         Just totalValueEntered ->
             Element.paragraph
@@ -601,7 +703,7 @@ focusedBucketSubheaderEl bucketInfo =
                 ]
                 [ emphasizedText PassiveStyle <|
                     TokenValue.toConciseString totalValueEntered
-                , Element.text <| " " ++ Config.enteringTokenCurrencyLabel ++ " has been bid on this bucket so far. All bids are irreversible."
+                , Element.text <| " " ++ Config.enteringTokenCurrencyLabel ++ bidText
                 ]
 
         _ ->
