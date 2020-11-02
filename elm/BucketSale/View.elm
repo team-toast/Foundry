@@ -20,7 +20,7 @@ import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Html.Attributes
-import Images
+import Images exposing (Image)
 import List.Extra
 import Maybe.Extra
 import Result.Extra
@@ -608,36 +608,40 @@ focusedBucketSubheaderEl bucketInfo =
             loadingElement
 
 
-navigateElementDetail : Int -> String -> Element Msg
-navigateElementDetail bucketToFocusOn buttonText =
-    Element.el
-        [ Element.padding 4
-        , Element.pointer
+navigateElementDetail : Int -> Image -> Element Msg
+navigateElementDetail bucketToFocusOn image =
+    Images.toElement
+        [ Element.pointer
         , Element.Events.onClick (FocusToBucket bucketToFocusOn)
         , Element.Font.extraBold
         , EH.noSelectText
+        , Element.width <| Element.px 35
         ]
-        (Element.text buttonText)
+        image
+
+
+
+--(Element.text buttonText)
 
 
 nextBucketArrow : Int -> Element Msg
 nextBucketArrow currentBucketId =
-    navigateElementDetail (currentBucketId + 1) "►"
+    navigateElementDetail (currentBucketId + 1) Images.right
 
 
 prevBucketArrow : Int -> Element Msg
 prevBucketArrow currentBucketId =
-    navigateElementDetail (currentBucketId - 1) "◄"
+    navigateElementDetail (currentBucketId - 1) Images.left
 
 
 prevTenBucketArrow : Int -> Element Msg
 prevTenBucketArrow currentBucketId =
-    navigateElementDetail (currentBucketId - 10) "◄◄"
+    navigateElementDetail (currentBucketId - 10) Images.leftTen
 
 
 nextTenBucketArrow : Int -> Element Msg
 nextTenBucketArrow currentBucketId =
-    navigateElementDetail (currentBucketId + 10) "►►"
+    navigateElementDetail (currentBucketId + 10) Images.rightTen
 
 
 focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> Element Msg
