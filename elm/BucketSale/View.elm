@@ -708,10 +708,6 @@ navigateElementDetail bucketToFocusOn image =
         image
 
 
-
---(Element.text buttonText)
-
-
 nextBucketArrow : Int -> Element Msg
 nextBucketArrow currentBucketId =
     navigateElementDetail (currentBucketId + 1) Images.right
