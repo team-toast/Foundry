@@ -1052,7 +1052,7 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
                          )
                             |> (\els ->
                                     if List.length els > 0 then
-                                        els ++ [ Element.text Config.enteringTokenCurrencyLabel ]
+                                        els ++ [ Element.text (" " ++ Config.enteringTokenCurrencyLabel) ]
 
                                     else
                                         [ Element.text <| "0 " ++ Config.enteringTokenCurrencyLabel ]
