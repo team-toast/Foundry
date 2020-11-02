@@ -675,9 +675,6 @@ focusedBucketSubheaderEl bucketInfo =
     let
         bidText =
             case bucketInfo.state of
-                Closed ->
-                    " was bid on this bucket."
-
                 _ ->
                     " has been bid on this bucket so far. All bids are irreversible."
     in
@@ -689,7 +686,10 @@ focusedBucketSubheaderEl bucketInfo =
                 ]
                 [ emphasizedText PassiveStyle <|
                     TokenValue.toConciseString totalValueEntered
-                , Element.text <| " " ++ Config.enteringTokenCurrencyLabel ++ bidText
+                , Element.text <|
+                    " "
+                        ++ Config.enteringTokenCurrencyLabel
+                        ++ bidText
                 ]
 
         _ ->
