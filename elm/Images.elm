@@ -2,6 +2,7 @@ module Images exposing (..)
 
 import Config
 import Element exposing (Attribute, Element)
+import Svg.Styled exposing (desc)
 import Time
 
 
@@ -165,6 +166,30 @@ telegram =
         }
 
 
+medium : Image
+medium =
+    JustImage
+        { src = "img/social-media/medium.png"
+        , description = "medium"
+        }
+
+
+reddit : Image
+reddit =
+    JustImage
+        { src = "img/social-media/reddit.png"
+        , description = "reddit"
+        }
+
+
+forum : Image
+forum =
+    JustImage
+        { src = "img/social-media/discourse.png"
+        , description = "forum"
+        }
+
+
 keybase : Image
 keybase =
     JustImage
@@ -178,4 +203,36 @@ checkmark =
     JustImage
         { src = "img/check.svg"
         , description = "checked"
+        }
+
+
+right : Image
+right =
+    JustImage
+        { src = "img/social-media/right.svg"
+        , description = "next"
+        }
+
+
+rightTen : Image
+rightTen =
+    JustImage
+        { src = "img/social-media/right_fast.svg"
+        , description = "next 10"
+        }
+
+
+left : Image
+left =
+    JustImage
+        { src = "img/social-media/left.svg"
+        , description = "previous"
+        }
+
+
+leftTen : Image
+leftTen =
+    JustImage
+        { src = "img/social-media/left_fast.svg"
+        , description = "previous 10"
         }

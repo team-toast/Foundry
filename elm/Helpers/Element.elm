@@ -47,6 +47,10 @@ white =
     Element.rgb 1 1 1
 
 
+red =
+    Element.rgb255 226 1 79
+
+
 softRed =
     Element.rgb255 255 0 110
 
@@ -567,6 +571,47 @@ button dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor l
         )
 
 
+buttonThin : DisplayProfile -> List (Attribute msg) -> ( Element.Color, Element.Color, Element.Color ) -> Element.Color -> List String -> msg -> Element msg
+buttonThin dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor lines msg =
+    Element.column
+        (attributes
+            ++ [ Element.Border.rounded 4
+               , Element.spacing (responsiveVal dProfile 8 5)
+               , Element.pointer
+               , Element.Events.onClick msg
+               , responsiveVal dProfile (Element.paddingXY 1 1) (Element.padding 10)
+               , Element.Font.color textColor
+               , Element.Font.size (responsiveVal dProfile 18 16)
+               , Element.Font.semiBold
+               , Element.Background.color bgColor
+               , Element.mouseDown [ Element.Background.color bgPressedColor ]
+               , Element.mouseOver [ Element.Background.color bgHoverColor ]
+               , noSelectText
+               ]
+        )
+        (List.map
+            (Element.el [ Element.centerX ] << Element.text)
+            lines
+        )
+
+
+buttonThinMargin : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg
+buttonThinMargin dProfile attributes text msg =
+    let
+        color =
+            lightBlue
+    in
+    buttonThin dProfile
+        attributes
+        ( color
+        , color |> addAlpha 0.8
+        , color |> addAlpha 0.6
+        )
+        white
+        text
+        msg
+
+
 closeButton : Bool -> msg -> Element msg
 closeButton isBlack msg =
     Element.el
@@ -660,6 +705,7 @@ redButton dProfile attributes text msg =
         text
         msg
 
+
 greenButton : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg
 greenButton dProfile attributes text msg =
     button dProfile
@@ -692,6 +738,7 @@ disabledButton dProfile attributes text maybeTipText =
         )
         (Element.text text)
 
+
 disabledSuccessButton : DisplayProfile -> List (Attribute msg) -> String -> Maybe String -> Element msg
 disabledSuccessButton dProfile attributes text maybeTipText =
     Element.el
@@ -710,7 +757,6 @@ disabledSuccessButton dProfile attributes text maybeTipText =
                ]
         )
         (Element.text text)
-
 
 
 orangeButton : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg
@@ -1305,4 +1351,4 @@ noSelectText =
 withTitle : String -> Attribute msg
 withTitle title =
     Html.Attributes.title title
-    |> Element.htmlAttribute
+        |> Element.htmlAttribute

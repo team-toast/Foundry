@@ -1,4 +1,4 @@
-module BucketSale.View exposing (root)
+module BucketSale.View exposing (bidImpactParagraphEl, root)
 
 import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
@@ -20,7 +20,7 @@ import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Html.Attributes
-import Images
+import Images exposing (Image)
 import List.Extra
 import Maybe.Extra
 import Result.Extra
@@ -169,13 +169,14 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
-               , Element.paddingXY 35 31
+               , Element.paddingXY 35 15
                , Element.spacing 7
                ]
         )
         ([ focusedBucketHeaderEl
             dProfile
             bucketId
+            (getCurrentBucketId bucketSale now testMode)
             (Wallet.userInfo wallet)
             maybeReferrer
             referralModalActive
@@ -191,14 +192,107 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                         ]
 
                     ValidBucket bucketInfo ->
-                        [ focusedBucketSubheaderEl bucketInfo
-                        , focusedBucketTimeLeftEl
-                            (getRelevantTimingInfo bucketInfo now testMode)
-                            testMode
-                        , enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
-                        ]
+                        case bucketInfo.state of
+                            Closed ->
+                                [ focusedBucketClosedPane bucketInfo (getRelevantTimingInfo bucketInfo now testMode) wallet testMode
+                                ]
+
+                            _ ->
+                                [ focusedBucketSubheaderEl bucketInfo
+                                , focusedBucketTimeLeftEl
+                                    (getRelevantTimingInfo bucketInfo now testMode)
+                                    testMode
+                                , enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
+                                ]
                )
         )
+
+
+focusedBucketClosedPane : ValidBucketInfo -> RelevantTimingInfo -> Wallet.State -> TestMode -> Element Msg
+focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
+    let
+        intervalString =
+            TimeHelpers.toConciseIntervalString timingInfo.relevantTimeFromNow
+
+        totalValueEntered =
+            case bucketInfo.bucketData.totalValueEntered of
+                Just totalEntered ->
+                    totalEntered
+
+                _ ->
+                    TokenValue.zero
+
+        userBuy =
+            case bucketInfo.bucketData.userBuy of
+                Just buy ->
+                    buy.valueEntered
+
+                _ ->
+                    TokenValue.zero
+
+        para =
+            Element.paragraph
+                [ Element.width Element.fill
+                , Element.Font.color grayTextColor
+                , Element.padding 5
+                ]
+    in
+    centerpaneBlockContainer PassiveStyle
+        [ Element.height <| Element.px 310 ]
+    <|
+        case Wallet.userInfo wallet of
+            Nothing ->
+                [ connectToWeb3Button wallet ]
+
+            Just _ ->
+                [ Element.column
+                    [ Element.padding 5
+                    , Element.Font.size 18
+                    ]
+                    [ para <|
+                        [ Element.text "Bucket "
+                        , emphasizedText PassiveStyle <|
+                            String.fromInt bucketInfo.id
+                        , Element.text " ended "
+                        , emphasizedText PassiveStyle <|
+                            intervalString
+                        , Element.text " ago."
+                        ]
+                    , para <|
+                        [ Element.text <|
+                            "Your bid for this bucket was "
+                        , emphasizedText PassiveStyle <|
+                            TokenValue.toConciseString userBuy
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                        ]
+                    , para <|
+                        [ Element.text
+                            "Total amount bid on this bucket was "
+                        , emphasizedText PassiveStyle <|
+                            TokenValue.toConciseString totalValueEntered
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                        ]
+                    , para <|
+                        [ Element.text <|
+                            "The price for "
+                                ++ Config.exitingTokenCurrencyLabel
+                                ++ " on this bucket was "
+                        , emphasizedText PassiveStyle <|
+                            (calcEffectivePricePerToken
+                                totalValueEntered
+                                testMode
+                                |> TokenValue.toConciseString
+                            )
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                                ++ "/"
+                                ++ Config.exitingTokenCurrencyLabel
+                                ++ "."
+                        ]
+                    ]
+                ]
 
 
 futureBucketsPane : Model -> Element Msg
@@ -496,34 +590,54 @@ totalExitedBlock maybeTotalExited =
                 ]
 
 
-focusedBucketHeaderEl : DisplayProfile -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
-focusedBucketHeaderEl dProfile bucketId maybeUserInfo maybeReferrer referralModalActive testMode =
+focusedBucketHeaderEl : DisplayProfile -> Int -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
+focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
-        [ Element.spacing 8
-        , Element.width Element.fill
-        ]
-        [ Element.row
-            [ Element.width Element.fill ]
-            [ Element.row
-                [ Element.Font.size 30
-                , Element.Font.bold
-                , Element.alignLeft
-                , Element.spacing 10
+        [ Element.width Element.fill ]
+        [ maybeReferralIndicatorAndModal
+            dProfile
+            maybeUserInfo
+            maybeReferrer
+            referralModalActive
+            testMode
+        , Element.row
+            [ Element.Font.size 30
+            , Element.Font.bold
+            , Element.alignLeft
+            , Element.spacing 10
+            , Element.centerX
+            ]
+            [ prevTenBucketArrow bucketId
+            , prevBucketArrow bucketId
+            , Element.row
+                [ Element.centerX
                 ]
-                [ prevBucketArrow bucketId
-                , Element.text <|
+                [ Element.text <|
                     "Bucket #"
                         ++ String.fromInt bucketId
-                , nextBucketArrow bucketId
                 ]
-            , maybeReferralIndicatorAndModal
-                dProfile
-                maybeUserInfo
-                maybeReferrer
-                referralModalActive
-                testMode
+            , nextBucketArrow bucketId
+            , nextTenBucketArrow bucketId
+            ]
+        , Element.row
+            [ Element.centerX
+            , Element.Font.size 20
+            ]
+            [ if currentBucketId /= bucketId then
+                jumpToCurrentBucketButton currentBucketId
+
+              else
+                Element.none
             ]
         ]
+
+
+edges =
+    { top = 0
+    , right = 0
+    , bottom = 0
+    , left = 0
+    }
 
 
 maybeReferralIndicatorAndModal : DisplayProfile -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
@@ -538,7 +652,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                     responsiveVal dProfile Element.onRight Element.onLeft <|
                         if referralModalActive then
                             Element.el
-                                [ responsiveVal dProfile Element.alignLeft Element.alignRight
+                                [ responsiveVal dProfile Element.centerX Element.alignRight
                                 , responsiveVal dProfile Element.moveRight Element.moveLeft 25
                                 , Element.moveUp 50
                                 , EH.moveToFront
@@ -549,7 +663,8 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                             Element.none
             in
             Element.el
-                [ Element.alignRight
+                [ Element.centerX
+                , Element.paddingEach { edges | bottom = 10 }
                 , maybeModalAttribute
                 , Element.inFront <|
                     if referralModalActive then
@@ -571,6 +686,15 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
 
 focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
 focusedBucketSubheaderEl bucketInfo =
+    let
+        bidText =
+            case bucketInfo.state of
+                Closed ->
+                    " was bid on this bucket."
+
+                _ ->
+                    " has been bid on this bucket so far. All bids are irreversible."
+    in
     case bucketInfo.bucketData.totalValueEntered of
         Just totalValueEntered ->
             Element.paragraph
@@ -579,35 +703,47 @@ focusedBucketSubheaderEl bucketInfo =
                 ]
                 [ emphasizedText PassiveStyle <|
                     TokenValue.toConciseString totalValueEntered
-                , Element.text <| " " ++ Config.enteringTokenCurrencyLabel ++ " has been bid on this bucket so far. All bids are irreversible."
+                , Element.text <| " " ++ Config.enteringTokenCurrencyLabel ++ bidText
                 ]
 
         _ ->
             loadingElement
 
 
-nextBucketArrow : Int -> Element Msg
-nextBucketArrow currentBucketId =
-    Element.el
-        [ Element.padding 4
-        , Element.pointer
-        , Element.Events.onClick (FocusToBucket (currentBucketId + 1))
+navigateElementDetail : Int -> Image -> Element Msg
+navigateElementDetail bucketToFocusOn image =
+    Images.toElement
+        [ Element.pointer
+        , Element.Events.onClick (FocusToBucket bucketToFocusOn)
         , Element.Font.extraBold
         , EH.noSelectText
+        , Element.width <| Element.px 35
         ]
-        (Element.text ">")
+        image
+
+
+
+--(Element.text buttonText)
+
+
+nextBucketArrow : Int -> Element Msg
+nextBucketArrow currentBucketId =
+    navigateElementDetail (currentBucketId + 1) Images.right
 
 
 prevBucketArrow : Int -> Element Msg
 prevBucketArrow currentBucketId =
-    Element.el
-        [ Element.padding 4
-        , Element.pointer
-        , Element.Events.onClick (FocusToBucket (currentBucketId - 1))
-        , Element.Font.extraBold
-        , EH.noSelectText
-        ]
-        (Element.text "<")
+    navigateElementDetail (currentBucketId - 1) Images.left
+
+
+prevTenBucketArrow : Int -> Element Msg
+prevTenBucketArrow currentBucketId =
+    navigateElementDetail (currentBucketId - 10) Images.leftTen
+
+
+nextTenBucketArrow : Int -> Element Msg
+nextTenBucketArrow currentBucketId =
+    navigateElementDetail (currentBucketId + 10) Images.rightTen
 
 
 focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> Element Msg
@@ -1022,7 +1158,7 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
                          )
                             |> (\els ->
                                     if List.length els > 0 then
-                                        els ++ [ Element.text Config.enteringTokenCurrencyLabel ]
+                                        els ++ [ Element.text (" " ++ Config.enteringTokenCurrencyLabel) ]
 
                                     else
                                         [ Element.text <| "0 " ++ Config.enteringTokenCurrencyLabel ]
@@ -1117,7 +1253,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 [ Element.spacing 10
                 , Element.width Element.fill
                 ]
-                [ msgInsteadOfButton "Error verifying jurisdiction." red
+                [ msgInsteadOfButton "Error verifying jurisdiction." EH.red
                 , Element.paragraph
                     [ Element.Font.color grayTextColor ]
                     [ Element.text errStr ]
@@ -1127,7 +1263,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 ]
 
         Checked ForbiddenJurisdictions ->
-            msgInsteadOfButton "Sorry, US citizens and residents are excluded." red
+            msgInsteadOfButton "Sorry, US citizens and residents are excluded." EH.red
 
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             msgInsteadOfButton "Jurisdiction Verified." green
@@ -1237,6 +1373,9 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
                         Just extraUserInfo ->
                             if unlockMining then
                                 msgInsteadOfButton "Mining token enable..." grayTextColor
+
+                            else if TokenValue.isZero extraUserInfo.ethBalance then
+                                msgInsteadOfButton "You have no Ethereum in your wallet..." orangeWarningColor
 
                             else if TokenValue.isZero extraUserInfo.enteringTokenAllowance then
                                 enableTokenButton
@@ -1838,29 +1977,28 @@ referralBonusIndicator maybeReferrer focusedStyle =
         , Element.pointer
         , Element.Events.onClick (ReferralIndicatorClicked maybeReferrer)
         , Element.Background.color
-            ((if hasReferral then
-                green
+            (if hasReferral then
+                EH.green
 
-              else
-                red
-             )
-                |> EH.addAlpha
-                    (if focusedStyle then
-                        1
+             else
+                EH.red
+                    |> EH.addAlpha
+                        (if focusedStyle then
+                            1
 
-                     else
-                        0.05
-                    )
+                         else
+                            0.05
+                        )
             )
         , Element.Font.color
             (if focusedStyle then
                 EH.white
 
              else if hasReferral then
-                green
+                EH.white
 
              else
-                red
+                EH.red
             )
         ]
         (Element.text <|
@@ -1897,7 +2035,7 @@ referralModal userInfo maybeReferrer testMode =
                     ( [ Element.paragraph
                             [ Element.Font.size 24
                             , Element.Font.bold
-                            , Element.Font.color red
+                            , Element.Font.color EH.red
                             ]
                             [ Element.text "Oh no! You’ve haven’t got a referral bonus." ]
                       , Element.column
@@ -2219,6 +2357,16 @@ makeClaimButton userInfo exitInfo =
         (ClaimClicked userInfo exitInfo)
 
 
+jumpToCurrentBucketButton : Int -> Element Msg
+jumpToCurrentBucketButton currentBucketId =
+    Element.el
+        [ Element.pointer
+        , Element.Events.onClick (FocusToBucket currentBucketId)
+        , Element.Font.color EH.lightBlue
+        ]
+        (Element.text "Current Bucket")
+
+
 loadingElement : Element Msg
 loadingElement =
     Element.text "Loading"
@@ -2255,9 +2403,9 @@ grayTextColor =
     Element.rgba255 1 31 52 0.75
 
 
-red : Element.Color
-red =
-    Element.rgb255 226 1 79
+orangeWarningColor : Element.Color
+orangeWarningColor =
+    Element.rgb255 252 106 3
 
 
 green : Element.Color
