@@ -110,13 +110,14 @@ pageElementAndModal model =
         [ Element.width Element.fill
         , Element.height Element.fill
         , Element.spacing 20
-        , Element.behindContent <| headerBackground model.dProfile
+        , Element.behindContent <|
+            headerBackground model.dProfile
         ]
         [ header model.dProfile
         , maybeTestnetIndicator
         , Element.el
             [ Element.width Element.fill
-            , Element.paddingXY 20 0
+            , Element.paddingXY (responsiveVal model.dProfile 20 10) 0
             ]
             submodelEl
         ]
@@ -128,7 +129,14 @@ headerBackground : DisplayProfile -> Element Msg
 headerBackground dProfile =
     Element.el
         [ Element.width Element.fill
-        , Element.height <| Element.px <| responsiveVal dProfile 600 200
+        , Element.height
+            (case dProfile of
+                Desktop ->
+                    Element.px 600
+
+                SmallDesktop ->
+                    Element.fill
+            )
         , Element.Background.color <| Element.rgb255 20 53 138
         ]
         Element.none
@@ -136,67 +144,113 @@ headerBackground dProfile =
 
 header : DisplayProfile -> Element Msg
 header dProfile =
-    Element.row
-        [ Element.height <| Element.px <| responsiveVal dProfile 100 30
-        , Element.width Element.fill
-        , Element.Background.color <| Element.rgb255 10 33 108
-        ]
-        [ Element.el
-            [ Element.alignLeft
-            , Element.centerY
-            ]
-            (brandAndLogo dProfile)
-        , Element.el
-            [ Element.alignRight
-            , Element.centerY
-            ]
-            (smLinks dProfile)
-        ]
+    case dProfile of
+        Desktop ->
+            Element.row
+                [ Element.height <|
+                    Element.px 100
+                , Element.width Element.fill
+                , Element.Background.color <|
+                    Element.rgb255 10 33 108
+                ]
+                [ Element.el
+                    [ Element.alignLeft
+                    , Element.centerY
+                    ]
+                    (brandAndLogo dProfile)
+                , Element.el
+                    [ Element.alignRight
+                    , Element.centerY
+                    ]
+                    (smLinks dProfile)
+                ]
+
+        SmallDesktop ->
+            Element.column
+                [ Element.width Element.fill ]
+                [ Element.el
+                    [ Element.width Element.fill
+                    , Element.centerX
+                    , Element.Background.color <|
+                        Element.rgb255 10 33 108
+                    ]
+                    (brandAndLogo dProfile)
+                , smLinks dProfile
+                ]
 
 
 brandAndLogo : DisplayProfile -> Element Msg
 brandAndLogo dProfile =
-    Element.row
-        [ Element.height Element.fill
-        , Element.padding <| responsiveVal dProfile 20 10
-        , Element.spacing <| responsiveVal dProfile 10 5
-        ]
-        [ Images.toElement
-            (case dProfile of
-                SmallDesktop ->
-                    [ Element.centerY
-                    , Element.width <| Element.px 20
-                    , Element.height <| Element.px 20
-                    ]
-
-                _ ->
+    case dProfile of
+        Desktop ->
+            Element.row
+                [ Element.height Element.fill
+                , Element.padding 20
+                , Element.spacing 10
+                ]
+                [ Images.toElement
                     [ Element.centerY ]
-            )
-            Images.exitingTokenIcon
-        , Element.column
-            [ Element.spacing 5 ]
-            [ Element.el
-                [ Element.Font.color EH.white
-                , Element.Font.size <| responsiveVal dProfile 35 12
-                , Element.Font.bold
-                , Element.centerY
+                    Images.exitingTokenIcon
+                , Element.column
+                    [ Element.spacing 5 ]
+                    [ Element.el
+                        [ Element.Font.color EH.white
+                        , Element.Font.size 35
+                        , Element.Font.bold
+                        , Element.centerY
+                        ]
+                      <|
+                        Element.text "Foundry Sale"
+                    , Element.newTabLink
+                        [ Element.alignLeft
+                        , Element.Background.color EH.lightBlue
+                        , Element.paddingXY 10 3
+                        , Element.Border.rounded 4
+                        , Element.Font.color EH.white
+                        , Element.Font.size 18
+                        ]
+                        { url = "https://foundrydao.com"
+                        , label =
+                            Element.text "What is Foundry?"
+                        }
+                    ]
                 ]
-              <|
-                Element.text "Foundry Sale"
-            , Element.newTabLink
-                [ Element.alignLeft
-                , Element.Background.color EH.lightBlue
-                , Element.paddingXY (responsiveVal dProfile 10 5) (responsiveVal dProfile 3 1)
-                , Element.Border.rounded 4
-                , Element.Font.color EH.white
-                , Element.Font.size <| responsiveVal dProfile 18 6
+
+        SmallDesktop ->
+            Element.row
+                [ Element.height Element.fill
+                , Element.centerX
+                , Element.padding 10
+                , Element.spacing 5
                 ]
-                { url = "https://foundrydao.com"
-                , label =
-                    Element.text "What is Foundry?"
-                }
-            ]
-        ]
+                [ Images.toElement
+                    [ Element.centerY
+                    , Element.width <|
+                        Element.px 25
+                    , Element.height <|
+                        Element.px 25
+                    ]
+                    Images.exitingTokenIcon
+                , Element.el
+                    [ Element.Font.color EH.white
+                    , Element.Font.size 16
+                    , Element.Font.bold
+                    , Element.centerY
+                    ]
+                  <|
+                    Element.text "Foundry Sale"
+                , Element.newTabLink
+                    [ Element.Background.color EH.lightBlue
+                    , Element.paddingXY 5 2
+                    , Element.Border.rounded 4
+                    , Element.Font.color EH.white
+                    , Element.Font.size 10
+                    ]
+                    { url = "https://foundrydao.com"
+                    , label =
+                        Element.text "What is Foundry?"
+                    }
+                ]
 
 
 smLinks : DisplayProfile -> Element Msg
@@ -215,14 +269,28 @@ smLinks dProfile =
                     { url = url
                     , label =
                         Images.toElement
-                            [ Element.height <| Element.px <| responsiveVal dProfile 40 15 ]
+                            [ Element.height <|
+                                Element.px <|
+                                    responsiveVal dProfile 40 20
+                            ]
                             image
                     }
             )
         |> Element.row
-            [ Element.padding <| responsiveVal dProfile 10 5
-            , Element.spacing <| responsiveVal dProfile 20 10
-            ]
+            ([ Element.padding <|
+                responsiveVal dProfile 10 5
+             , Element.spacing <|
+                responsiveVal dProfile 20 10
+             ]
+                ++ (case dProfile of
+                        Desktop ->
+                            []
+
+                        SmallDesktop ->
+                            [ Element.centerX
+                            ]
+                   )
+            )
 
 
 type HeaderLinkStyle
@@ -329,7 +397,7 @@ submodelElementAndModal model =
         ( submodelEl, modalEls ) =
             case model.submodel of
                 LoadingSaleModel bucketSaleLoadingModel ->
-                    ( viewBucketSaleLoading bucketSaleLoadingModel model.wallet model.now
+                    ( viewBucketSaleLoading bucketSaleLoadingModel model.wallet model.now model.dProfile
                     , []
                     )
 
@@ -452,17 +520,17 @@ userNotice dProfile ( id, notice ) =
         )
 
 
-viewBucketSaleLoading : BucketSaleLoadingModel -> Wallet.State -> Time.Posix -> Element Msg
-viewBucketSaleLoading bucketSaleLoadingModel wallet now =
+viewBucketSaleLoading : BucketSaleLoadingModel -> Wallet.State -> Time.Posix -> DisplayProfile -> Element Msg
+viewBucketSaleLoading bucketSaleLoadingModel wallet now dProfile =
     case bucketSaleLoadingModel.loadingState of
         Loading ->
-            bigCenteredText "Fetching Sale Contract State..."
+            bigCenteredText "Fetching Sale Contract State..." dProfile
 
         Error SaleNotDeployed ->
-            bigCenteredText "The sale contract doesn't seem to be deployed yet."
+            bigCenteredText "The sale contract doesn't seem to be deployed yet." dProfile
 
         Error (SaleNotStarted startTime) ->
-            bigCenteredText "The sale hasn't started yet!"
+            bigCenteredText "The sale hasn't started yet!" dProfile
 
 
 
@@ -473,12 +541,15 @@ viewBucketSaleLoading bucketSaleLoadingModel wallet now =
 --     bucketSaleLoadingModel.userBalance
 
 
-bigCenteredText : String -> Element Msg
-bigCenteredText text =
+bigCenteredText : String -> DisplayProfile -> Element Msg
+bigCenteredText text dProfile =
     Element.paragraph
         [ Element.centerX
-        , Element.paddingXY 50 20
-        , Element.Font.size 30
+        , Element.paddingXY
+            (responsiveVal dProfile 50 25)
+            (responsiveVal dProfile 20 10)
+        , Element.Font.size <|
+            responsiveVal dProfile 30 12
         , Element.Font.color EH.white
         , Element.Font.center
         ]

@@ -45,70 +45,95 @@ root model maybeReferrer dProfile =
                     viewModals model maybeReferrer
                )
         )
-        [ Element.row
-            [ Element.centerX
-            , Element.spacing 50
-            ]
-            [ Element.column
-                [ Element.width <| Element.fillPortion 1
-                , Element.alignTop
-                , Element.spacing 20
-                ]
-                ([ viewYoutubeLinksBlock
-                 , closedBucketsPane model
-                 ]
-                    ++ (if dProfile == SmallDesktop then
-                            [ futureBucketsPane model
+        [ case dProfile of
+            Desktop ->
+                Element.row
+                    [ Element.centerX
+                    , Element.spacing 50
+                    ]
+                    [ Element.column
+                        [ Element.width <| Element.fillPortion 1
+                        , Element.alignTop
+                        , Element.spacing 20
+                        ]
+                        ([ viewYoutubeLinksBlock
+                         , closedBucketsPane model
+                         ]
+                            ++ (if dProfile == SmallDesktop then
+                                    [ futureBucketsPane model
+                                    , trackedTxsElement model.trackedTxs
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
+                    , Element.column
+                        [ Element.width <| Element.fillPortion 2
+                        , Element.spacing 20
+                        , Element.alignTop
+                        ]
+                        [ focusedBucketPane
+                            dProfile
+                            maybeReferrer
+                            model.bucketSale
+                            (getFocusedBucketId
+                                model.bucketSale
+                                model.bucketView
+                                model.now
+                                model.testMode
+                            )
+                            model.wallet
+                            model.extraUserInfo
+                            model.enterUXModel
+                            model.jurisdictionCheckStatus
+                            model.trackedTxs
+                            model.showReferralModal
+                            model.now
+                            model.testMode
+                        , if dProfile == SmallDesktop then
+                            feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+
+                          else
+                            Element.none
+                        ]
+                    , if dProfile == Desktop then
+                        Element.column
+                            [ Element.spacing 20
+                            , Element.width Element.fill
+                            , Element.alignTop
+                            ]
+                            [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+                            , futureBucketsPane model
                             , trackedTxsElement model.trackedTxs
                             ]
 
-                        else
-                            []
-                       )
-                )
-            , Element.column
-                [ Element.width <| Element.fillPortion 2
-                , Element.spacing 20
-                , Element.alignTop
-                ]
-                [ focusedBucketPane
-                    dProfile
-                    maybeReferrer
-                    model.bucketSale
-                    (getFocusedBucketId
+                      else
+                        Element.none
+                    ]
+
+            SmallDesktop ->
+                Element.column
+                    []
+                    [ focusedBucketPane
+                        dProfile
+                        maybeReferrer
                         model.bucketSale
-                        model.bucketView
+                        (getFocusedBucketId
+                            model.bucketSale
+                            model.bucketView
+                            model.now
+                            model.testMode
+                        )
+                        model.wallet
+                        model.extraUserInfo
+                        model.enterUXModel
+                        model.jurisdictionCheckStatus
+                        model.trackedTxs
+                        model.showReferralModal
                         model.now
                         model.testMode
-                    )
-                    model.wallet
-                    model.extraUserInfo
-                    model.enterUXModel
-                    model.jurisdictionCheckStatus
-                    model.trackedTxs
-                    model.showReferralModal
-                    model.now
-                    model.testMode
-                , if dProfile == SmallDesktop then
-                    feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-
-                  else
-                    Element.none
-                ]
-            , if dProfile == Desktop then
-                Element.column
-                    [ Element.spacing 20
-                    , Element.width Element.fill
-                    , Element.alignTop
                     ]
-                    [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-                    , futureBucketsPane model
-                    , trackedTxsElement model.trackedTxs
-                    ]
-
-              else
-                Element.none
-            ]
         ]
     , []
     )
@@ -169,8 +194,11 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
-               , Element.paddingXY 35 15
-               , Element.spacing 7
+               , Element.paddingXY
+                    (responsiveVal dProfile 35 16)
+                    (responsiveVal dProfile 15 7)
+               , Element.spacing
+                    (responsiveVal dProfile 7 3)
                ]
         )
         ([ focusedBucketHeaderEl
@@ -194,22 +222,35 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                     ValidBucket bucketInfo ->
                         case bucketInfo.state of
                             Closed ->
-                                [ focusedBucketClosedPane bucketInfo (getRelevantTimingInfo bucketInfo now testMode) wallet testMode
+                                [ focusedBucketClosedPane bucketInfo
+                                    (getRelevantTimingInfo bucketInfo now testMode)
+                                    wallet
+                                    testMode
+                                    dProfile
                                 ]
 
                             _ ->
-                                [ focusedBucketSubheaderEl bucketInfo
+                                [ focusedBucketSubheaderEl bucketInfo dProfile
                                 , focusedBucketTimeLeftEl
                                     (getRelevantTimingInfo bucketInfo now testMode)
                                     testMode
-                                , enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
+                                    dProfile
+                                , enterBidUX wallet
+                                    maybeReferrer
+                                    maybeExtraUserInfo
+                                    enterUXModel
+                                    bucketInfo
+                                    jurisdictionCheckStatus
+                                    trackedTxs
+                                    testMode
+                                    dProfile
                                 ]
                )
         )
 
 
-focusedBucketClosedPane : ValidBucketInfo -> RelevantTimingInfo -> Wallet.State -> TestMode -> Element Msg
-focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
+focusedBucketClosedPane : ValidBucketInfo -> RelevantTimingInfo -> Wallet.State -> TestMode -> DisplayProfile -> Element Msg
+focusedBucketClosedPane bucketInfo timingInfo wallet testMode dProfile =
     let
         intervalString =
             TimeHelpers.toConciseIntervalString timingInfo.relevantTimeFromNow
@@ -247,7 +288,7 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
             Just _ ->
                 [ Element.column
                     [ Element.padding 5
-                    , Element.Font.size 16
+                    , Element.Font.size (responsiveVal dProfile 16 8)
                     , Element.width Element.fill
                     ]
                     [ para <|
@@ -295,6 +336,9 @@ futureBucketsPane model =
                 )
                 model.now
                 model.testMode
+
+        dProfile =
+            model.dProfile
     in
     case fetchedNextBucketInfo of
         InvalidBucket ->
@@ -304,7 +348,7 @@ futureBucketsPane model =
             Element.column
                 (commonPaneAttributes
                     ++ [ Element.width <| Element.fillPortion 1
-                       , Element.paddingXY 32 25
+                       , Element.paddingXY (responsiveVal dProfile 32 16) (responsiveVal dProfile 25 12)
                        ]
                 )
                 [ blockTitleText "Future Buckets"
@@ -587,34 +631,57 @@ focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeRefer
             referralModalActive
             testMode
         , Element.row
-            [ Element.Font.size 30
+            [ Element.Font.size (responsiveVal dProfile 30 16)
             , Element.Font.bold
             , Element.alignLeft
-            , Element.spacing 10
+            , Element.spacing (responsiveVal dProfile 10 4)
             , Element.centerX
             ]
             [ prevTenBucketArrow bucketId
             , prevBucketArrow bucketId
-            , Element.row
-                [ Element.centerX
+            , Element.column
+                [ Element.width Element.fill
+                , Element.centerX
                 ]
-                [ Element.text <|
-                    "Bucket #"
-                        ++ String.fromInt bucketId
+                [ Element.row
+                    [ Element.centerX
+                    ]
+                    [ Element.text <|
+                        "Bucket #"
+                            ++ String.fromInt bucketId
+                    ]
+                , case dProfile of
+                    Desktop ->
+                        Element.none
+
+                    SmallDesktop ->
+                        Element.row
+                            [ Element.centerX
+                            ]
+                            [ if currentBucketId /= bucketId then
+                                jumpToCurrentBucketButton currentBucketId dProfile
+
+                              else
+                                Element.none
+                            ]
                 ]
             , nextBucketArrow bucketId
             , nextTenBucketArrow bucketId
             ]
-        , Element.row
-            [ Element.centerX
-            , Element.Font.size 20
-            ]
-            [ if currentBucketId /= bucketId then
-                jumpToCurrentBucketButton currentBucketId
+        , case dProfile of
+            Desktop ->
+                Element.row
+                    [ Element.centerX
+                    ]
+                    [ if currentBucketId /= bucketId then
+                        jumpToCurrentBucketButton currentBucketId dProfile
 
-              else
+                      else
+                        Element.none
+                    ]
+
+            SmallDesktop ->
                 Element.none
-            ]
         ]
 
 
@@ -660,6 +727,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                             referralBonusIndicator
                                 maybeReferrer
                                 True
+                                dProfile
 
                     else
                         Element.none
@@ -668,10 +736,11 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                 referralBonusIndicator
                     maybeReferrer
                     referralModalActive
+                    dProfile
 
 
-focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
-focusedBucketSubheaderEl bucketInfo =
+focusedBucketSubheaderEl : ValidBucketInfo -> DisplayProfile -> Element Msg
+focusedBucketSubheaderEl bucketInfo dProfile =
     let
         bidText =
             case bucketInfo.state of
@@ -682,15 +751,21 @@ focusedBucketSubheaderEl bucketInfo =
         Just totalValueEntered ->
             Element.paragraph
                 [ Element.Font.color grayTextColor
-                , Element.Font.size 15
+                , Element.Font.size (responsiveVal dProfile 15 7)
                 ]
-                [ emphasizedText PassiveStyle <|
-                    TokenValue.toConciseString totalValueEntered
-                , Element.text <|
-                    " "
-                        ++ Config.enteringTokenCurrencyLabel
-                        ++ bidText
-                ]
+                (case dProfile of
+                    SmallDesktop ->
+                        [ Element.none ]
+
+                    Desktop ->
+                        [ emphasizedText PassiveStyle <|
+                            TokenValue.toConciseString totalValueEntered
+                        , Element.text <|
+                            " "
+                                ++ Config.enteringTokenCurrencyLabel
+                                ++ bidText
+                        ]
+                )
 
         _ ->
             loadingElement
@@ -728,8 +803,8 @@ nextTenBucketArrow currentBucketId =
     navigateElementDetail (currentBucketId + 10) Images.rightTen
 
 
-focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> Element Msg
-focusedBucketTimeLeftEl timingInfo testMode =
+focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> DisplayProfile -> Element Msg
+focusedBucketTimeLeftEl timingInfo testMode dProfile =
     Element.row
         [ Element.width Element.fill
         , Element.spacing 22
@@ -752,7 +827,15 @@ focusedBucketTimeLeftEl timingInfo testMode =
                 TimeHelpers.toConciseIntervalString timingInfo.relevantTimeFromNow
           in
           (Element.el
-            [ Element.Font.color deepBlue ]
+            (case dProfile of
+                Desktop ->
+                    [ Element.Font.color deepBlue ]
+
+                SmallDesktop ->
+                    [ Element.Font.color deepBlue
+                    , Element.Font.size 12
+                    ]
+            )
             << Element.text
           )
             (case timingInfo.state of
@@ -768,8 +851,8 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Wallet.State -> Maybe Address -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
-enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
+enterBidUX : Wallet.State -> Maybe Address -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> DisplayProfile -> Element Msg
+enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode dProfile =
     let
         miningEnters =
             trackedTxs
@@ -808,15 +891,36 @@ enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo juris
         [ Element.width Element.fill
         , Element.spacing 20
         ]
-        [ bidInputBlock enterUXModel bucketInfo testMode
-        , bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode
+        [ bidInputBlock
+            enterUXModel
+            bucketInfo
+            testMode
+            dProfile
+        , bidImpactBlock
+            enterUXModel
+            bucketInfo
+            wallet
+            miningEnters
+            testMode
+            dProfile
         , otherBidsImpactMsg
-        , actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode
+            dProfile
+        , actionButton
+            jurisdictionCheckStatus
+            maybeReferrer
+            wallet
+            maybeExtraUserInfo
+            unlockMining
+            enterUXModel
+            bucketInfo
+            trackedTxs
+            testMode
+            dProfile
         ]
 
 
-bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> Element Msg
-bidInputBlock enterUXModel bucketInfo testMode =
+bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> DisplayProfile -> Element Msg
+bidInputBlock enterUXModel bucketInfo testMode dProfile =
     centerpaneBlockContainer ActiveStyle
         []
         [ emphasizedText ActiveStyle "I want to bid:"
@@ -915,8 +1019,15 @@ pricePerTokenMsg totalValueEntered maybeEnterAmount testMode =
         )
 
 
-bidImpactBlock : EnterUXModel -> ValidBucketInfo -> Wallet.State -> List EnterInfo -> TestMode -> Element Msg
-bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode =
+bidImpactBlock :
+    EnterUXModel
+    -> ValidBucketInfo
+    -> Wallet.State
+    -> List EnterInfo
+    -> TestMode
+    -> DisplayProfile
+    -> Element Msg
+bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode dProfile =
     centerpaneBlockContainer PassiveStyle
         [ Element.height <| Element.px 310 ]
     <|
@@ -1189,8 +1300,8 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
             ]
 
 
-otherBidsImpactMsg : Element Msg
-otherBidsImpactMsg =
+otherBidsImpactMsg : DisplayProfile -> Element Msg
+otherBidsImpactMsg dProfile =
     centerpaneBlockContainer PassiveStyle
         []
         [ emphasizedText PassiveStyle "If other bids are made:"
@@ -1198,7 +1309,11 @@ otherBidsImpactMsg =
             [ Element.width Element.fill
             , Element.Font.color grayTextColor
             ]
-            [ Element.text <| "The price per token will increase further, and the amount of " ++ Config.exitingTokenCurrencyLabel ++ " you can claim from the bucket will decrease proportionally. For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve." ]
+            [ Element.text <|
+                "The price per token will increase further, and the amount of "
+                    ++ Config.exitingTokenCurrencyLabel
+                    ++ " you can claim from the bucket will decrease proportionally. For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve."
+            ]
         ]
 
 
@@ -1339,8 +1454,8 @@ alreadyEnteredBucketButton enterAmount =
     Element.none
 
 
-actionButton : JurisdictionCheckStatus -> Maybe Address -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> Element Msg
-actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
+actionButton : JurisdictionCheckStatus -> Maybe Address -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> DisplayProfile -> Element Msg
+actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode dProfile =
     case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
@@ -1946,8 +2061,8 @@ viewTosPageNavigationButtons confirmTosModel enterInfo =
         ]
 
 
-referralBonusIndicator : Maybe Address -> Bool -> Element Msg
-referralBonusIndicator maybeReferrer focusedStyle =
+referralBonusIndicator : Maybe Address -> Bool -> DisplayProfile -> Element Msg
+referralBonusIndicator maybeReferrer focusedStyle dProfile =
     let
         hasReferral =
             maybeReferrer /= Nothing
@@ -1955,7 +2070,7 @@ referralBonusIndicator maybeReferrer focusedStyle =
     Element.el
         [ Element.paddingXY 16 7
         , Element.Font.bold
-        , Element.Font.size 18
+        , Element.Font.size (responsiveVal dProfile 18 14)
         , Element.pointer
         , Element.Events.onClick (ReferralIndicatorClicked maybeReferrer)
         , Element.Background.color
@@ -2339,14 +2454,24 @@ makeClaimButton userInfo exitInfo =
         (ClaimClicked userInfo exitInfo)
 
 
-jumpToCurrentBucketButton : Int -> Element Msg
-jumpToCurrentBucketButton currentBucketId =
-    Element.el
-        [ Element.pointer
-        , Element.Events.onClick (FocusToBucket currentBucketId)
-        , Element.Font.color EH.lightBlue
-        ]
-        (Element.text "Return to Current Bucket")
+jumpToCurrentBucketButton : Int -> DisplayProfile -> Element Msg
+jumpToCurrentBucketButton currentBucketId dProfile =
+    case dProfile of
+        Desktop ->
+            Element.el
+                [ Element.pointer
+                , Element.Events.onClick (FocusToBucket currentBucketId)
+                , Element.Font.color EH.lightBlue
+                , Element.Font.size (responsiveVal dProfile 20 10)
+                ]
+                (Element.text "Return to Current Bucket")
+
+        SmallDesktop ->
+            EH.lightBlueButton
+                dProfile
+                [ Element.alignRight ]
+                [ "Return to Current Bucket" ]
+                (FocusToBucket currentBucketId)
 
 
 loadingElement : Element Msg

@@ -268,6 +268,7 @@ update msg prevModel =
                                                             prevModel.testMode
                                                             prevModel.wallet
                                                             prevModel.now
+                                                            prevModel.dProfile
                                                 in
                                                 ( { prevModel
                                                     | submodel =
@@ -377,6 +378,7 @@ update msg prevModel =
                                                 prevModel.testMode
                                                 prevModel.wallet
                                                 newNow
+                                                prevModel.dProfile
                                     in
                                     ( { modelWithUpdatedNow
                                         | submodel = BucketSaleModel bucketSaleModel

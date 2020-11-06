@@ -552,13 +552,21 @@ button dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor l
     Element.column
         (attributes
             ++ [ Element.Border.rounded 4
-               , Element.spacing (responsiveVal dProfile 8 5)
+               , Element.spacing (responsiveVal dProfile 8 1)
                , Element.pointer
                , Element.Events.onClick msg
-               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.padding 10)
+               , responsiveVal
+                    dProfile
+                    (Element.paddingXY 25 17)
+                    (Element.padding 3)
                , Element.Font.color textColor
-               , Element.Font.size (responsiveVal dProfile 18 16)
-               , Element.Font.semiBold
+               , Element.Font.size (responsiveVal dProfile 18 10)
+               , case dProfile of
+                    Desktop ->
+                        Element.Font.semiBold
+
+                    SmallDesktop ->
+                        Element.Font.regular
                , Element.Background.color bgColor
                , Element.mouseDown [ Element.Background.color bgPressedColor ]
                , Element.mouseOver [ Element.Background.color bgHoverColor ]

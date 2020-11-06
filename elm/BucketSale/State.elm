@@ -36,8 +36,8 @@ import Utils
 import Wallet
 
 
-init : BucketSale -> Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
-init bucketSale maybeReferrer testMode wallet now =
+init : BucketSale -> Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> DisplayProfile -> ( Model, Cmd Msg )
+init bucketSale maybeReferrer testMode wallet now displayProfile =
     ( { wallet = verifyWalletCorrectNetwork wallet testMode
       , extraUserInfo = Nothing
       , testMode = testMode
@@ -56,6 +56,7 @@ init bucketSale maybeReferrer testMode wallet now =
       , showFeedbackUXModel = False
       , feedbackUXModel =
             initFeedbackUXModel
+      , dProfile = displayProfile
       }
     , Cmd.batch
         [ fetchFastGasPriceCmd

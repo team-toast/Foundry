@@ -41,6 +41,7 @@ type alias Model =
     , showReferralModal : Bool
     , showFeedbackUXModel : Bool
     , feedbackUXModel : FeedbackUXModel
+    , dProfile : DisplayProfile
     }
 
 
