@@ -54,82 +54,81 @@ root model =
 
 pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
 pageElementAndModal model =
-    if model.dProfile /= Desktop && model.displayMobileWarning then
-        ( Element.column
-            [ Element.width Element.fill
-            , Element.height Element.fill
-            , Element.Background.color <| Element.rgb255 20 53 138
-            , Element.spacing 30
-            , Element.paddingXY 10 30
-            , Element.Font.size 22
-            , Element.Font.color EH.white
-            ]
-            [ Element.paragraph [ Element.Font.center ]
-                [ Element.text "This interface is not designed for screens this small. To participate in this sale, visit on a larger screen. Alternatively, some mobile browsers have a \"desktop mode\" that might help." ]
-            , Element.paragraph [ Element.Font.center ]
-                [ Element.text "If you're just looking for info on Foundry, FRY, or the sale, check out "
-                , Element.newTabLink
-                    [ Element.Font.color EH.lightBlue
-                    ]
-                    { url = "https://foundrydao.com"
-                    , label = Element.text "foundrydao.com"
-                    }
-                , Element.text "."
+    -- if model.dProfile /= Desktop && model.displayMobileWarning then
+    --     ( Element.column
+    --         [ Element.width Element.fill
+    --         , Element.height Element.fill
+    --         , Element.Background.color <| Element.rgb255 20 53 138
+    --         , Element.spacing 30
+    --         , Element.paddingXY 10 30
+    --         , Element.Font.size 22
+    --         , Element.Font.color EH.white
+    --         ]
+    --         [ Element.paragraph [ Element.Font.center ]
+    --             [ Element.text "This interface is not designed for screens this small. To participate in this sale, visit on a larger screen. Alternatively, some mobile browsers have a \"desktop mode\" that might help." ]
+    --         , Element.paragraph [ Element.Font.center ]
+    --             [ Element.text "If you're just looking for info on Foundry, FRY, or the sale, check out "
+    --             , Element.newTabLink
+    --                 [ Element.Font.color EH.lightBlue
+    --                 ]
+    --                 { url = "https://foundrydao.com"
+    --                 , label = Element.text "foundrydao.com"
+    --                 }
+    --             , Element.text "."
+    --             ]
+    --         ]
+    --     , []
+    --     )
+    -- else
+    let
+        ( submodelEl, modalEls ) =
+            submodelElementAndModal model
+
+        maybeTestnetIndicator =
+            Element.el
+                [ Element.centerX
+                , Element.Font.size <| responsiveVal model.dProfile 24 10
+                , Element.Font.bold
+                , Element.Font.italic
+                , Element.Font.color EH.softRed
                 ]
-            ]
-        , []
-        )
+            <|
+                case model.testMode of
+                    None ->
+                        Element.none
 
-    else
-        let
-            ( submodelEl, modalEls ) =
-                submodelElementAndModal model
+                    TestMainnet ->
+                        Element.text "In Test (Mainnet) mode"
 
-            maybeTestnetIndicator =
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size 24
-                    , Element.Font.bold
-                    , Element.Font.italic
-                    , Element.Font.color EH.softRed
-                    ]
-                <|
-                    case model.testMode of
-                        None ->
-                            Element.none
+                    TestKovan ->
+                        Element.text "In Test (Kovan) mode"
 
-                        TestMainnet ->
-                            Element.text "In Test (Mainnet) mode"
-
-                        TestKovan ->
-                            Element.text "In Test (Kovan) mode"
-
-                        TestGanache ->
-                            Element.text "In Test (Local) mode"
-        in
-        ( Element.column
+                    TestGanache ->
+                        Element.text "In Test (Local) mode"
+    in
+    ( Element.column
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        , Element.spacing 20
+        , Element.behindContent <| headerBackground model.dProfile
+        ]
+        [ header model.dProfile
+        , maybeTestnetIndicator
+        , Element.el
             [ Element.width Element.fill
-            , Element.height Element.fill
-            , Element.spacing 20
-            , Element.behindContent <| headerBackground model.dProfile
+            , Element.paddingXY 20 0
             ]
-            [ header model.dProfile
-            , maybeTestnetIndicator
-            , Element.el
-                [ Element.width Element.fill
-                , Element.paddingXY 20 0
-                ]
-                submodelEl
-            ]
-        , modalEls ++ userNoticeEls model.dProfile model.userNotices
-        )
+            submodelEl
+        ]
+    , modalEls ++ userNoticeEls model.dProfile model.userNotices
+    )
 
 
 headerBackground : DisplayProfile -> Element Msg
 headerBackground dProfile =
     Element.el
         [ Element.width Element.fill
-        , Element.height <| Element.px 600
+        , Element.height <| Element.px <| responsiveVal dProfile 600 200
         , Element.Background.color <| Element.rgb255 20 53 138
         ]
         Element.none
@@ -138,7 +137,7 @@ headerBackground dProfile =
 header : DisplayProfile -> Element Msg
 header dProfile =
     Element.row
-        [ Element.height <| Element.px 100
+        [ Element.height <| Element.px <| responsiveVal dProfile 100 30
         , Element.width Element.fill
         , Element.Background.color <| Element.rgb255 10 33 108
         ]
@@ -159,17 +158,26 @@ brandAndLogo : DisplayProfile -> Element Msg
 brandAndLogo dProfile =
     Element.row
         [ Element.height Element.fill
-        , Element.padding 20
-        , Element.spacing 10
+        , Element.padding <| responsiveVal dProfile 20 10
+        , Element.spacing <| responsiveVal dProfile 10 5
         ]
         [ Images.toElement
-            [ Element.centerY ]
+            (case dProfile of
+                SmallDesktop ->
+                    [ Element.centerY
+                    , Element.width <| Element.px 20
+                    , Element.height <| Element.px 20
+                    ]
+
+                _ ->
+                    [ Element.centerY ]
+            )
             Images.exitingTokenIcon
         , Element.column
             [ Element.spacing 5 ]
             [ Element.el
                 [ Element.Font.color EH.white
-                , Element.Font.size 35
+                , Element.Font.size <| responsiveVal dProfile 35 12
                 , Element.Font.bold
                 , Element.centerY
                 ]
@@ -178,10 +186,10 @@ brandAndLogo dProfile =
             , Element.newTabLink
                 [ Element.alignLeft
                 , Element.Background.color EH.lightBlue
-                , Element.paddingXY 10 3
+                , Element.paddingXY (responsiveVal dProfile 10 5) (responsiveVal dProfile 3 1)
                 , Element.Border.rounded 4
                 , Element.Font.color EH.white
-                , Element.Font.size 18
+                , Element.Font.size <| responsiveVal dProfile 18 6
                 ]
                 { url = "https://foundrydao.com"
                 , label =
@@ -207,13 +215,13 @@ smLinks dProfile =
                     { url = url
                     , label =
                         Images.toElement
-                            [ Element.height <| Element.px 40 ]
+                            [ Element.height <| Element.px <| responsiveVal dProfile 40 15 ]
                             image
                     }
             )
         |> Element.row
-            [ Element.padding 10
-            , Element.spacing 20
+            [ Element.padding <| responsiveVal dProfile 10 5
+            , Element.spacing <| responsiveVal dProfile 20 10
             ]
 
 

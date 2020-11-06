@@ -132,8 +132,9 @@ init flags url key =
             , userNotices = []
             , dProfile = dProfile
             , maybeReferrer = maybeReferrer
-            , displayMobileWarning =
-                flags.width < 1024
+            , displayMobileWarning = False
+
+            --flags.width < 1024
             , nonRepeatingGTagsSent = []
             }
 

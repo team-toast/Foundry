@@ -595,23 +595,6 @@ buttonThin dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textCol
         )
 
 
-buttonThinMargin : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg
-buttonThinMargin dProfile attributes text msg =
-    let
-        color =
-            lightBlue
-    in
-    buttonThin dProfile
-        attributes
-        ( color
-        , color |> addAlpha 0.8
-        , color |> addAlpha 0.6
-        )
-        white
-        text
-        msg
-
-
 closeButton : Bool -> msg -> Element msg
 closeButton isBlack msg =
     Element.el
