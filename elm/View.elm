@@ -87,7 +87,8 @@ pageElementAndModal model =
         maybeTestnetIndicator =
             Element.el
                 [ Element.centerX
-                , Element.Font.size <| responsiveVal model.dProfile 24 10
+                , Element.Font.size <|
+                    responsiveVal model.dProfile 24 10
                 , Element.Font.bold
                 , Element.Font.italic
                 , Element.Font.color EH.softRed
@@ -121,7 +122,10 @@ pageElementAndModal model =
             ]
             submodelEl
         ]
-    , modalEls ++ userNoticeEls model.dProfile model.userNotices
+    , modalEls
+        ++ userNoticeEls
+            model.dProfile
+            model.userNotices
     )
 
 

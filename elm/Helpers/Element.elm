@@ -547,7 +547,14 @@ dropdownSelector itemsAndMsgs =
 -- BUTTONS
 
 
-button : DisplayProfile -> List (Attribute msg) -> ( Element.Color, Element.Color, Element.Color ) -> Element.Color -> List String -> msg -> Element msg
+button :
+    DisplayProfile
+    -> List (Attribute msg)
+    -> ( Element.Color, Element.Color, Element.Color )
+    -> Element.Color
+    -> List String
+    -> msg
+    -> Element msg
 button dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor lines msg =
     Element.column
         (attributes
@@ -560,7 +567,8 @@ button dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor l
                     (Element.paddingXY 25 17)
                     (Element.padding 3)
                , Element.Font.color textColor
-               , Element.Font.size (responsiveVal dProfile 18 10)
+               , Element.Font.size
+                    (responsiveVal dProfile 18 10)
                , case dProfile of
                     Desktop ->
                         Element.Font.semiBold
@@ -573,9 +581,24 @@ button dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor l
                , noSelectText
                ]
         )
-        (List.map
-            (Element.el [ Element.centerX ] << Element.text)
-            lines
+        (case dProfile of
+            Desktop ->
+                List.map
+                    (Element.el
+                        [ Element.centerX ]
+                        << Element.text
+                    )
+                    lines
+
+            SmallDesktop ->
+                [ Element.paragraph
+                    [ Element.padding 3
+                    ]
+                    (List.map
+                        Element.text
+                        lines
+                    )
+                ]
         )
 
 
@@ -710,44 +733,61 @@ greenButton dProfile attributes text msg =
         msg
 
 
+commonButtonArgs : DisplayProfile -> List (Attribute msg)
+commonButtonArgs dProfile =
+    [ Element.Border.rounded 4
+    , responsiveVal dProfile
+        (Element.paddingXY 25 17)
+        (Element.paddingXY 10 5)
+    , Element.Font.size
+        (responsiveVal dProfile 18 10)
+    , Element.Font.semiBold
+    , Element.Background.color lightGray
+    , Element.Font.center
+    , noSelectText
+    ]
+
+
 disabledButton : DisplayProfile -> List (Attribute msg) -> String -> Maybe String -> Element msg
 disabledButton dProfile attributes text maybeTipText =
     Element.el
         (attributes
-            ++ [ Element.Border.rounded 4
-               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.paddingXY 10 5)
-               , Element.Font.size (responsiveVal dProfile 18 16)
-               , Element.Font.semiBold
-               , Element.Background.color lightGray
-               , Element.Font.center
-               , noSelectText
-               , Element.above <|
+            ++ commonButtonArgs dProfile
+            ++ [ Element.above <|
                     maybeErrorElement
                         [ Element.moveUp 5 ]
                         maybeTipText
                ]
         )
-        (Element.text text)
+        (case dProfile of
+            Desktop ->
+                Element.text text
+
+            SmallDesktop ->
+                Element.paragraph []
+                    [ Element.text text ]
+        )
 
 
 disabledSuccessButton : DisplayProfile -> List (Attribute msg) -> String -> Maybe String -> Element msg
 disabledSuccessButton dProfile attributes text maybeTipText =
     Element.el
         (attributes
-            ++ [ Element.Border.rounded 4
-               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.paddingXY 10 5)
-               , Element.Font.size (responsiveVal dProfile 18 16)
-               , Element.Font.semiBold
-               , Element.Background.color green
-               , Element.Font.center
-               , noSelectText
-               , Element.above <|
+            ++ commonButtonArgs dProfile
+            ++ [ Element.above <|
                     maybeErrorElement
                         [ Element.moveUp 5 ]
                         maybeTipText
                ]
         )
-        (Element.text text)
+        (case dProfile of
+            Desktop ->
+                Element.text text
+
+            SmallDesktop ->
+                Element.paragraph []
+                    [ Element.text text ]
+        )
 
 
 orangeButton : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg

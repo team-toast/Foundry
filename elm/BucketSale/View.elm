@@ -57,7 +57,7 @@ root model maybeReferrer dProfile =
                         , Element.spacing 20
                         ]
                         ([ viewYoutubeLinksBlock
-                         , closedBucketsPane model
+                         , closedBucketsPane model dProfile
                          ]
                             ++ (if dProfile == SmallDesktop then
                                     [ futureBucketsPane model
@@ -165,8 +165,8 @@ blockTitleText text =
         Element.text text
 
 
-closedBucketsPane : Model -> Element Msg
-closedBucketsPane model =
+closedBucketsPane : Model -> DisplayProfile -> Element Msg
+closedBucketsPane model dProfile =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
@@ -178,14 +178,24 @@ closedBucketsPane model =
             [ Element.Font.color grayTextColor
             , Element.Font.size 15
             ]
-            [ Element.text <| "These are the concluded buckets of " ++ Config.exitingTokenCurrencyLabel ++ " that have been claimed. If you have " ++ Config.exitingTokenCurrencyLabel ++ " to claim it will show below." ]
+            [ Element.text <|
+                "These are the concluded buckets of "
+                    ++ Config.exitingTokenCurrencyLabel
+                    ++ " that have been claimed. If you have "
+                    ++ Config.exitingTokenCurrencyLabel
+                    ++ " to claim it will show below."
+            ]
         , maybeUserBalanceBlock
             model.wallet
             model.extraUserInfo
+            dProfile
         , maybeClaimBlock
             model.wallet
             (model.extraUserInfo |> Maybe.map .exitInfo)
-        , totalExitedBlock model.totalTokensExited
+            dProfile
+        , totalExitedBlock
+            model.totalTokensExited
+            dProfile
         ]
 
 
@@ -279,6 +289,7 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode dProfile =
                 ]
     in
     centerpaneBlockContainer PassiveStyle
+        dProfile
         [ Element.height <| Element.px 310 ]
     <|
         case Wallet.userInfo wallet of
@@ -367,10 +378,12 @@ futureBucketsPane model =
                     model.bucketSale
                     model.now
                     model.testMode
+                    dProfile
                 , maybeSoldTokenInFutureBucketsBlock
                     model.bucketSale
                     model.now
                     model.testMode
+                    dProfile
                 ]
 
 
@@ -519,8 +532,8 @@ viewFeedbackForm feedbackUXModel =
         )
 
 
-maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> Element Msg
-maybeUserBalanceBlock wallet maybeExtraUserInfo =
+maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> DisplayProfile -> Element Msg
+maybeUserBalanceBlock wallet maybeExtraUserInfo dProfile =
     case ( Wallet.userInfo wallet, maybeExtraUserInfo ) of
         ( Nothing, _ ) ->
             Element.none
@@ -530,15 +543,25 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
 
         ( Just userInfo, Just extraUserInfo ) ->
             sidepaneBlockContainer PassiveStyle
+                dProfile
                 [ bigNumberElement
                     [ Element.centerX ]
                     (TokenNum extraUserInfo.exitingTokenBalance)
                     Config.exitingTokenCurrencyLabel
                     PassiveStyle
+                    dProfile
                 , Element.paragraph
-                    [ Element.centerX
-                    , Element.width Element.shrink
-                    ]
+                    ([ Element.centerX
+                     , Element.width Element.shrink
+                     ]
+                        ++ (case dProfile of
+                                Desktop ->
+                                    []
+
+                                SmallDesktop ->
+                                    [ Element.Font.size 10 ]
+                           )
+                    )
                     [ Element.text "in your wallet"
                     ]
                 , if TokenValue.isZero extraUserInfo.exitingTokenBalance then
@@ -546,20 +569,28 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
 
                   else
                     Element.paragraph
-                        [ Element.centerX
-                        , Element.width Element.shrink
-                        , Element.Font.color EH.lightBlue
-                        , Element.pointer
-                        , Element.Events.onClick AddFryToMetaMaskClicked
-                        , EH.withTitle <| "Add " ++ Config.exitingTokenCurrencyLabel ++ " to Metamask or another EIP 747 compliant Web3 wallet"
-                        ]
+                        ([ Element.centerX
+                         , Element.width Element.shrink
+                         , Element.Font.color EH.lightBlue
+                         , Element.pointer
+                         , Element.Events.onClick AddFryToMetaMaskClicked
+                         , EH.withTitle <| "Add " ++ Config.exitingTokenCurrencyLabel ++ " to Metamask or another EIP 747 compliant Web3 wallet"
+                         ]
+                            ++ (case dProfile of
+                                    Desktop ->
+                                        []
+
+                                    SmallDesktop ->
+                                        [ Element.Font.size 10 ]
+                               )
+                        )
                         [ Element.text <| "List " ++ Config.exitingTokenCurrencyLabel ++ " in your wallet"
                         ]
                 ]
 
 
-maybeClaimBlock : Wallet.State -> Maybe ExitInfo -> Element Msg
-maybeClaimBlock wallet maybeExitInfo =
+maybeClaimBlock : Wallet.State -> Maybe ExitInfo -> DisplayProfile -> Element Msg
+maybeClaimBlock wallet maybeExitInfo dProfile =
     case ( Wallet.userInfo wallet, maybeExitInfo ) of
         ( Nothing, _ ) ->
             Element.none
@@ -574,18 +605,28 @@ maybeClaimBlock wallet maybeExitInfo =
                         ( PassiveStyle, Nothing )
 
                     else
-                        ( ActiveStyle, Just <| makeClaimButton userInfo exitInfo )
+                        ( ActiveStyle, Just <| makeClaimButton userInfo exitInfo dProfile )
             in
             sidepaneBlockContainer blockStyle
+                dProfile
                 [ bigNumberElement
                     [ Element.centerX ]
                     (TokenNum exitInfo.totalExitable)
                     Config.exitingTokenCurrencyLabel
                     blockStyle
+                    dProfile
                 , Element.paragraph
-                    [ Element.centerX
-                    , Element.width Element.shrink
-                    ]
+                    ([ Element.centerX
+                     , Element.width Element.shrink
+                     ]
+                        ++ (case dProfile of
+                                Desktop ->
+                                    []
+
+                                SmallDesktop ->
+                                    [ Element.Font.size 10 ]
+                           )
+                    )
                     [ Element.text "available for "
                     , emphasizedText blockStyle "you"
                     , Element.text " to claim"
@@ -597,19 +638,21 @@ maybeClaimBlock wallet maybeExitInfo =
                 ]
 
 
-totalExitedBlock : Maybe TokenValue -> Element Msg
-totalExitedBlock maybeTotalExited =
+totalExitedBlock : Maybe TokenValue -> DisplayProfile -> Element Msg
+totalExitedBlock maybeTotalExited dProfile =
     case maybeTotalExited of
         Nothing ->
             loadingElement
 
         Just totalExited ->
             sidepaneBlockContainer PassiveStyle
+                dProfile
                 [ bigNumberElement
                     [ Element.centerX ]
                     (TokenNum totalExited)
                     Config.exitingTokenCurrencyLabel
                     PassiveStyle
+                    dProfile
                 , Element.paragraph
                     [ Element.centerX
                     , Element.width Element.shrink
@@ -891,132 +934,331 @@ enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo juris
         [ Element.width Element.fill
         , Element.spacing 20
         ]
-        [ bidInputBlock
-            enterUXModel
-            bucketInfo
-            testMode
-            dProfile
-        , bidImpactBlock
-            enterUXModel
-            bucketInfo
-            wallet
-            miningEnters
-            testMode
-            dProfile
-        , otherBidsImpactMsg
-            dProfile
-        , actionButton
-            jurisdictionCheckStatus
-            maybeReferrer
-            wallet
-            maybeExtraUserInfo
-            unlockMining
-            enterUXModel
-            bucketInfo
-            trackedTxs
-            testMode
-            dProfile
-        ]
+        ([]
+            ++ (case dProfile of
+                    Desktop ->
+                        [ bidInputBlock
+                            enterUXModel
+                            bucketInfo
+                            testMode
+                            dProfile
+                        , bidImpactBlock
+                            enterUXModel
+                            bucketInfo
+                            wallet
+                            miningEnters
+                            testMode
+                            dProfile
+                        , otherBidsImpactMsg
+                            dProfile
+                        , actionButton
+                            jurisdictionCheckStatus
+                            maybeReferrer
+                            wallet
+                            maybeExtraUserInfo
+                            unlockMining
+                            enterUXModel
+                            bucketInfo
+                            trackedTxs
+                            testMode
+                            dProfile
+                        ]
+
+                    SmallDesktop ->
+                        [ Element.row
+                            [ Element.width Element.fill
+                            , Element.spacingXY 5 0
+                            ]
+                            [ Element.column
+                                [ Element.width <| Element.fillPortion 3
+                                , Element.spacingXY 0 3
+                                ]
+                                [ Element.el
+                                    [ Element.width Element.fill
+                                    , Element.alignTop
+                                    ]
+                                  <|
+                                    bidInputBlock
+                                        enterUXModel
+                                        bucketInfo
+                                        testMode
+                                        dProfile
+                                , bidImpactBlock
+                                    enterUXModel
+                                    bucketInfo
+                                    wallet
+                                    miningEnters
+                                    testMode
+                                    dProfile
+                                , otherBidsImpactMsg
+                                    dProfile
+                                ]
+                            , Element.column
+                                [ Element.width Element.fill
+                                , Element.alignTop
+                                , Element.spacingXY 0 3
+                                ]
+                                [ maybeUserBalanceBlock
+                                    wallet
+                                    maybeExtraUserInfo
+                                    dProfile
+                                , maybeClaimBlock
+                                    wallet
+                                    (maybeExtraUserInfo |> Maybe.map .exitInfo)
+                                    dProfile
+                                , actionButton
+                                    jurisdictionCheckStatus
+                                    maybeReferrer
+                                    wallet
+                                    maybeExtraUserInfo
+                                    unlockMining
+                                    enterUXModel
+                                    bucketInfo
+                                    trackedTxs
+                                    testMode
+                                    dProfile
+                                ]
+                            ]
+                        ]
+               )
+        )
 
 
 bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> DisplayProfile -> Element Msg
 bidInputBlock enterUXModel bucketInfo testMode dProfile =
     centerpaneBlockContainer ActiveStyle
+        dProfile
         []
-        [ emphasizedText ActiveStyle "I want to bid:"
-        , Element.row
-            [ Element.Background.color <| Element.rgba 1 1 1 0.08
-            , Element.Border.rounded 4
-            , Element.padding 13
-            , Element.width Element.fill
-            ]
-            [ Element.Input.text
-                [ Element.Font.size 19
-                , Element.Font.medium
-                , Element.Font.color EH.white
-                , Element.Border.width 0
-                , Element.width Element.fill
-                , Element.Background.color EH.transparent
-                ]
-                { onChange = EnterInputChanged
-                , text = enterUXModel.input
-                , placeholder =
-                    Just <|
-                        Element.Input.placeholder
-                            [ Element.Font.medium
-                            , Element.Font.color <| Element.rgba 1 1 1 0.25
-                            ]
-                            (Element.text "Enter Amount")
-                , label = Element.Input.labelHidden "bid amount"
-                }
-            , Element.row
-                [ Element.centerY
-                , Element.spacing 10
-                ]
-                [ Images.enteringTokenSymbol
-                    |> Images.toElement [ Element.height <| Element.px 30 ]
-                , Element.text Config.enteringTokenCurrencyLabel
-                ]
-            ]
-        , Maybe.map
-            (\totalValueEntered ->
-                pricePerTokenMsg
-                    totalValueEntered
-                    (enterUXModel.amount
-                        |> Maybe.map Result.toMaybe
-                        |> Maybe.Extra.join
+    <|
+        case dProfile of
+            Desktop ->
+                [ emphasizedText ActiveStyle "I want to bid:"
+                , Element.row
+                    [ Element.Background.color <| Element.rgba 1 1 1 0.08
+                    , Element.Border.rounded 4
+                    , Element.padding <|
+                        responsiveVal dProfile 13 7
+                    , Element.width Element.fill
+                    ]
+                    [ Element.Input.text
+                        [ Element.Font.size 19
+                        , Element.Font.medium
+                        , Element.Font.color EH.white
+                        , Element.Border.width 0
+                        , Element.width Element.fill
+                        , Element.Background.color EH.transparent
+                        ]
+                        { onChange = EnterInputChanged
+                        , text = enterUXModel.input
+                        , placeholder =
+                            Just <|
+                                Element.Input.placeholder
+                                    [ Element.Font.medium
+                                    , Element.Font.color <| Element.rgba 1 1 1 0.25
+                                    ]
+                                    (Element.text "Enter Amount")
+                        , label = Element.Input.labelHidden "bid amount"
+                        }
+                    , Element.row
+                        [ Element.centerY
+                        , Element.spacing 10
+                        ]
+                        [ Images.enteringTokenSymbol
+                            |> Images.toElement [ Element.height <| Element.px 30 ]
+                        , Element.text Config.enteringTokenCurrencyLabel
+                        ]
+                    ]
+                , Maybe.map
+                    (\totalValueEntered ->
+                        pricePerTokenMsg
+                            totalValueEntered
+                            (enterUXModel.amount
+                                |> Maybe.map Result.toMaybe
+                                |> Maybe.Extra.join
+                            )
+                            testMode
+                            dProfile
                     )
-                    testMode
-            )
-            bucketInfo.bucketData.totalValueEntered
-            |> Maybe.withDefault loadingElement
-        ]
+                    bucketInfo.bucketData.totalValueEntered
+                    |> Maybe.withDefault loadingElement
+                ]
 
+            SmallDesktop ->
+                let
+                    totalValueEntered =
+                        case bucketInfo.bucketData.totalValueEntered of
+                            Just totalEntered ->
+                                totalEntered
 
-pricePerTokenMsg : TokenValue -> Maybe TokenValue -> TestMode -> Element Msg
-pricePerTokenMsg totalValueEntered maybeEnterAmount testMode =
-    Element.paragraph
-        [ Element.Font.size 14
-        , Element.Font.medium
-        ]
-        ([ Element.text <|
-            "The current "
-                ++ Config.exitingTokenCurrencyLabel
-                ++ " price is "
-                ++ (calcEffectivePricePerToken
-                        totalValueEntered
-                        testMode
-                        |> TokenValue.toConciseString
-                   )
-                ++ " "
-                ++ Config.enteringTokenCurrencyLabel
-                ++ "/"
-                ++ Config.exitingTokenCurrencyLabel
-                ++ "."
-         ]
-            ++ (case maybeEnterAmount of
-                    Just amount ->
-                        [ Element.text " This bid will increase the price to "
-                        , emphasizedText ActiveStyle <|
-                            (calcEffectivePricePerToken
-                                (TokenValue.add
+                            _ ->
+                                TokenValue.zero
+                in
+                [ Element.row
+                    [ Element.width Element.fill ]
+                    [ emphasizedText ActiveStyle <| "I want to bid:"
+                    , Element.column
+                        [ Element.width Element.fill ]
+                        [ Element.row
+                            [ Element.alignRight ]
+                            [ emphasizedText
+                                ActiveStyle
+                              <|
+                                TokenValue.toConciseString
                                     totalValueEntered
-                                    amount
-                                )
+                                    ++ " "
+                                    ++ Config.enteringTokenCurrencyLabel
+                                    ++ " already bid"
+                            ]
+                        ]
+                    ]
+                , Element.row
+                    [ Element.Background.color <|
+                        Element.rgba 1 1 1 0.08
+                    , Element.Border.rounded 4
+                    , Element.padding 4
+                    , Element.width Element.fill
+                    ]
+                    [ Element.Input.text
+                        [ Element.Font.size 12
+                        , Element.Font.medium
+                        , Element.Font.color EH.white
+                        , Element.Border.width 0
+                        , Element.width Element.fill
+                        , Element.Background.color EH.transparent
+                        ]
+                        { onChange = EnterInputChanged
+                        , text = enterUXModel.input
+                        , placeholder =
+                            Just <|
+                                Element.Input.placeholder
+                                    [ Element.Font.medium
+                                    , Element.Font.color <|
+                                        Element.rgba 1 1 1 0.25
+                                    ]
+                                    (Element.text "Enter Amount")
+                        , label = Element.Input.labelHidden "bid amount"
+                        }
+                    , Element.row
+                        [ Element.centerY
+                        , Element.spacing 8
+                        ]
+                        [ Images.enteringTokenSymbol
+                            |> Images.toElement [ Element.height <| Element.px 20 ]
+                        , Element.text Config.enteringTokenCurrencyLabel
+                        ]
+                    ]
+                , Maybe.map
+                    (\totalValue ->
+                        pricePerTokenMsg
+                            totalValue
+                            (enterUXModel.amount
+                                |> Maybe.map Result.toMaybe
+                                |> Maybe.Extra.join
+                            )
+                            testMode
+                            dProfile
+                    )
+                    bucketInfo.bucketData.totalValueEntered
+                    |> Maybe.withDefault loadingElement
+                ]
+
+
+pricePerTokenMsg : TokenValue -> Maybe TokenValue -> TestMode -> DisplayProfile -> Element Msg
+pricePerTokenMsg totalValueEntered maybeEnterAmount testMode dProfile =
+    case dProfile of
+        Desktop ->
+            Element.paragraph
+                [ Element.Font.size 14
+                , Element.Font.medium
+                ]
+                ([ Element.text <|
+                    "The current "
+                        ++ Config.exitingTokenCurrencyLabel
+                        ++ " price is "
+                        ++ (calcEffectivePricePerToken
+                                totalValueEntered
                                 testMode
                                 |> TokenValue.toConciseString
-                            )
-                                ++ " "
-                                ++ Config.enteringTokenCurrencyLabel
-                                ++ "/"
-                                ++ Config.exitingTokenCurrencyLabel
-                                ++ "."
-                        ]
+                           )
+                        ++ " "
+                        ++ Config.enteringTokenCurrencyLabel
+                        ++ "/"
+                        ++ Config.exitingTokenCurrencyLabel
+                        ++ "."
+                 ]
+                    ++ (case maybeEnterAmount of
+                            Just amount ->
+                                [ Element.text " This bid will increase the price to "
+                                , emphasizedText ActiveStyle <|
+                                    (calcEffectivePricePerToken
+                                        (TokenValue.add
+                                            totalValueEntered
+                                            amount
+                                        )
+                                        testMode
+                                        |> TokenValue.toConciseString
+                                    )
+                                        ++ " "
+                                        ++ Config.enteringTokenCurrencyLabel
+                                        ++ "/"
+                                        ++ Config.exitingTokenCurrencyLabel
+                                        ++ "."
+                                ]
 
-                    _ ->
-                        []
-               )
-        )
+                            _ ->
+                                []
+                       )
+                )
+
+        SmallDesktop ->
+            let
+                listEl =
+                    Element.el [ Element.paddingXY 0 3 ]
+            in
+            Element.column
+                [ Element.Font.size 10
+                , Element.Font.medium
+                ]
+                ([ listEl
+                    (Element.text <|
+                        "Current price: "
+                            ++ (calcEffectivePricePerToken
+                                    totalValueEntered
+                                    testMode
+                                    |> TokenValue.toConciseString
+                               )
+                            ++ " "
+                            ++ Config.enteringTokenCurrencyLabel
+                            ++ "/"
+                            ++ Config.exitingTokenCurrencyLabel
+                            ++ "."
+                    )
+                 ]
+                    ++ (case maybeEnterAmount of
+                            Just amount ->
+                                [ listEl
+                                    (Element.text <|
+                                        "After this bid: "
+                                            ++ (calcEffectivePricePerToken
+                                                    (TokenValue.add
+                                                        totalValueEntered
+                                                        amount
+                                                    )
+                                                    testMode
+                                                    |> TokenValue.toConciseString
+                                               )
+                                            ++ " "
+                                            ++ Config.enteringTokenCurrencyLabel
+                                            ++ "/"
+                                            ++ Config.exitingTokenCurrencyLabel
+                                            ++ "."
+                                    )
+                                ]
+
+                            _ ->
+                                []
+                       )
+                )
 
 
 bidImpactBlock :
@@ -1029,7 +1271,8 @@ bidImpactBlock :
     -> Element Msg
 bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode dProfile =
     centerpaneBlockContainer PassiveStyle
-        [ Element.height <| Element.px 310 ]
+        dProfile
+        []
     <|
         case Wallet.userInfo wallet of
             Nothing ->
@@ -1303,6 +1546,7 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
 otherBidsImpactMsg : DisplayProfile -> Element Msg
 otherBidsImpactMsg dProfile =
     centerpaneBlockContainer PassiveStyle
+        dProfile
         []
         [ emphasizedText PassiveStyle "If other bids are made:"
         , Element.paragraph
@@ -1317,8 +1561,8 @@ otherBidsImpactMsg dProfile =
         ]
 
 
-msgInsteadOfButton : String -> Element.Color -> Element Msg
-msgInsteadOfButton text color =
+msgInsteadOfButton : String -> Element.Color -> DisplayProfile -> Element Msg
+msgInsteadOfButton text color dProfile =
     Element.el
         [ Element.centerX
         , Element.Font.size 22
@@ -1328,19 +1572,19 @@ msgInsteadOfButton text color =
         (Element.text text)
 
 
-verifyJurisdictionButtonOrResult : JurisdictionCheckStatus -> Element Msg
-verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
+verifyJurisdictionButtonOrResult : JurisdictionCheckStatus -> DisplayProfile -> Element Msg
+verifyJurisdictionButtonOrResult jurisdictionCheckStatus dProfile =
     case jurisdictionCheckStatus of
         WaitingForClick ->
             EH.redButton
-                Desktop
+                dProfile
                 [ Element.width Element.fill ]
                 [ "Confirm you are not a US citizen" ]
                 VerifyJurisdictionClicked
 
         Checking ->
             EH.disabledButton
-                Desktop
+                dProfile
                 [ Element.width Element.fill ]
                 "Verifying Jurisdiction..."
                 Nothing
@@ -1350,7 +1594,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 [ Element.spacing 10
                 , Element.width Element.fill
                 ]
-                [ msgInsteadOfButton "Error verifying jurisdiction." EH.red
+                [ msgInsteadOfButton "Error verifying jurisdiction." EH.red dProfile
                 , Element.paragraph
                     [ Element.Font.color grayTextColor ]
                     [ Element.text errStr ]
@@ -1360,41 +1604,49 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 ]
 
         Checked ForbiddenJurisdictions ->
-            msgInsteadOfButton "Sorry, US citizens and residents are excluded." EH.red
+            msgInsteadOfButton "Sorry, US citizens and residents are excluded." EH.red dProfile
 
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
-            msgInsteadOfButton "Jurisdiction Verified." green
+            msgInsteadOfButton "Jurisdiction Verified." green dProfile
 
 
-enableTokenButton : Element Msg
-enableTokenButton =
+enableTokenButton : DisplayProfile -> Element Msg
+enableTokenButton dProfile =
     EH.redButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
         [ "Enable " ++ Config.enteringTokenCurrencyLabel ]
         EnableTokenButtonClicked
 
 
-disabledButton : String -> Element Msg
-disabledButton disableText =
+disabledButton : String -> DisplayProfile -> Element Msg
+disabledButton disableText dProfile =
     EH.disabledButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
         disableText
         Nothing
 
 
-successButton : String -> Element Msg
-successButton text =
+successButton : String -> DisplayProfile -> Element Msg
+successButton text dProfile =
     EH.disabledSuccessButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
         text
         Nothing
 
 
-continueButton : UserInfo -> Int -> TokenValue -> Maybe Address -> TokenValue -> TokenValue -> Element Msg
-continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal =
+continueButton :
+    UserInfo
+    -> Int
+    -> TokenValue
+    -> Maybe Address
+    -> TokenValue
+    -> TokenValue
+    -> DisplayProfile
+    -> Element Msg
+continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal dProfile =
     let
         maybeMining =
             if miningTotal == TokenValue.zero then
@@ -1430,7 +1682,7 @@ continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal =
         alreadyEnteredWithDescription =
             case maybeAlreadyEnteredString of
                 Just alreadyEnteredString ->
-                    " (You have "
+                    "(You have "
                         ++ alreadyEnteredString
                         ++ ")"
 
@@ -1438,9 +1690,15 @@ continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal =
                     ""
     in
     EH.redButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
-        [ "Enter with " ++ TokenValue.toFloatString (Just 2) enterAmount ++ " " ++ Config.enteringTokenCurrencyLabel ++ "" ++ alreadyEnteredWithDescription ]
+        [ "Enter with "
+            ++ TokenValue.toFloatString (Just 2) enterAmount
+            ++ " "
+            ++ Config.enteringTokenCurrencyLabel
+            ++ " "
+            ++ alreadyEnteredWithDescription
+        ]
         (EnterButtonClicked <|
             EnterInfo
                 userInfo
@@ -1454,7 +1712,18 @@ alreadyEnteredBucketButton enterAmount =
     Element.none
 
 
-actionButton : JurisdictionCheckStatus -> Maybe Address -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> DisplayProfile -> Element Msg
+actionButton :
+    JurisdictionCheckStatus
+    -> Maybe Address
+    -> Wallet.State
+    -> Maybe UserStateInfo
+    -> Bool
+    -> EnterUXModel
+    -> ValidBucketInfo
+    -> List TrackedTx
+    -> TestMode
+    -> DisplayProfile
+    -> Element Msg
 actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode dProfile =
     case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
@@ -1465,17 +1734,25 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
                 Just userInfo ->
                     case maybeExtraUserInfo of
                         Nothing ->
-                            msgInsteadOfButton "Fetching user balance info..." grayTextColor
+                            msgInsteadOfButton
+                                "Fetching user balance info..."
+                                grayTextColor
+                                dProfile
 
                         Just extraUserInfo ->
                             if unlockMining then
-                                msgInsteadOfButton "Mining token enable..." grayTextColor
+                                msgInsteadOfButton "Mining token enable..."
+                                    grayTextColor
+                                    dProfile
 
                             else if TokenValue.isZero extraUserInfo.ethBalance then
-                                msgInsteadOfButton "You have no Ethereum in your wallet..." orangeWarningColor
+                                msgInsteadOfButton
+                                    "You have no Ethereum in your wallet..."
+                                    orangeWarningColor
+                                    dProfile
 
                             else if TokenValue.isZero extraUserInfo.enteringTokenAllowance then
-                                enableTokenButton
+                                enableTokenButton dProfile
 
                             else
                                 let
@@ -1536,26 +1813,48 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
                                 case enterUXModel.amount of
                                     Just (Ok enterAmount) ->
                                         if List.any (\tx -> tx.status == Signing) trackedTxs then
-                                            disabledButton "Sign or reject pending transactions to continue"
+                                            disabledButton
+                                                "Sign or reject pending transactions to continue"
+                                                dProfile
 
                                         else if TokenValue.compare enterAmount extraUserInfo.enteringTokenAllowance /= GT && TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= LT then
-                                            disabledButton <| "You only have " ++ toConciseString extraUserInfo.enteringTokenBalance ++ " " ++ Config.enteringTokenCurrencyLabel ++ ""
+                                            disabledButton
+                                                ("You only have "
+                                                    ++ toConciseString extraUserInfo.enteringTokenBalance
+                                                    ++ " "
+                                                    ++ Config.enteringTokenCurrencyLabel
+                                                    ++ ""
+                                                )
+                                                dProfile
 
                                         else if TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= GT then
-                                            continueButton userInfo bucketInfo.id enterAmount maybeReferrer enteredIntoThisBucket miningTotalForThisBucket
+                                            continueButton
+                                                userInfo
+                                                bucketInfo.id
+                                                enterAmount
+                                                maybeReferrer
+                                                enteredIntoThisBucket
+                                                miningTotalForThisBucket
+                                                dProfile
 
                                         else
-                                            enableTokenButton
+                                            enableTokenButton dProfile
 
                                     _ ->
                                         if lastTransactionsForThisBucketWasSuccessful then
-                                            successButton "Successfully entered!"
+                                            successButton
+                                                "Successfully entered!"
+                                                dProfile
 
                                         else
-                                            disabledButton "Enter bid amount to continue"
+                                            disabledButton
+                                                "Enter bid amount to continue"
+                                                dProfile
 
         _ ->
-            verifyJurisdictionButtonOrResult jurisdictionCheckStatus
+            verifyJurisdictionButtonOrResult
+                jurisdictionCheckStatus
+                dProfile
 
 
 lastElem : List a -> Maybe a
@@ -1568,8 +1867,8 @@ noBucketsLeftBlock =
     Element.text "There are no more future blocks."
 
 
-maybeBucketsLeftBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
-maybeBucketsLeftBlock bucketSale now testMode =
+maybeBucketsLeftBlock : BucketSale -> Time.Posix -> TestMode -> DisplayProfile -> Element Msg
+maybeBucketsLeftBlock bucketSale now testMode dProfile =
     let
         currentBucketId =
             getCurrentBucketId
@@ -1578,6 +1877,7 @@ maybeBucketsLeftBlock bucketSale now testMode =
                 testMode
     in
     sidepaneBlockContainer PassiveStyle
+        dProfile
         [ bigNumberElement
             [ Element.centerX ]
             (IntegerNum
@@ -1587,6 +1887,7 @@ maybeBucketsLeftBlock bucketSale now testMode =
             )
             "buckets"
             PassiveStyle
+            dProfile
         , Element.paragraph
             [ Element.centerX
             , Element.width Element.shrink
@@ -1595,8 +1896,8 @@ maybeBucketsLeftBlock bucketSale now testMode =
         ]
 
 
-maybeSoldTokenInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
-maybeSoldTokenInFutureBucketsBlock bucketSale now testMode =
+maybeSoldTokenInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> DisplayProfile -> Element Msg
+maybeSoldTokenInFutureBucketsBlock bucketSale now testMode dProfile =
     let
         currentBucketId =
             getCurrentBucketId
@@ -1605,6 +1906,7 @@ maybeSoldTokenInFutureBucketsBlock bucketSale now testMode =
                 testMode
     in
     sidepaneBlockContainer PassiveStyle
+        dProfile
         [ bigNumberElement
             [ Element.centerX ]
             (TokenNum
@@ -1617,6 +1919,7 @@ maybeSoldTokenInFutureBucketsBlock bucketSale now testMode =
             )
             Config.exitingTokenCurrencyLabel
             PassiveStyle
+            dProfile
         , Element.paragraph
             [ Element.centerX
             , Element.width Element.shrink
@@ -2362,14 +2665,17 @@ type CommonBlockStyle
     | PassiveStyle
 
 
-centerpaneBlockContainer : CommonBlockStyle -> List (Attribute Msg) -> List (Element Msg) -> Element Msg
-centerpaneBlockContainer styleType attributes =
+centerpaneBlockContainer : CommonBlockStyle -> DisplayProfile -> List (Attribute Msg) -> List (Element Msg) -> Element Msg
+centerpaneBlockContainer styleType dProfile attributes =
     Element.column
         ([ Element.width Element.fill
          , Element.Border.rounded 4
-         , Element.padding 20
-         , Element.spacing 13
-         , Element.Font.size 16
+         , Element.padding <|
+            responsiveVal dProfile 20 10
+         , Element.spacing <|
+            responsiveVal dProfile 13 7
+         , Element.Font.size <|
+            responsiveVal dProfile 16 10
          ]
             ++ attributes
             ++ (case styleType of
@@ -2384,13 +2690,16 @@ centerpaneBlockContainer styleType attributes =
         )
 
 
-sidepaneBlockContainer : CommonBlockStyle -> List (Element Msg) -> Element Msg
-sidepaneBlockContainer styleType =
+sidepaneBlockContainer : CommonBlockStyle -> DisplayProfile -> List (Element Msg) -> Element Msg
+sidepaneBlockContainer styleType dProfile =
     Element.column
         ([ Element.width Element.fill
          , Element.Border.rounded 4
-         , Element.paddingXY 22 18
-         , Element.spacing 16
+         , Element.paddingXY
+            (responsiveVal dProfile 22 11)
+            (responsiveVal dProfile 18 9)
+         , Element.spacing
+            (responsiveVal dProfile 16 8)
          ]
             ++ (case styleType of
                     ActiveStyle ->
@@ -2421,11 +2730,11 @@ numberValToString numberVal =
             TokenValue.toConciseString tokenValue
 
 
-bigNumberElement : List (Attribute Msg) -> NumberVal -> String -> CommonBlockStyle -> Element Msg
-bigNumberElement attributes numberVal numberLabel blockStyle =
+bigNumberElement : List (Attribute Msg) -> NumberVal -> String -> CommonBlockStyle -> DisplayProfile -> Element Msg
+bigNumberElement attributes numberVal numberLabel blockStyle dProfile =
     Element.el
         (attributes
-            ++ [ Element.Font.size 27
+            ++ [ Element.Font.size (responsiveVal dProfile 27 16)
                , Element.Font.bold
                , Element.Font.color
                     (case blockStyle of
@@ -2445,10 +2754,10 @@ bigNumberElement attributes numberVal numberLabel blockStyle =
         )
 
 
-makeClaimButton : UserInfo -> ExitInfo -> Element Msg
-makeClaimButton userInfo exitInfo =
+makeClaimButton : UserInfo -> ExitInfo -> DisplayProfile -> Element Msg
+makeClaimButton userInfo exitInfo dProfile =
     EH.lightBlueButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
         [ "Claim your " ++ Config.exitingTokenCurrencyLabel ++ "" ]
         (ClaimClicked userInfo exitInfo)
