@@ -42,7 +42,7 @@ root model maybeReferrer dProfile =
             }
          ]
             ++ (List.map Element.inFront <|
-                    viewModals model maybeReferrer
+                    viewModals model maybeReferrer dProfile
                )
         )
         [ case dProfile of
@@ -114,7 +114,8 @@ root model maybeReferrer dProfile =
 
             SmallDesktop ->
                 Element.column
-                    []
+                    [ Element.width Element.fill
+                    ]
                     [ focusedBucketPane
                         dProfile
                         maybeReferrer
@@ -290,7 +291,13 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode dProfile =
     in
     centerpaneBlockContainer PassiveStyle
         dProfile
-        [ Element.height <| Element.px 310 ]
+        (case dProfile of
+            Desktop ->
+                [ Element.height <| Element.px 310 ]
+
+            SmallDesktop ->
+                []
+        )
     <|
         case Wallet.userInfo wallet of
             Nothing ->
@@ -299,7 +306,7 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode dProfile =
             Just _ ->
                 [ Element.column
                     [ Element.padding 5
-                    , Element.Font.size (responsiveVal dProfile 16 8)
+                    , Element.Font.size (responsiveVal dProfile 16 10)
                     , Element.width Element.fill
                     ]
                     [ para <|
@@ -1505,17 +1512,17 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
                     [ Element.alignRight
                     , Element.spacing 6
                     ]
-                    [ Element.el
+                    [ Element.paragraph
                         [ Element.Font.color grayTextColor
                         , Element.alignRight
                         ]
-                      <|
-                        Element.text <|
+                        [ Element.text <|
                             if totalValueEntered /= totalValueEnteredAfterBidAndMining then
                                 "Resulting total bids in bucket"
 
                             else
                                 "Total bids in bucket"
+                        ]
                     , Element.el
                         [ Element.alignRight ]
                         (Element.text <|
@@ -2064,8 +2071,8 @@ makeDescription action =
             "Claim " ++ Config.exitingTokenCurrencyLabel ++ ""
 
 
-viewModals : Model -> Maybe Address -> List (Element Msg)
-viewModals model maybeReferrer =
+viewModals : Model -> Maybe Address -> DisplayProfile -> List (Element Msg)
+viewModals model maybeReferrer dProfile =
     Maybe.Extra.values
         [ case model.enterInfoToConfirm of
             Just enterInfo ->
@@ -2076,7 +2083,7 @@ viewModals model maybeReferrer =
                         NoOp
                         CancelClicked
                     <|
-                        viewAgreeToTosModal model.confirmTosModel enterInfo
+                        viewAgreeToTosModal model.confirmTosModel enterInfo dProfile
 
             _ ->
                 Nothing
@@ -2143,8 +2150,8 @@ viewYoutubeLinksColumn linkInfoList =
         )
 
 
-viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> Element Msg
-viewAgreeToTosModal confirmTosModel enterInfo =
+viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> DisplayProfile -> Element Msg
+viewAgreeToTosModal confirmTosModel enterInfo dProfile =
     Element.el
         [ Element.centerX
         , Element.paddingEach
@@ -2174,24 +2181,24 @@ viewAgreeToTosModal confirmTosModel enterInfo =
                 , Element.spacing 10
                 , Element.padding 20
                 ]
-                [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points)
+                [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points) dProfile
                 , Element.el
                     [ Element.centerY
                     , Element.width Element.fill
                     ]
                   <|
-                    viewTosPage confirmTosModel
+                    viewTosPage confirmTosModel dProfile
                 , Element.el
                     [ Element.alignBottom
                     , Element.width Element.fill
                     ]
                   <|
-                    viewTosPageNavigationButtons confirmTosModel enterInfo
+                    viewTosPageNavigationButtons confirmTosModel enterInfo dProfile
                 ]
 
 
-viewTosTitle : Int -> Int -> Element Msg
-viewTosTitle pageNum totalPages =
+viewTosTitle : Int -> Int -> DisplayProfile -> Element Msg
+viewTosTitle pageNum totalPages dProfile =
     Element.el
         [ Element.Font.size 40
         , Element.Font.bold
@@ -2206,8 +2213,8 @@ viewTosTitle pageNum totalPages =
                 ++ ")"
 
 
-viewTosPage : ConfirmTosModel -> Element Msg
-viewTosPage agreeToTosModel =
+viewTosPage : ConfirmTosModel -> DisplayProfile -> Element Msg
+viewTosPage agreeToTosModel dProfile =
     let
         ( boundedPageNum, pagePoints ) =
             case List.Extra.getAt agreeToTosModel.page agreeToTosModel.points of
@@ -2230,13 +2237,13 @@ viewTosPage agreeToTosModel =
         (pagePoints
             |> List.indexedMap
                 (\pointNum point ->
-                    viewTosPoint ( boundedPageNum, pointNum ) point
+                    viewTosPoint ( boundedPageNum, pointNum ) point dProfile
                 )
         )
 
 
-viewTosPoint : ( Int, Int ) -> TosCheckbox -> Element Msg
-viewTosPoint pointRef point =
+viewTosPoint : ( Int, Int ) -> TosCheckbox -> DisplayProfile -> Element Msg
+viewTosPoint pointRef point dProfile =
     Element.row
         [ Element.width Element.fill
         , Element.spacing 15
@@ -2255,7 +2262,7 @@ viewTosPoint pointRef point =
                 point.textEls
             , case point.maybeCheckedString of
                 Just checkedString ->
-                    viewTosCheckbox checkedString pointRef
+                    viewTosCheckbox checkedString pointRef dProfile
 
                 Nothing ->
                     Element.none
@@ -2263,8 +2270,8 @@ viewTosPoint pointRef point =
         ]
 
 
-viewTosCheckbox : ( String, Bool ) -> ( Int, Int ) -> Element Msg
-viewTosCheckbox ( checkboxText, checked ) pointRef =
+viewTosCheckbox : ( String, Bool ) -> ( Int, Int ) -> DisplayProfile -> Element Msg
+viewTosCheckbox ( checkboxText, checked ) pointRef dProfile =
     Element.row
         [ Element.Border.rounded 5
         , Element.Background.color <|
@@ -2306,8 +2313,8 @@ viewTosCheckbox ( checkboxText, checked ) pointRef =
         ]
 
 
-viewTosPageNavigationButtons : ConfirmTosModel -> EnterInfo -> Element Msg
-viewTosPageNavigationButtons confirmTosModel enterInfo =
+viewTosPageNavigationButtons : ConfirmTosModel -> EnterInfo -> DisplayProfile -> Element Msg
+viewTosPageNavigationButtons confirmTosModel enterInfo dProfile =
     let
         navigationButton text msg =
             Element.el
@@ -2373,7 +2380,7 @@ referralBonusIndicator maybeReferrer focusedStyle dProfile =
     Element.el
         [ Element.paddingXY 16 7
         , Element.Font.bold
-        , Element.Font.size (responsiveVal dProfile 18 14)
+        , Element.Font.size (responsiveVal dProfile 18 12)
         , Element.pointer
         , Element.Events.onClick (ReferralIndicatorClicked maybeReferrer)
         , Element.Background.color
