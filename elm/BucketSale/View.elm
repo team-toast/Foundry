@@ -306,7 +306,7 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode dProfile =
     <|
         case Wallet.userInfo wallet of
             Nothing ->
-                [ connectToWeb3Button wallet ]
+                [ connectToWeb3Button wallet dProfile ]
 
             Just _ ->
                 [ Element.column
@@ -1319,7 +1319,7 @@ bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode dProfile =
     <|
         case Wallet.userInfo wallet of
             Nothing ->
-                [ connectToWeb3Button wallet ]
+                [ connectToWeb3Button wallet dProfile ]
 
             Just _ ->
                 [ emphasizedText PassiveStyle "Your current bid standing:" ]
@@ -1780,7 +1780,7 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
                 Nothing ->
-                    connectToWeb3Button wallet
+                    connectToWeb3Button wallet dProfile
 
                 Just userInfo ->
                     case maybeExtraUserInfo of
@@ -3032,14 +3032,14 @@ green =
     Element.rgb255 0 162 149
 
 
-connectToWeb3Button : Wallet.State -> Element Msg
-connectToWeb3Button wallet =
+connectToWeb3Button : Wallet.State -> DisplayProfile -> Element Msg
+connectToWeb3Button wallet dProfile =
     let
         commonButtonStyles =
             [ Element.width Element.fill
             , Element.padding 17
             , Element.Border.rounded 4
-            , Element.Font.size 20
+            , Element.Font.size <| responsiveVal dProfile 20 16
             , Element.Font.semiBold
             , Element.Font.center
             , Element.Background.color EH.softRed
@@ -3050,7 +3050,7 @@ connectToWeb3Button wallet =
         commonTextStyles =
             [ Element.Font.bold
             , Element.Font.italic
-            , Element.Font.size 20
+            , Element.Font.size <| responsiveVal dProfile 20 16
             , Element.Font.center
             , Element.padding 17
             , Element.centerX
