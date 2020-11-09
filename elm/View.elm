@@ -54,32 +54,6 @@ root model =
 
 pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
 pageElementAndModal model =
-    -- if model.dProfile /= Desktop && model.displayMobileWarning then
-    --     ( Element.column
-    --         [ Element.width Element.fill
-    --         , Element.height Element.fill
-    --         , Element.Background.color <| Element.rgb255 20 53 138
-    --         , Element.spacing 30
-    --         , Element.paddingXY 10 30
-    --         , Element.Font.size 22
-    --         , Element.Font.color EH.white
-    --         ]
-    --         [ Element.paragraph [ Element.Font.center ]
-    --             [ Element.text "This interface is not designed for screens this small. To participate in this sale, visit on a larger screen. Alternatively, some mobile browsers have a \"desktop mode\" that might help." ]
-    --         , Element.paragraph [ Element.Font.center ]
-    --             [ Element.text "If you're just looking for info on Foundry, FRY, or the sale, check out "
-    --             , Element.newTabLink
-    --                 [ Element.Font.color EH.lightBlue
-    --                 ]
-    --                 { url = "https://foundrydao.com"
-    --                 , label = Element.text "foundrydao.com"
-    --                 }
-    --             , Element.text "."
-    --             ]
-    --         ]
-    --     , []
-    --     )
-    -- else
     let
         ( submodelEl, modalEls ) =
             submodelElementAndModal model
@@ -110,7 +84,7 @@ pageElementAndModal model =
     ( Element.column
         [ Element.width Element.fill
         , Element.height Element.fill
-        , Element.spacing 20
+        , Element.spacing (responsiveVal model.dProfile 20 2)
         , Element.behindContent <|
             headerBackground model.dProfile
         ]
@@ -224,7 +198,7 @@ brandAndLogo dProfile =
             Element.row
                 [ Element.height Element.fill
                 , Element.centerX
-                , Element.padding 10
+                , Element.padding 5
                 , Element.spacing 5
                 ]
                 [ Images.toElement
@@ -237,7 +211,7 @@ brandAndLogo dProfile =
                     Images.exitingTokenIcon
                 , Element.el
                     [ Element.Font.color EH.white
-                    , Element.Font.size 16
+                    , Element.Font.size 20
                     , Element.Font.bold
                     , Element.centerY
                     ]

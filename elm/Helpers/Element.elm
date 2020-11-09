@@ -1,5 +1,6 @@
 module Helpers.Element exposing (..)
 
+import Array
 import Browser.Dom
 import Collage exposing (Collage)
 import Collage.Render
@@ -557,48 +558,31 @@ button :
     -> Element msg
 button dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor lines msg =
     Element.column
-        (attributes
-            ++ [ Element.Border.rounded 4
-               , Element.spacing (responsiveVal dProfile 8 1)
-               , Element.pointer
-               , Element.Events.onClick msg
-               , responsiveVal
-                    dProfile
-                    (Element.paddingXY 25 17)
-                    (Element.padding 3)
-               , Element.Font.color textColor
-               , Element.Font.size
-                    (responsiveVal dProfile 18 10)
-               , case dProfile of
-                    Desktop ->
-                        Element.Font.semiBold
-
-                    SmallDesktop ->
-                        Element.Font.regular
-               , Element.Background.color bgColor
-               , Element.mouseDown [ Element.Background.color bgPressedColor ]
-               , Element.mouseOver [ Element.Background.color bgHoverColor ]
-               , noSelectText
-               ]
+        ([ Element.Border.rounded 4
+         , Element.spacing (responsiveVal dProfile 8 2)
+         , Element.pointer
+         , Element.Events.onClick msg
+         , responsiveVal
+            dProfile
+            (Element.paddingXY 25 17)
+            (Element.padding 5)
+         , Element.Font.color textColor
+         , Element.Font.size
+            (responsiveVal dProfile 18 10)
+         , Element.Font.semiBold
+         , Element.Background.color bgColor
+         , Element.mouseDown [ Element.Background.color bgPressedColor ]
+         , Element.mouseOver [ Element.Background.color bgHoverColor ]
+         , noSelectText
+         ]
+            ++ attributes
         )
-        (case dProfile of
-            Desktop ->
-                List.map
-                    (Element.el
-                        [ Element.centerX ]
-                        << Element.text
-                    )
-                    lines
-
-            SmallDesktop ->
-                [ Element.paragraph
-                    [ Element.padding 3
-                    ]
-                    (List.map
-                        Element.text
-                        lines
-                    )
-                ]
+        (List.map
+            (Element.el
+                [ Element.centerX ]
+                << Element.text
+            )
+            lines
         )
 
 
@@ -759,14 +743,7 @@ disabledButton dProfile attributes text maybeTipText =
                         maybeTipText
                ]
         )
-        (case dProfile of
-            Desktop ->
-                Element.text text
-
-            SmallDesktop ->
-                Element.paragraph []
-                    [ Element.text text ]
-        )
+        (Element.text text)
 
 
 disabledSuccessButton : DisplayProfile -> List (Attribute msg) -> String -> Maybe String -> Element msg
@@ -780,14 +757,7 @@ disabledSuccessButton dProfile attributes text maybeTipText =
                         maybeTipText
                ]
         )
-        (case dProfile of
-            Desktop ->
-                Element.text text
-
-            SmallDesktop ->
-                Element.paragraph []
-                    [ Element.text text ]
-        )
+        (Element.text text)
 
 
 orangeButton : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg

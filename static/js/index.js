@@ -6,6 +6,8 @@ var addFryToMetaMask = require('./addFryToMetaMask.js');
 
 import { Elm } from '../../elm/App'
 
+
+
 //window.testStuff = secureComms.testStuff;
 window.web3Connected = false;
 
@@ -95,7 +97,7 @@ function referrerStoragePortStuff(app) {
 }
 
 function locationCheckPortStuff(app) {
-    app.ports.beginLocationCheck.subscribe(function(data) {
+    app.ports.beginLocationCheck.subscribe(function (data) {
         console.log(locationCheck);
         locationCheck.dualLocationCheckWithCallback(app.ports.locationCheckResult.send);
     });
@@ -109,14 +111,17 @@ function addFryToMetaMaskStuff(app) {
 }
 
 function twitterConversionTrackingPortStuff(app) {
-    app.ports.tagTwitterConversion.subscribe(function(amount) {
+    app.ports.tagTwitterConversion.subscribe(function (amount) {
         console.log("got amount:" + amount);
-        !function(e,t,n,s,u,a){e.twq||(s=e.twq=function(){s.exe?s.exe.apply(s,arguments):s.queue.push(arguments);
-        },s.version='1.1',s.queue=[],u=t.createElement(n),u.async=!0,u.src='//static.ads-twitter.com/uwt.js',
-        a=t.getElementsByTagName(n)[0],a.parentNode.insertBefore(u,a))}(window,document,'script');
+        !function (e, t, n, s, u, a) {
+            e.twq || (s = e.twq = function () {
+                s.exe ? s.exe.apply(s, arguments) : s.queue.push(arguments);
+            }, s.version = '1.1', s.queue = [], u = t.createElement(n), u.async = !0, u.src = '//static.ads-twitter.com/uwt.js',
+                a = t.getElementsByTagName(n)[0], a.parentNode.insertBefore(u, a))
+        }(window, document, 'script');
         // Insert Twitter Pixel ID and Standard Event data below
-        twq('init','o4l06');
-        twq('track','Purchase', {
+        twq('init', 'o4l06');
+        twq('track', 'Purchase', {
             //required parameters
             value: str(amount),
             currency: 'USD',

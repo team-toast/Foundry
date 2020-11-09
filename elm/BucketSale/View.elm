@@ -3,6 +3,7 @@ module BucketSale.View exposing (bidImpactParagraphEl, root)
 import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
 import CmdUp exposing (CmdUp)
+import Color
 import CommonTypes exposing (..)
 import Config
 import Contracts.BucketSale.Wrappers exposing (ExitInfo, UserStateInfo)
@@ -56,7 +57,7 @@ root model maybeReferrer dProfile =
                         , Element.alignTop
                         , Element.spacing 20
                         ]
-                        ([ viewYoutubeLinksBlock
+                        ([ viewYoutubeLinksBlock dProfile True
                          , closedBucketsPane model dProfile
                          ]
                             ++ (if dProfile == SmallDesktop then
@@ -115,8 +116,10 @@ root model maybeReferrer dProfile =
             SmallDesktop ->
                 Element.column
                     [ Element.width Element.fill
+                    , Element.spacing 5
                     ]
-                    [ focusedBucketPane
+                    [ viewYoutubeLinksBlock dProfile model.showYoutubeBlock
+                    , focusedBucketPane
                         dProfile
                         maybeReferrer
                         model.bucketSale
@@ -155,13 +158,15 @@ commonPaneAttributes =
     ]
 
 
-blockTitleText : String -> Element Msg
-blockTitleText text =
+blockTitleText : String -> List (Attribute Msg) -> Element Msg
+blockTitleText text attributes =
     Element.el
-        [ Element.width Element.fill
-        , Element.Font.size 25
-        , Element.Font.bold
-        ]
+        ([ Element.width Element.fill
+         , Element.Font.size 25
+         , Element.Font.bold
+         ]
+            ++ attributes
+        )
     <|
         Element.text text
 
@@ -174,7 +179,7 @@ closedBucketsPane model dProfile =
                , Element.paddingXY 32 25
                ]
         )
-        [ blockTitleText "Concluded Buckets"
+        [ blockTitleText "Concluded Buckets" []
         , Element.paragraph
             [ Element.Font.color grayTextColor
             , Element.Font.size 15
@@ -369,7 +374,7 @@ futureBucketsPane model =
                        , Element.paddingXY (responsiveVal dProfile 32 16) (responsiveVal dProfile 25 12)
                        ]
                 )
-                [ blockTitleText "Future Buckets"
+                [ blockTitleText "Future Buckets" []
                 , Element.paragraph
                     [ Element.Font.color grayTextColor
                     , Element.Font.size 15
@@ -402,7 +407,7 @@ feedbackButtonBlock showFeedbackUXModel feedbackUXModel =
                , Element.paddingXY 32 25
                ]
         )
-        [ blockTitleText "Having issues?"
+        [ blockTitleText "Having issues?" []
         , if showFeedbackUXModel then
             viewFeedbackForm feedbackUXModel
 
@@ -607,42 +612,84 @@ maybeClaimBlock wallet maybeExitInfo dProfile =
 
         ( Just userInfo, Just exitInfo ) ->
             let
-                ( blockStyle, maybeClaimButton ) =
+                ( blockStyle, maybeClaimButton, exitableValue ) =
                     if TokenValue.isZero exitInfo.totalExitable then
-                        ( PassiveStyle, Nothing )
+                        ( PassiveStyle, Nothing, TokenValue.zero )
 
                     else
-                        ( ActiveStyle, Just <| makeClaimButton userInfo exitInfo dProfile )
+                        ( ActiveStyle
+                        , Just <|
+                            makeClaimButton userInfo exitInfo dProfile
+                        , exitInfo.totalExitable
+                        )
             in
-            sidepaneBlockContainer blockStyle
-                dProfile
-                [ bigNumberElement
-                    [ Element.centerX ]
-                    (TokenNum exitInfo.totalExitable)
-                    Config.exitingTokenCurrencyLabel
-                    blockStyle
-                    dProfile
-                , Element.paragraph
-                    ([ Element.centerX
-                     , Element.width Element.shrink
-                     ]
-                        ++ (case dProfile of
-                                Desktop ->
-                                    []
+            if dProfile == SmallDesktop && exitableValue == TokenValue.zero then
+                Element.none
 
-                                SmallDesktop ->
-                                    [ Element.Font.size 10 ]
-                           )
+            else
+                sidepaneBlockContainer blockStyle
+                    dProfile
+                    (case dProfile of
+                        Desktop ->
+                            [ bigNumberElement
+                                [ Element.centerX ]
+                                (TokenNum exitInfo.totalExitable)
+                                Config.exitingTokenCurrencyLabel
+                                blockStyle
+                                dProfile
+                            , Element.paragraph
+                                ([ Element.centerX
+                                 , Element.width Element.shrink
+                                 ]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 10 ]
+                                       )
+                                )
+                                [ Element.text "available for "
+                                , emphasizedText blockStyle "you"
+                                , Element.text " to claim"
+                                ]
+                            , Maybe.map
+                                (Element.el [ Element.centerX ])
+                                maybeClaimButton
+                                |> Maybe.withDefault Element.none
+                            ]
+
+                        SmallDesktop ->
+                            [ Element.row [ Element.width Element.fill, Element.spacing 5 ]
+                                [ bigNumberElement
+                                    [ Element.centerX ]
+                                    (TokenNum exitInfo.totalExitable)
+                                    Config.exitingTokenCurrencyLabel
+                                    blockStyle
+                                    dProfile
+                                , Element.paragraph
+                                    ([ Element.centerX
+                                     , Element.width Element.shrink
+                                     ]
+                                        ++ (case dProfile of
+                                                Desktop ->
+                                                    []
+
+                                                SmallDesktop ->
+                                                    [ Element.Font.size 10 ]
+                                           )
+                                    )
+                                    [ Element.text "available for "
+                                    , emphasizedText blockStyle "you"
+                                    , Element.text " to claim"
+                                    ]
+                                , Maybe.map
+                                    (Element.el [ Element.centerX ])
+                                    maybeClaimButton
+                                    |> Maybe.withDefault Element.none
+                                ]
+                            ]
                     )
-                    [ Element.text "available for "
-                    , emphasizedText blockStyle "you"
-                    , Element.text " to claim"
-                    ]
-                , Maybe.map
-                    (Element.el [ Element.centerX ])
-                    maybeClaimButton
-                    |> Maybe.withDefault Element.none
-                ]
 
 
 totalExitedBlock : Maybe TokenValue -> DisplayProfile -> Element Msg
@@ -752,15 +799,19 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
         Just userInfo ->
             let
                 maybeModalAttribute =
-                    responsiveVal dProfile Element.onRight Element.onLeft <|
+                    responsiveVal
+                        dProfile
+                        Element.onRight
+                        Element.below
+                    <|
                         if referralModalActive then
                             Element.el
-                                [ responsiveVal dProfile Element.centerX Element.alignRight
-                                , responsiveVal dProfile Element.moveRight Element.moveLeft 25
-                                , Element.moveUp 50
+                                [ Element.centerX
+                                , Element.moveRight <| responsiveVal dProfile 25 0
+                                , Element.moveUp (responsiveVal dProfile 50 0)
                                 , EH.moveToFront
                                 ]
-                                (referralModal userInfo maybeReferrer testMode)
+                                (referralModal userInfo maybeReferrer testMode dProfile)
 
                         else
                             Element.none
@@ -828,7 +879,7 @@ navigateElementDetail bucketToFocusOn image =
         , Element.Events.onClick (FocusToBucket bucketToFocusOn)
         , Element.Font.extraBold
         , EH.noSelectText
-        , Element.width <| Element.px 35
+        , Element.width <| Element.px 30
         ]
         image
 
@@ -972,59 +1023,44 @@ enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo juris
                         ]
 
                     SmallDesktop ->
-                        [ Element.row
-                            [ Element.width Element.fill
-                            , Element.spacingXY 5 0
+                        [ Element.column
+                            [ Element.width <| Element.fillPortion 3
+                            , Element.spacingXY 0 3
                             ]
-                            [ Element.column
-                                [ Element.width <| Element.fillPortion 3
-                                , Element.spacingXY 0 3
-                                ]
-                                [ Element.el
-                                    [ Element.width Element.fill
-                                    , Element.alignTop
-                                    ]
-                                  <|
-                                    bidInputBlock
-                                        enterUXModel
-                                        bucketInfo
-                                        testMode
-                                        dProfile
-                                , bidImpactBlock
-                                    enterUXModel
-                                    bucketInfo
-                                    wallet
-                                    miningEnters
-                                    testMode
-                                    dProfile
-                                , otherBidsImpactMsg
-                                    dProfile
-                                ]
-                            , Element.column
+                            [ maybeClaimBlock
+                                wallet
+                                (maybeExtraUserInfo |> Maybe.map .exitInfo)
+                                dProfile
+                            , Element.el
                                 [ Element.width Element.fill
                                 , Element.alignTop
-                                , Element.spacingXY 0 3
                                 ]
-                                [ maybeUserBalanceBlock
-                                    wallet
-                                    maybeExtraUserInfo
-                                    dProfile
-                                , maybeClaimBlock
-                                    wallet
-                                    (maybeExtraUserInfo |> Maybe.map .exitInfo)
-                                    dProfile
-                                , actionButton
-                                    jurisdictionCheckStatus
-                                    maybeReferrer
-                                    wallet
-                                    maybeExtraUserInfo
-                                    unlockMining
+                              <|
+                                bidInputBlock
                                     enterUXModel
                                     bucketInfo
-                                    trackedTxs
                                     testMode
                                     dProfile
-                                ]
+                            , actionButton
+                                jurisdictionCheckStatus
+                                maybeReferrer
+                                wallet
+                                maybeExtraUserInfo
+                                unlockMining
+                                enterUXModel
+                                bucketInfo
+                                trackedTxs
+                                testMode
+                                dProfile
+                            , bidImpactBlock
+                                enterUXModel
+                                bucketInfo
+                                wallet
+                                miningEnters
+                                testMode
+                                dProfile
+                            , otherBidsImpactMsg
+                                dProfile
                             ]
                         ]
                )
@@ -1572,7 +1608,7 @@ msgInsteadOfButton : String -> Element.Color -> DisplayProfile -> Element Msg
 msgInsteadOfButton text color dProfile =
     Element.el
         [ Element.centerX
-        , Element.Font.size 22
+        , Element.Font.size <| responsiveVal dProfile 22 14
         , Element.Font.italic
         , Element.Font.color color
         ]
@@ -1698,7 +1734,15 @@ continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal dPr
     in
     EH.redButton
         dProfile
-        [ Element.width Element.fill ]
+        ([ Element.width Element.fill ]
+            ++ (case dProfile of
+                    Desktop ->
+                        []
+
+                    SmallDesktop ->
+                        [ Element.padding 10 ]
+               )
+        )
         [ "Enter with "
             ++ TokenValue.toFloatString (Just 2) enterAmount
             ++ " "
@@ -2101,18 +2145,38 @@ viewModals model maybeReferrer dProfile =
         ]
 
 
-viewYoutubeLinksBlock : Element Msg
-viewYoutubeLinksBlock =
+viewYoutubeLinksBlock : DisplayProfile -> Bool -> Element Msg
+viewYoutubeLinksBlock dProfile showBlock =
     Element.column
         (commonPaneAttributes
             ++ [ Element.padding 20
                , Element.alignTop
                , Element.width Element.fill
-               , Element.paddingXY 32 25
+               , responsiveVal
+                    dProfile
+                    (Element.paddingXY 32 25)
+                    (Element.paddingXY 15 5)
                ]
+            ++ (case dProfile of
+                    Desktop ->
+                        []
+
+                    SmallDesktop ->
+                        [ Element.spacing 5 ]
+               )
         )
         [ blockTitleText "Not sure where to start?"
-        , viewYoutubeLinksColumn
+            (case dProfile of
+                Desktop ->
+                    []
+
+                SmallDesktop ->
+                    [ Element.Events.onClick YoutubeBlockClicked
+                    , Element.Font.size 16
+                    ]
+            )
+        , viewYoutubeLinksColumn dProfile
+            showBlock
             [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf" )
             , ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
             , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=gkt-Wv104RU" )
@@ -2122,32 +2186,55 @@ viewYoutubeLinksBlock =
         ]
 
 
-viewYoutubeLinksColumn : List ( String, String, String ) -> Element Msg
-viewYoutubeLinksColumn linkInfoList =
-    Element.column
-        [ Element.width Element.fill
-        , Element.spacing 10
-        ]
-        (linkInfoList
-            |> List.map
-                (\( preTitle, title, url ) ->
-                    Element.row
-                        [ Element.spacing 10
-                        ]
-                        [ Element.el
-                            [ Element.Font.bold
-                            , Element.width <| Element.px 75
+viewYoutubeLinksColumn : DisplayProfile -> Bool -> List ( String, String, String ) -> Element Msg
+viewYoutubeLinksColumn dProfile showBlock linkInfoList =
+    if dProfile == SmallDesktop && showBlock == False then
+        Element.none
+
+    else
+        Element.column
+            [ Element.width Element.fill
+            , Element.spacing <| responsiveVal dProfile 10 5
+            ]
+            (linkInfoList
+                |> List.map
+                    (\( preTitle, title, url ) ->
+                        Element.row
+                            [ Element.spacing <| responsiveVal dProfile 10 5
                             ]
-                          <|
-                            Element.text preTitle
-                        , Element.newTabLink
-                            [ Element.Font.color EH.lightBlue ]
-                            { url = url
-                            , label = Element.text title
-                            }
-                        ]
-                )
-        )
+                            [ Element.el
+                                ([ Element.Font.bold
+                                 , Element.width <|
+                                    Element.px <|
+                                        responsiveVal dProfile 75 60
+                                 ]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 14 ]
+                                       )
+                                )
+                              <|
+                                Element.text preTitle
+                            , Element.newTabLink
+                                ([ Element.Font.color EH.lightBlue
+                                 ]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 14 ]
+                                       )
+                                )
+                                { url = url
+                                , label = Element.text title
+                                }
+                            ]
+                    )
+            )
 
 
 viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> DisplayProfile -> Element Msg
@@ -2155,7 +2242,7 @@ viewAgreeToTosModal confirmTosModel enterInfo dProfile =
     Element.el
         [ Element.centerX
         , Element.paddingEach
-            { top = 100
+            { top = responsiveVal dProfile 100 0
             , bottom = 0
             , right = 0
             , left = 0
@@ -2163,23 +2250,33 @@ viewAgreeToTosModal confirmTosModel enterInfo dProfile =
         ]
     <|
         Element.el
-            [ Element.centerX
-            , Element.alignTop
-            , Element.width <| Element.px 700
-            , Element.height <| Element.px 800
-            , Element.Border.rounded 10
-            , Element.Border.glow
+            ([ Element.centerX
+             , Element.alignTop
+             , Element.Border.rounded 10
+             , Element.Border.glow
                 (Element.rgba 0 0 0 0.2)
                 5
-            , Element.Background.color <| Element.rgb 0.7 0.8 1
-            , Element.padding 20
-            ]
+             , Element.Background.color <| Element.rgb 0.7 0.8 1
+             ]
+                ++ (case dProfile of
+                        Desktop ->
+                            [ Element.width <| Element.px 700
+                            , Element.height <| Element.px 800
+                            , Element.padding 20
+                            ]
+
+                        SmallDesktop ->
+                            [ Element.height <| Element.px 500
+                            , Element.padding 5
+                            ]
+                   )
+            )
         <|
             Element.column
                 [ Element.width Element.fill
                 , Element.height Element.fill
-                , Element.spacing 10
-                , Element.padding 20
+                , Element.spacing (responsiveVal dProfile 10 5)
+                , Element.padding (responsiveVal dProfile 20 10)
                 ]
                 [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points) dProfile
                 , Element.el
@@ -2200,7 +2297,7 @@ viewAgreeToTosModal confirmTosModel enterInfo dProfile =
 viewTosTitle : Int -> Int -> DisplayProfile -> Element Msg
 viewTosTitle pageNum totalPages dProfile =
     Element.el
-        [ Element.Font.size 40
+        [ Element.Font.size (responsiveVal dProfile 40 20)
         , Element.Font.bold
         , Element.centerX
         ]
@@ -2231,8 +2328,8 @@ viewTosPage agreeToTosModel dProfile =
     in
     Element.column
         [ Element.width Element.fill
-        , Element.spacing 30
-        , Element.padding 20
+        , Element.spacing (responsiveVal dProfile 30 10)
+        , Element.padding (responsiveVal dProfile 20 5)
         ]
         (pagePoints
             |> List.indexedMap
@@ -2246,17 +2343,18 @@ viewTosPoint : ( Int, Int ) -> TosCheckbox -> DisplayProfile -> Element Msg
 viewTosPoint pointRef point dProfile =
     Element.row
         [ Element.width Element.fill
-        , Element.spacing 15
+        , Element.spacing (responsiveVal dProfile 15 5)
         ]
         [ Element.el
-            [ Element.Font.size 40
+            [ Element.Font.size
+                (responsiveVal dProfile 40 25)
             , Element.alignTop
             ]
           <|
             Element.text EH.bulletPointString
         , Element.column
             [ Element.width Element.fill
-            , Element.spacing 10
+            , Element.spacing (responsiveVal dProfile 10 3)
             ]
             [ Element.paragraph []
                 point.textEls
@@ -2280,17 +2378,17 @@ viewTosCheckbox ( checkboxText, checked ) pointRef dProfile =
 
             else
                 Element.rgb 1 0.3 0.3
-        , Element.padding 10
-        , Element.spacing 15
-        , Element.Font.size 26
+        , Element.padding (responsiveVal dProfile 10 5)
+        , Element.spacing (responsiveVal dProfile 15 5)
+        , Element.Font.size (responsiveVal dProfile 26 12)
         , Element.Font.color EH.white
         , Element.pointer
         , Element.Events.onClick <|
             TosCheckboxClicked pointRef
         ]
         [ Element.el
-            [ Element.width <| Element.px 30
-            , Element.height <| Element.px 30
+            [ Element.width <| Element.px (responsiveVal dProfile 30 20)
+            , Element.height <| Element.px (responsiveVal dProfile 30 20)
             , Element.Border.rounded 3
             , Element.Border.width 2
             , Element.Border.color <|
@@ -2322,8 +2420,8 @@ viewTosPageNavigationButtons confirmTosModel enterInfo dProfile =
                 , Element.Border.rounded 5
                 , Element.Background.color EH.blue
                 , Element.Font.color EH.white
-                , Element.Font.size 30
-                , Element.paddingXY 20 10
+                , Element.Font.size (responsiveVal dProfile 30 12)
+                , responsiveVal dProfile (Element.paddingXY 20 10) (Element.padding 8)
                 , Element.pointer
                 , Element.Events.onClick msg
                 , EH.noSelectText
@@ -2356,7 +2454,7 @@ viewTosPageNavigationButtons confirmTosModel enterInfo dProfile =
 
             else if isAllPointsChecked confirmTosModel then
                 EH.redButton
-                    Desktop
+                    dProfile
                     [ Element.width Element.fill ]
                     [ "Confirm & deposit "
                         ++ TokenValue.toConciseString enterInfo.amount
@@ -2417,8 +2515,8 @@ referralBonusIndicator maybeReferrer focusedStyle dProfile =
         )
 
 
-referralModal : UserInfo -> Maybe Address -> TestMode -> Element Msg
-referralModal userInfo maybeReferrer testMode =
+referralModal : UserInfo -> Maybe Address -> TestMode -> DisplayProfile -> Element Msg
+referralModal userInfo maybeReferrer testMode dProfile =
     let
         highlightedText text =
             Element.el
@@ -2440,7 +2538,7 @@ referralModal userInfo maybeReferrer testMode =
             case maybeReferrer of
                 Nothing ->
                     ( [ Element.paragraph
-                            [ Element.Font.size 24
+                            [ Element.Font.size <| responsiveVal dProfile 24 14
                             , Element.Font.bold
                             , Element.Font.color EH.red
                             ]
@@ -2448,30 +2546,66 @@ referralModal userInfo maybeReferrer testMode =
                       , Element.column
                             [ Element.spacing 20
                             , Element.width Element.fill
-                            , Element.Font.size 18
+                            , Element.Font.size <| responsiveVal dProfile 18 9
                             ]
-                            [ Element.paragraph []
+                            [ Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "You're missing out. Help us market the sale and your friends get an extra "
                                 , highlightedText "10% bonus"
                                 , Element.text " on their purchase. In addition, you can earn "
                                 , highlightedText "10%-20%"
                                 , Element.text <| " extra " ++ Config.exitingTokenCurrencyLabel ++ " tokens, based on how much " ++ Config.enteringTokenCurrencyLabel ++ " you refer with this code."
                                 ]
-                            , Element.paragraph []
+                            , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "You can also use your own reference code and get both benefits." ]
-                            , Element.paragraph []
+                            , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.newTabLink [ Element.Font.color <| EH.lightBlue ]
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "More info on how this works"
                                     }
                                 ]
-                            , Element.paragraph []
+                            , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "If you haven’t been given a referral link you can generate one for yourself below!" ]
                             ]
                       ]
                     , Just <|
                         [ Element.paragraph
-                            [ Element.Font.size 24
+                            [ Element.Font.size <| responsiveVal dProfile 24 14
                             , Element.Font.bold
                             , Element.Font.color deepBlue
                             ]
@@ -2489,14 +2623,32 @@ referralModal userInfo maybeReferrer testMode =
                 Just referrer ->
                     if referrer == userInfo.address then
                         ( [ Element.paragraph
-                                [ Element.Font.size 24
+                                [ Element.Font.size <| responsiveVal dProfile 24 14
                                 , Element.Font.bold
                                 , Element.Font.color green
                                 ]
                                 [ Element.text "Nice! You're using your own referral link." ]
-                          , Element.paragraph []
+                          , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "This means you'll get both bonuses! More info "
-                                , Element.newTabLink [ Element.Font.color EH.lightBlue ]
+                                , Element.newTabLink
+                                    ([ Element.Font.color EH.lightBlue ]
+                                        ++ (case dProfile of
+                                                Desktop ->
+                                                    []
+
+                                                SmallDesktop ->
+                                                    [ Element.Font.size 12 ]
+                                           )
+                                    )
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
                                     }
@@ -2505,35 +2657,62 @@ referralModal userInfo maybeReferrer testMode =
                           ]
                         , Just <|
                             [ Element.paragraph
-                                [ Element.Font.size 24
+                                [ Element.Font.size <| responsiveVal dProfile 24 14
                                 , Element.Font.bold
                                 , Element.Font.color deepBlue
                                 ]
                                 [ Element.text "Your Referral Link" ]
-                            , referralLinkElement referrer testMode
-                            , referralLinkCopyButton
+                            , referralLinkElement referrer testMode dProfile
+                            , referralLinkCopyButton dProfile
                             ]
                         )
 
                     else
                         ( [ Element.paragraph
-                                [ Element.Font.size 24
+                                [ Element.Font.size <| responsiveVal dProfile 24 14
                                 , Element.Font.bold
                                 , Element.Font.color green
                                 ]
                                 [ Element.text "Nice! You’ve got a referral bonus." ]
-                          , Element.paragraph []
+                          , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "Every bid you make will result in a bonus bid into the next bucket, at 10% of the first bid amount. Check the next bucket after you enter your bid!" ]
-                          , Element.paragraph []
+                          , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text <| "Share your own referral code with others to earn " ++ Config.exitingTokenCurrencyLabel ++ "! More info "
-                                , Element.newTabLink [ Element.Font.color EH.lightBlue ]
+                                , Element.newTabLink
+                                    ([ Element.Font.color EH.lightBlue ]
+                                        ++ (case dProfile of
+                                                Desktop ->
+                                                    []
+
+                                                SmallDesktop ->
+                                                    [ Element.Font.size 12 ]
+                                           )
+                                    )
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
                                     }
                                 , Element.text "."
                                 ]
-                          , referralLinkElement userInfo.address testMode
-                          , referralLinkCopyButton
+                          , referralLinkElement userInfo.address testMode dProfile
+                          , referralLinkCopyButton dProfile
                           ]
                         , Nothing
                         )
@@ -2541,7 +2720,8 @@ referralModal userInfo maybeReferrer testMode =
     Element.column
         [ Element.Border.rounded 6
         , Element.Background.color EH.white
-        , Element.width <| Element.px 480
+        , Element.width <|
+            responsiveVal dProfile (Element.px 480) Element.fill
         ]
         [ Element.column
             [ Element.width Element.fill
@@ -2558,15 +2738,15 @@ referralModal userInfo maybeReferrer testMode =
                 }
             , Element.Border.dashed
             , Element.Border.color <| Element.rgb 0.5 0.5 0.5
-            , Element.padding 30
-            , Element.spacing 30
+            , Element.padding <| responsiveVal dProfile 30 15
+            , Element.spacing <| responsiveVal dProfile 30 15
             ]
             firstElsChunk
         , Maybe.map
             (Element.column
                 [ Element.width Element.fill
-                , Element.padding 30
-                , Element.spacing 30
+                , Element.padding <| responsiveVal dProfile 30 15
+                , Element.spacing <| responsiveVal dProfile 30 15
                 ]
             )
             maybeSecondElsChunk
@@ -2574,35 +2754,51 @@ referralModal userInfo maybeReferrer testMode =
         ]
 
 
-referralLinkElement : Address -> TestMode -> Element Msg
-referralLinkElement referrerAddress testMode =
+referralLinkElement : Address -> TestMode -> DisplayProfile -> Element Msg
+referralLinkElement referrerAddress testMode dProfile =
     Element.el
         [ Element.width Element.fill
         , Element.Background.color <| deepBlueWithAlpha 0.05
-        , Element.paddingXY 0 15
+        , Element.paddingXY 5 15
         , Element.Font.color deepBlue
-        , Element.Font.size 12
+        , Element.Font.size <| responsiveVal dProfile 12 10
         , Element.clipX
         , Element.scrollbarX
         ]
-        (Element.el
-            [ EH.withIdAttribute "copyable-link" ]
-         <|
-            Element.text
-                (Routing.FullRoute
-                    testMode
-                    Routing.Sale
-                    (Just referrerAddress)
-                    |> Routing.routeToString
-                    |> (\path -> "https://sale.foundrydao.com" ++ path)
-                )
+        (case dProfile of
+            Desktop ->
+                Element.el
+                    [ EH.withIdAttribute "copyable-link" ]
+                <|
+                    Element.text
+                        (Routing.FullRoute
+                            testMode
+                            Routing.Sale
+                            (Just referrerAddress)
+                            |> Routing.routeToString
+                            |> (\path -> "https://sale.foundrydao.com" ++ path)
+                        )
+
+            SmallDesktop ->
+                Element.paragraph
+                    [ EH.withIdAttribute "copyable-link" ]
+                <|
+                    [ Element.text
+                        (Routing.FullRoute
+                            testMode
+                            Routing.Sale
+                            (Just referrerAddress)
+                            |> Routing.routeToString
+                            |> (\path -> "https://sale.foundrydao.com" ++ path)
+                        )
+                    ]
         )
 
 
-referralLinkCopyButton : Element Msg
-referralLinkCopyButton =
+referralLinkCopyButton : DisplayProfile -> Element Msg
+referralLinkCopyButton dProfile =
     EH.button
-        Desktop
+        dProfile
         [ Element.width Element.fill
         , Element.htmlAttribute <|
             Html.Attributes.attribute
@@ -2741,7 +2937,7 @@ bigNumberElement : List (Attribute Msg) -> NumberVal -> String -> CommonBlockSty
 bigNumberElement attributes numberVal numberLabel blockStyle dProfile =
     Element.el
         (attributes
-            ++ [ Element.Font.size (responsiveVal dProfile 27 16)
+            ++ [ Element.Font.size (responsiveVal dProfile 27 12)
                , Element.Font.bold
                , Element.Font.color
                     (case blockStyle of
