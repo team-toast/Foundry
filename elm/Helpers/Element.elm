@@ -1,5 +1,6 @@
 module Helpers.Element exposing (..)
 
+import Array
 import Browser.Dom
 import Collage exposing (Collage)
 import Collage.Render
@@ -547,26 +548,40 @@ dropdownSelector itemsAndMsgs =
 -- BUTTONS
 
 
-button : DisplayProfile -> List (Attribute msg) -> ( Element.Color, Element.Color, Element.Color ) -> Element.Color -> List String -> msg -> Element msg
+button :
+    DisplayProfile
+    -> List (Attribute msg)
+    -> ( Element.Color, Element.Color, Element.Color )
+    -> Element.Color
+    -> List String
+    -> msg
+    -> Element msg
 button dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textColor lines msg =
     Element.column
-        (attributes
-            ++ [ Element.Border.rounded 4
-               , Element.spacing (responsiveVal dProfile 8 5)
-               , Element.pointer
-               , Element.Events.onClick msg
-               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.padding 10)
-               , Element.Font.color textColor
-               , Element.Font.size (responsiveVal dProfile 18 16)
-               , Element.Font.semiBold
-               , Element.Background.color bgColor
-               , Element.mouseDown [ Element.Background.color bgPressedColor ]
-               , Element.mouseOver [ Element.Background.color bgHoverColor ]
-               , noSelectText
-               ]
+        ([ Element.Border.rounded 4
+         , Element.spacing (responsiveVal dProfile 8 2)
+         , Element.pointer
+         , Element.Events.onClick msg
+         , responsiveVal
+            dProfile
+            (Element.paddingXY 25 17)
+            (Element.padding 5)
+         , Element.Font.color textColor
+         , Element.Font.size
+            (responsiveVal dProfile 18 10)
+         , Element.Font.semiBold
+         , Element.Background.color bgColor
+         , Element.mouseDown [ Element.Background.color bgPressedColor ]
+         , Element.mouseOver [ Element.Background.color bgHoverColor ]
+         , noSelectText
+         ]
+            ++ attributes
         )
         (List.map
-            (Element.el [ Element.centerX ] << Element.text)
+            (Element.el
+                [ Element.centerX ]
+                << Element.text
+            )
             lines
         )
 
@@ -593,23 +608,6 @@ buttonThin dProfile attributes ( bgColor, bgHoverColor, bgPressedColor ) textCol
             (Element.el [ Element.centerX ] << Element.text)
             lines
         )
-
-
-buttonThinMargin : DisplayProfile -> List (Attribute msg) -> List String -> msg -> Element msg
-buttonThinMargin dProfile attributes text msg =
-    let
-        color =
-            lightBlue
-    in
-    buttonThin dProfile
-        attributes
-        ( color
-        , color |> addAlpha 0.8
-        , color |> addAlpha 0.6
-        )
-        white
-        text
-        msg
 
 
 closeButton : Bool -> msg -> Element msg
@@ -719,18 +717,27 @@ greenButton dProfile attributes text msg =
         msg
 
 
+commonButtonArgs : DisplayProfile -> List (Attribute msg)
+commonButtonArgs dProfile =
+    [ Element.Border.rounded 4
+    , responsiveVal dProfile
+        (Element.paddingXY 25 17)
+        (Element.paddingXY 10 5)
+    , Element.Font.size
+        (responsiveVal dProfile 18 10)
+    , Element.Font.semiBold
+    , Element.Background.color lightGray
+    , Element.Font.center
+    , noSelectText
+    ]
+
+
 disabledButton : DisplayProfile -> List (Attribute msg) -> String -> Maybe String -> Element msg
 disabledButton dProfile attributes text maybeTipText =
     Element.el
         (attributes
-            ++ [ Element.Border.rounded 4
-               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.paddingXY 10 5)
-               , Element.Font.size (responsiveVal dProfile 18 16)
-               , Element.Font.semiBold
-               , Element.Background.color lightGray
-               , Element.Font.center
-               , noSelectText
-               , Element.above <|
+            ++ commonButtonArgs dProfile
+            ++ [ Element.above <|
                     maybeErrorElement
                         [ Element.moveUp 5 ]
                         maybeTipText
@@ -743,14 +750,8 @@ disabledSuccessButton : DisplayProfile -> List (Attribute msg) -> String -> Mayb
 disabledSuccessButton dProfile attributes text maybeTipText =
     Element.el
         (attributes
-            ++ [ Element.Border.rounded 4
-               , responsiveVal dProfile (Element.paddingXY 25 17) (Element.paddingXY 10 5)
-               , Element.Font.size (responsiveVal dProfile 18 16)
-               , Element.Font.semiBold
-               , Element.Background.color green
-               , Element.Font.center
-               , noSelectText
-               , Element.above <|
+            ++ commonButtonArgs dProfile
+            ++ [ Element.above <|
                     maybeErrorElement
                         [ Element.moveUp 5 ]
                         maybeTipText

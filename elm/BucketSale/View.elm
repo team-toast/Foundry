@@ -3,6 +3,7 @@ module BucketSale.View exposing (bidImpactParagraphEl, root)
 import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
 import CmdUp exposing (CmdUp)
+import Color
 import CommonTypes exposing (..)
 import Config
 import Contracts.BucketSale.Wrappers exposing (ExitInfo, UserStateInfo)
@@ -42,73 +43,101 @@ root model maybeReferrer dProfile =
             }
          ]
             ++ (List.map Element.inFront <|
-                    viewModals model maybeReferrer
+                    viewModals model maybeReferrer dProfile
                )
         )
-        [ Element.row
-            [ Element.centerX
-            , Element.spacing 50
-            ]
-            [ Element.column
-                [ Element.width <| Element.fillPortion 1
-                , Element.alignTop
-                , Element.spacing 20
-                ]
-                ([ viewYoutubeLinksBlock
-                 , closedBucketsPane model
-                 ]
-                    ++ (if dProfile == SmallDesktop then
-                            [ futureBucketsPane model
+        [ case dProfile of
+            Desktop ->
+                Element.row
+                    [ Element.centerX
+                    , Element.spacing 50
+                    ]
+                    [ Element.column
+                        [ Element.width <| Element.fillPortion 1
+                        , Element.alignTop
+                        , Element.spacing 20
+                        ]
+                        ([ viewYoutubeLinksBlock dProfile True
+                         , closedBucketsPane model dProfile
+                         ]
+                            ++ (if dProfile == SmallDesktop then
+                                    [ futureBucketsPane model
+                                    , trackedTxsElement model.trackedTxs
+                                    ]
+
+                                else
+                                    []
+                               )
+                        )
+                    , Element.column
+                        [ Element.width <| Element.fillPortion 2
+                        , Element.spacing 20
+                        , Element.alignTop
+                        ]
+                        [ focusedBucketPane
+                            dProfile
+                            maybeReferrer
+                            model.bucketSale
+                            (getFocusedBucketId
+                                model.bucketSale
+                                model.bucketView
+                                model.now
+                                model.testMode
+                            )
+                            model.wallet
+                            model.extraUserInfo
+                            model.enterUXModel
+                            model.jurisdictionCheckStatus
+                            model.trackedTxs
+                            model.showReferralModal
+                            model.now
+                            model.testMode
+                        , if dProfile == SmallDesktop then
+                            feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+
+                          else
+                            Element.none
+                        ]
+                    , if dProfile == Desktop then
+                        Element.column
+                            [ Element.spacing 20
+                            , Element.width Element.fill
+                            , Element.alignTop
+                            ]
+                            [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+                            , futureBucketsPane model
                             , trackedTxsElement model.trackedTxs
                             ]
 
-                        else
-                            []
-                       )
-                )
-            , Element.column
-                [ Element.width <| Element.fillPortion 2
-                , Element.spacing 20
-                , Element.alignTop
-                ]
-                [ focusedBucketPane
-                    dProfile
-                    maybeReferrer
-                    model.bucketSale
-                    (getFocusedBucketId
+                      else
+                        Element.none
+                    ]
+
+            SmallDesktop ->
+                Element.column
+                    [ Element.width Element.fill
+                    , Element.spacing 5
+                    ]
+                    [ viewYoutubeLinksBlock dProfile model.showYoutubeBlock
+                    , focusedBucketPane
+                        dProfile
+                        maybeReferrer
                         model.bucketSale
-                        model.bucketView
+                        (getFocusedBucketId
+                            model.bucketSale
+                            model.bucketView
+                            model.now
+                            model.testMode
+                        )
+                        model.wallet
+                        model.extraUserInfo
+                        model.enterUXModel
+                        model.jurisdictionCheckStatus
+                        model.trackedTxs
+                        model.showReferralModal
                         model.now
                         model.testMode
-                    )
-                    model.wallet
-                    model.extraUserInfo
-                    model.enterUXModel
-                    model.jurisdictionCheckStatus
-                    model.trackedTxs
-                    model.showReferralModal
-                    model.now
-                    model.testMode
-                , if dProfile == SmallDesktop then
-                    feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-
-                  else
-                    Element.none
-                ]
-            , if dProfile == Desktop then
-                Element.column
-                    [ Element.spacing 20
-                    , Element.width Element.fill
-                    , Element.alignTop
                     ]
-                    [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-                    , futureBucketsPane model
-                    , trackedTxsElement model.trackedTxs
-                    ]
-
-              else
-                Element.none
-            ]
         ]
     , []
     )
@@ -129,38 +158,50 @@ commonPaneAttributes =
     ]
 
 
-blockTitleText : String -> Element Msg
-blockTitleText text =
+blockTitleText : String -> List (Attribute Msg) -> Element Msg
+blockTitleText text attributes =
     Element.el
-        [ Element.width Element.fill
-        , Element.Font.size 25
-        , Element.Font.bold
-        ]
+        ([ Element.width Element.fill
+         , Element.Font.size 25
+         , Element.Font.bold
+         ]
+            ++ attributes
+        )
     <|
         Element.text text
 
 
-closedBucketsPane : Model -> Element Msg
-closedBucketsPane model =
+closedBucketsPane : Model -> DisplayProfile -> Element Msg
+closedBucketsPane model dProfile =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
                , Element.paddingXY 32 25
                ]
         )
-        [ blockTitleText "Concluded Buckets"
+        [ blockTitleText "Concluded Buckets" []
         , Element.paragraph
             [ Element.Font.color grayTextColor
             , Element.Font.size 15
             ]
-            [ Element.text <| "These are the concluded buckets of " ++ Config.exitingTokenCurrencyLabel ++ " that have been claimed. If you have " ++ Config.exitingTokenCurrencyLabel ++ " to claim it will show below." ]
+            [ Element.text <|
+                "These are the concluded buckets of "
+                    ++ Config.exitingTokenCurrencyLabel
+                    ++ " that have been claimed. If you have "
+                    ++ Config.exitingTokenCurrencyLabel
+                    ++ " to claim it will show below."
+            ]
         , maybeUserBalanceBlock
             model.wallet
             model.extraUserInfo
+            dProfile
         , maybeClaimBlock
             model.wallet
             (model.extraUserInfo |> Maybe.map .exitInfo)
-        , totalExitedBlock model.totalTokensExited
+            dProfile
+        , totalExitedBlock
+            model.totalTokensExited
+            dProfile
         ]
 
 
@@ -169,8 +210,11 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
-               , Element.paddingXY 35 15
-               , Element.spacing 7
+               , Element.paddingXY
+                    (responsiveVal dProfile 35 16)
+                    (responsiveVal dProfile 15 7)
+               , Element.spacing
+                    (responsiveVal dProfile 7 3)
                ]
         )
         ([ focusedBucketHeaderEl
@@ -194,22 +238,35 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                     ValidBucket bucketInfo ->
                         case bucketInfo.state of
                             Closed ->
-                                [ focusedBucketClosedPane bucketInfo (getRelevantTimingInfo bucketInfo now testMode) wallet testMode
+                                [ focusedBucketClosedPane bucketInfo
+                                    (getRelevantTimingInfo bucketInfo now testMode)
+                                    wallet
+                                    testMode
+                                    dProfile
                                 ]
 
                             _ ->
-                                [ focusedBucketSubheaderEl bucketInfo
+                                [ focusedBucketSubheaderEl bucketInfo dProfile
                                 , focusedBucketTimeLeftEl
                                     (getRelevantTimingInfo bucketInfo now testMode)
                                     testMode
-                                , enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode
+                                    dProfile
+                                , enterBidUX wallet
+                                    maybeReferrer
+                                    maybeExtraUserInfo
+                                    enterUXModel
+                                    bucketInfo
+                                    jurisdictionCheckStatus
+                                    trackedTxs
+                                    testMode
+                                    dProfile
                                 ]
                )
         )
 
 
-focusedBucketClosedPane : ValidBucketInfo -> RelevantTimingInfo -> Wallet.State -> TestMode -> Element Msg
-focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
+focusedBucketClosedPane : ValidBucketInfo -> RelevantTimingInfo -> Wallet.State -> TestMode -> DisplayProfile -> Element Msg
+focusedBucketClosedPane bucketInfo timingInfo wallet testMode dProfile =
     let
         intervalString =
             TimeHelpers.toConciseIntervalString timingInfo.relevantTimeFromNow
@@ -238,16 +295,23 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode =
                 ]
     in
     centerpaneBlockContainer PassiveStyle
-        [ Element.height <| Element.px 310 ]
+        dProfile
+        (case dProfile of
+            Desktop ->
+                [ Element.height <| Element.px 310 ]
+
+            SmallDesktop ->
+                []
+        )
     <|
         case Wallet.userInfo wallet of
             Nothing ->
-                [ connectToWeb3Button wallet ]
+                [ connectToWeb3Button wallet dProfile ]
 
             Just _ ->
                 [ Element.column
                     [ Element.padding 5
-                    , Element.Font.size 16
+                    , Element.Font.size (responsiveVal dProfile 16 10)
                     , Element.width Element.fill
                     ]
                     [ para <|
@@ -295,6 +359,9 @@ futureBucketsPane model =
                 )
                 model.now
                 model.testMode
+
+        dProfile =
+            model.dProfile
     in
     case fetchedNextBucketInfo of
         InvalidBucket ->
@@ -304,10 +371,10 @@ futureBucketsPane model =
             Element.column
                 (commonPaneAttributes
                     ++ [ Element.width <| Element.fillPortion 1
-                       , Element.paddingXY 32 25
+                       , Element.paddingXY (responsiveVal dProfile 32 16) (responsiveVal dProfile 25 12)
                        ]
                 )
-                [ blockTitleText "Future Buckets"
+                [ blockTitleText "Future Buckets" []
                 , Element.paragraph
                     [ Element.Font.color grayTextColor
                     , Element.Font.size 15
@@ -323,10 +390,12 @@ futureBucketsPane model =
                     model.bucketSale
                     model.now
                     model.testMode
+                    dProfile
                 , maybeSoldTokenInFutureBucketsBlock
                     model.bucketSale
                     model.now
                     model.testMode
+                    dProfile
                 ]
 
 
@@ -338,7 +407,7 @@ feedbackButtonBlock showFeedbackUXModel feedbackUXModel =
                , Element.paddingXY 32 25
                ]
         )
-        [ blockTitleText "Having issues?"
+        [ blockTitleText "Having issues?" []
         , if showFeedbackUXModel then
             viewFeedbackForm feedbackUXModel
 
@@ -475,8 +544,8 @@ viewFeedbackForm feedbackUXModel =
         )
 
 
-maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> Element Msg
-maybeUserBalanceBlock wallet maybeExtraUserInfo =
+maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> DisplayProfile -> Element Msg
+maybeUserBalanceBlock wallet maybeExtraUserInfo dProfile =
     case ( Wallet.userInfo wallet, maybeExtraUserInfo ) of
         ( Nothing, _ ) ->
             Element.none
@@ -486,15 +555,25 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
 
         ( Just userInfo, Just extraUserInfo ) ->
             sidepaneBlockContainer PassiveStyle
+                dProfile
                 [ bigNumberElement
                     [ Element.centerX ]
                     (TokenNum extraUserInfo.exitingTokenBalance)
                     Config.exitingTokenCurrencyLabel
                     PassiveStyle
+                    dProfile
                 , Element.paragraph
-                    [ Element.centerX
-                    , Element.width Element.shrink
-                    ]
+                    ([ Element.centerX
+                     , Element.width Element.shrink
+                     ]
+                        ++ (case dProfile of
+                                Desktop ->
+                                    []
+
+                                SmallDesktop ->
+                                    [ Element.Font.size 10 ]
+                           )
+                    )
                     [ Element.text "in your wallet"
                     ]
                 , if TokenValue.isZero extraUserInfo.exitingTokenBalance then
@@ -502,20 +581,28 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo =
 
                   else
                     Element.paragraph
-                        [ Element.centerX
-                        , Element.width Element.shrink
-                        , Element.Font.color EH.lightBlue
-                        , Element.pointer
-                        , Element.Events.onClick AddFryToMetaMaskClicked
-                        , EH.withTitle <| "Add " ++ Config.exitingTokenCurrencyLabel ++ " to Metamask or another EIP 747 compliant Web3 wallet"
-                        ]
+                        ([ Element.centerX
+                         , Element.width Element.shrink
+                         , Element.Font.color EH.lightBlue
+                         , Element.pointer
+                         , Element.Events.onClick AddFryToMetaMaskClicked
+                         , EH.withTitle <| "Add " ++ Config.exitingTokenCurrencyLabel ++ " to Metamask or another EIP 747 compliant Web3 wallet"
+                         ]
+                            ++ (case dProfile of
+                                    Desktop ->
+                                        []
+
+                                    SmallDesktop ->
+                                        [ Element.Font.size 10 ]
+                               )
+                        )
                         [ Element.text <| "List " ++ Config.exitingTokenCurrencyLabel ++ " in your wallet"
                         ]
                 ]
 
 
-maybeClaimBlock : Wallet.State -> Maybe ExitInfo -> Element Msg
-maybeClaimBlock wallet maybeExitInfo =
+maybeClaimBlock : Wallet.State -> Maybe ExitInfo -> DisplayProfile -> Element Msg
+maybeClaimBlock wallet maybeExitInfo dProfile =
     case ( Wallet.userInfo wallet, maybeExitInfo ) of
         ( Nothing, _ ) ->
             Element.none
@@ -525,47 +612,101 @@ maybeClaimBlock wallet maybeExitInfo =
 
         ( Just userInfo, Just exitInfo ) ->
             let
-                ( blockStyle, maybeClaimButton ) =
+                ( blockStyle, maybeClaimButton, exitableValue ) =
                     if TokenValue.isZero exitInfo.totalExitable then
-                        ( PassiveStyle, Nothing )
+                        ( PassiveStyle, Nothing, TokenValue.zero )
 
                     else
-                        ( ActiveStyle, Just <| makeClaimButton userInfo exitInfo )
+                        ( ActiveStyle
+                        , Just <|
+                            makeClaimButton userInfo exitInfo dProfile
+                        , exitInfo.totalExitable
+                        )
             in
-            sidepaneBlockContainer blockStyle
-                [ bigNumberElement
-                    [ Element.centerX ]
-                    (TokenNum exitInfo.totalExitable)
-                    Config.exitingTokenCurrencyLabel
-                    blockStyle
-                , Element.paragraph
-                    [ Element.centerX
-                    , Element.width Element.shrink
-                    ]
-                    [ Element.text "available for "
-                    , emphasizedText blockStyle "you"
-                    , Element.text " to claim"
-                    ]
-                , Maybe.map
-                    (Element.el [ Element.centerX ])
-                    maybeClaimButton
-                    |> Maybe.withDefault Element.none
-                ]
+            if dProfile == SmallDesktop && exitableValue == TokenValue.zero then
+                Element.none
+
+            else
+                sidepaneBlockContainer blockStyle
+                    dProfile
+                    (case dProfile of
+                        Desktop ->
+                            [ bigNumberElement
+                                [ Element.centerX ]
+                                (TokenNum exitInfo.totalExitable)
+                                Config.exitingTokenCurrencyLabel
+                                blockStyle
+                                dProfile
+                            , Element.paragraph
+                                ([ Element.centerX
+                                 , Element.width Element.shrink
+                                 ]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 10 ]
+                                       )
+                                )
+                                [ Element.text "available for "
+                                , emphasizedText blockStyle "you"
+                                , Element.text " to claim"
+                                ]
+                            , Maybe.map
+                                (Element.el [ Element.centerX ])
+                                maybeClaimButton
+                                |> Maybe.withDefault Element.none
+                            ]
+
+                        SmallDesktop ->
+                            [ Element.row [ Element.width Element.fill, Element.spacing 5 ]
+                                [ bigNumberElement
+                                    [ Element.centerX ]
+                                    (TokenNum exitInfo.totalExitable)
+                                    Config.exitingTokenCurrencyLabel
+                                    blockStyle
+                                    dProfile
+                                , Element.paragraph
+                                    ([ Element.centerX
+                                     , Element.width Element.shrink
+                                     ]
+                                        ++ (case dProfile of
+                                                Desktop ->
+                                                    []
+
+                                                SmallDesktop ->
+                                                    [ Element.Font.size 10 ]
+                                           )
+                                    )
+                                    [ Element.text "available for "
+                                    , emphasizedText blockStyle "you"
+                                    , Element.text " to claim"
+                                    ]
+                                , Maybe.map
+                                    (Element.el [ Element.centerX ])
+                                    maybeClaimButton
+                                    |> Maybe.withDefault Element.none
+                                ]
+                            ]
+                    )
 
 
-totalExitedBlock : Maybe TokenValue -> Element Msg
-totalExitedBlock maybeTotalExited =
+totalExitedBlock : Maybe TokenValue -> DisplayProfile -> Element Msg
+totalExitedBlock maybeTotalExited dProfile =
     case maybeTotalExited of
         Nothing ->
             loadingElement
 
         Just totalExited ->
             sidepaneBlockContainer PassiveStyle
+                dProfile
                 [ bigNumberElement
                     [ Element.centerX ]
                     (TokenNum totalExited)
                     Config.exitingTokenCurrencyLabel
                     PassiveStyle
+                    dProfile
                 , Element.paragraph
                     [ Element.centerX
                     , Element.width Element.shrink
@@ -587,34 +728,57 @@ focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeRefer
             referralModalActive
             testMode
         , Element.row
-            [ Element.Font.size 30
+            [ Element.Font.size (responsiveVal dProfile 30 16)
             , Element.Font.bold
             , Element.alignLeft
-            , Element.spacing 10
+            , Element.spacing (responsiveVal dProfile 10 4)
             , Element.centerX
             ]
             [ prevTenBucketArrow bucketId
             , prevBucketArrow bucketId
-            , Element.row
-                [ Element.centerX
+            , Element.column
+                [ Element.width Element.fill
+                , Element.centerX
                 ]
-                [ Element.text <|
-                    "Bucket #"
-                        ++ String.fromInt bucketId
+                [ Element.row
+                    [ Element.centerX
+                    ]
+                    [ Element.text <|
+                        "Bucket #"
+                            ++ String.fromInt bucketId
+                    ]
+                , case dProfile of
+                    Desktop ->
+                        Element.none
+
+                    SmallDesktop ->
+                        Element.row
+                            [ Element.centerX
+                            ]
+                            [ if currentBucketId /= bucketId then
+                                jumpToCurrentBucketButton currentBucketId dProfile
+
+                              else
+                                Element.none
+                            ]
                 ]
             , nextBucketArrow bucketId
             , nextTenBucketArrow bucketId
             ]
-        , Element.row
-            [ Element.centerX
-            , Element.Font.size 20
-            ]
-            [ if currentBucketId /= bucketId then
-                jumpToCurrentBucketButton currentBucketId
+        , case dProfile of
+            Desktop ->
+                Element.row
+                    [ Element.centerX
+                    ]
+                    [ if currentBucketId /= bucketId then
+                        jumpToCurrentBucketButton currentBucketId dProfile
 
-              else
+                      else
+                        Element.none
+                    ]
+
+            SmallDesktop ->
                 Element.none
-            ]
         ]
 
 
@@ -635,15 +799,19 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
         Just userInfo ->
             let
                 maybeModalAttribute =
-                    responsiveVal dProfile Element.onRight Element.onLeft <|
+                    responsiveVal
+                        dProfile
+                        Element.onRight
+                        Element.below
+                    <|
                         if referralModalActive then
                             Element.el
-                                [ responsiveVal dProfile Element.centerX Element.alignRight
-                                , responsiveVal dProfile Element.moveRight Element.moveLeft 25
-                                , Element.moveUp 50
+                                [ Element.centerX
+                                , Element.moveRight <| responsiveVal dProfile 25 0
+                                , Element.moveUp (responsiveVal dProfile 50 0)
                                 , EH.moveToFront
                                 ]
-                                (referralModal userInfo maybeReferrer testMode)
+                                (referralModal userInfo maybeReferrer testMode dProfile)
 
                         else
                             Element.none
@@ -660,6 +828,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                             referralBonusIndicator
                                 maybeReferrer
                                 True
+                                dProfile
 
                     else
                         Element.none
@@ -668,10 +837,11 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                 referralBonusIndicator
                     maybeReferrer
                     referralModalActive
+                    dProfile
 
 
-focusedBucketSubheaderEl : ValidBucketInfo -> Element Msg
-focusedBucketSubheaderEl bucketInfo =
+focusedBucketSubheaderEl : ValidBucketInfo -> DisplayProfile -> Element Msg
+focusedBucketSubheaderEl bucketInfo dProfile =
     let
         bidText =
             case bucketInfo.state of
@@ -682,15 +852,21 @@ focusedBucketSubheaderEl bucketInfo =
         Just totalValueEntered ->
             Element.paragraph
                 [ Element.Font.color grayTextColor
-                , Element.Font.size 15
+                , Element.Font.size (responsiveVal dProfile 15 7)
                 ]
-                [ emphasizedText PassiveStyle <|
-                    TokenValue.toConciseString totalValueEntered
-                , Element.text <|
-                    " "
-                        ++ Config.enteringTokenCurrencyLabel
-                        ++ bidText
-                ]
+                (case dProfile of
+                    SmallDesktop ->
+                        [ Element.none ]
+
+                    Desktop ->
+                        [ emphasizedText PassiveStyle <|
+                            TokenValue.toConciseString totalValueEntered
+                        , Element.text <|
+                            " "
+                                ++ Config.enteringTokenCurrencyLabel
+                                ++ bidText
+                        ]
+                )
 
         _ ->
             loadingElement
@@ -703,7 +879,7 @@ navigateElementDetail bucketToFocusOn image =
         , Element.Events.onClick (FocusToBucket bucketToFocusOn)
         , Element.Font.extraBold
         , EH.noSelectText
-        , Element.width <| Element.px 35
+        , Element.width <| Element.px 30
         ]
         image
 
@@ -728,8 +904,8 @@ nextTenBucketArrow currentBucketId =
     navigateElementDetail (currentBucketId + 10) Images.rightTen
 
 
-focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> Element Msg
-focusedBucketTimeLeftEl timingInfo testMode =
+focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> DisplayProfile -> Element Msg
+focusedBucketTimeLeftEl timingInfo testMode dProfile =
     Element.row
         [ Element.width Element.fill
         , Element.spacing 22
@@ -752,7 +928,15 @@ focusedBucketTimeLeftEl timingInfo testMode =
                 TimeHelpers.toConciseIntervalString timingInfo.relevantTimeFromNow
           in
           (Element.el
-            [ Element.Font.color deepBlue ]
+            (case dProfile of
+                Desktop ->
+                    [ Element.Font.color deepBlue ]
+
+                SmallDesktop ->
+                    [ Element.Font.color deepBlue
+                    , Element.Font.size 12
+                    ]
+            )
             << Element.text
           )
             (case timingInfo.state of
@@ -768,8 +952,8 @@ focusedBucketTimeLeftEl timingInfo testMode =
         ]
 
 
-enterBidUX : Wallet.State -> Maybe Address -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> Element Msg
-enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
+enterBidUX : Wallet.State -> Maybe Address -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> DisplayProfile -> Element Msg
+enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode dProfile =
     let
         miningEnters =
             trackedTxs
@@ -808,121 +992,334 @@ enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo juris
         [ Element.width Element.fill
         , Element.spacing 20
         ]
-        [ bidInputBlock enterUXModel bucketInfo testMode
-        , bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode
-        , otherBidsImpactMsg
-        , actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode
-        ]
-
-
-bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> Element Msg
-bidInputBlock enterUXModel bucketInfo testMode =
-    centerpaneBlockContainer ActiveStyle
-        []
-        [ emphasizedText ActiveStyle "I want to bid:"
-        , Element.row
-            [ Element.Background.color <| Element.rgba 1 1 1 0.08
-            , Element.Border.rounded 4
-            , Element.padding 13
-            , Element.width Element.fill
-            ]
-            [ Element.Input.text
-                [ Element.Font.size 19
-                , Element.Font.medium
-                , Element.Font.color EH.white
-                , Element.Border.width 0
-                , Element.width Element.fill
-                , Element.Background.color EH.transparent
-                ]
-                { onChange = EnterInputChanged
-                , text = enterUXModel.input
-                , placeholder =
-                    Just <|
-                        Element.Input.placeholder
-                            [ Element.Font.medium
-                            , Element.Font.color <| Element.rgba 1 1 1 0.25
-                            ]
-                            (Element.text "Enter Amount")
-                , label = Element.Input.labelHidden "bid amount"
-                }
-            , Element.row
-                [ Element.centerY
-                , Element.spacing 10
-                ]
-                [ Images.enteringTokenSymbol
-                    |> Images.toElement [ Element.height <| Element.px 30 ]
-                , Element.text Config.enteringTokenCurrencyLabel
-                ]
-            ]
-        , Maybe.map
-            (\totalValueEntered ->
-                pricePerTokenMsg
-                    totalValueEntered
-                    (enterUXModel.amount
-                        |> Maybe.map Result.toMaybe
-                        |> Maybe.Extra.join
-                    )
-                    testMode
-            )
-            bucketInfo.bucketData.totalValueEntered
-            |> Maybe.withDefault loadingElement
-        ]
-
-
-pricePerTokenMsg : TokenValue -> Maybe TokenValue -> TestMode -> Element Msg
-pricePerTokenMsg totalValueEntered maybeEnterAmount testMode =
-    Element.paragraph
-        [ Element.Font.size 14
-        , Element.Font.medium
-        ]
-        ([ Element.text <|
-            "The current "
-                ++ Config.exitingTokenCurrencyLabel
-                ++ " price is "
-                ++ (calcEffectivePricePerToken
-                        totalValueEntered
-                        testMode
-                        |> TokenValue.toConciseString
-                   )
-                ++ " "
-                ++ Config.enteringTokenCurrencyLabel
-                ++ "/"
-                ++ Config.exitingTokenCurrencyLabel
-                ++ "."
-         ]
-            ++ (case maybeEnterAmount of
-                    Just amount ->
-                        [ Element.text " This bid will increase the price to "
-                        , emphasizedText ActiveStyle <|
-                            (calcEffectivePricePerToken
-                                (TokenValue.add
-                                    totalValueEntered
-                                    amount
-                                )
-                                testMode
-                                |> TokenValue.toConciseString
-                            )
-                                ++ " "
-                                ++ Config.enteringTokenCurrencyLabel
-                                ++ "/"
-                                ++ Config.exitingTokenCurrencyLabel
-                                ++ "."
+        ([]
+            ++ (case dProfile of
+                    Desktop ->
+                        [ bidInputBlock
+                            enterUXModel
+                            bucketInfo
+                            testMode
+                            dProfile
+                        , bidImpactBlock
+                            enterUXModel
+                            bucketInfo
+                            wallet
+                            miningEnters
+                            testMode
+                            dProfile
+                        , otherBidsImpactMsg
+                            dProfile
+                        , actionButton
+                            jurisdictionCheckStatus
+                            maybeReferrer
+                            wallet
+                            maybeExtraUserInfo
+                            unlockMining
+                            enterUXModel
+                            bucketInfo
+                            trackedTxs
+                            testMode
+                            dProfile
                         ]
 
-                    _ ->
-                        []
+                    SmallDesktop ->
+                        [ Element.column
+                            [ Element.width <| Element.fillPortion 3
+                            , Element.spacingXY 0 3
+                            ]
+                            [ maybeClaimBlock
+                                wallet
+                                (maybeExtraUserInfo |> Maybe.map .exitInfo)
+                                dProfile
+                            , Element.el
+                                [ Element.width Element.fill
+                                , Element.alignTop
+                                ]
+                              <|
+                                bidInputBlock
+                                    enterUXModel
+                                    bucketInfo
+                                    testMode
+                                    dProfile
+                            , actionButton
+                                jurisdictionCheckStatus
+                                maybeReferrer
+                                wallet
+                                maybeExtraUserInfo
+                                unlockMining
+                                enterUXModel
+                                bucketInfo
+                                trackedTxs
+                                testMode
+                                dProfile
+                            , bidImpactBlock
+                                enterUXModel
+                                bucketInfo
+                                wallet
+                                miningEnters
+                                testMode
+                                dProfile
+                            , otherBidsImpactMsg
+                                dProfile
+                            ]
+                        ]
                )
         )
 
 
-bidImpactBlock : EnterUXModel -> ValidBucketInfo -> Wallet.State -> List EnterInfo -> TestMode -> Element Msg
-bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode =
+bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> DisplayProfile -> Element Msg
+bidInputBlock enterUXModel bucketInfo testMode dProfile =
+    centerpaneBlockContainer ActiveStyle
+        dProfile
+        []
+    <|
+        case dProfile of
+            Desktop ->
+                [ emphasizedText ActiveStyle "I want to bid:"
+                , Element.row
+                    [ Element.Background.color <| Element.rgba 1 1 1 0.08
+                    , Element.Border.rounded 4
+                    , Element.padding <|
+                        responsiveVal dProfile 13 7
+                    , Element.width Element.fill
+                    ]
+                    [ Element.Input.text
+                        [ Element.Font.size 19
+                        , Element.Font.medium
+                        , Element.Font.color EH.white
+                        , Element.Border.width 0
+                        , Element.width Element.fill
+                        , Element.Background.color EH.transparent
+                        ]
+                        { onChange = EnterInputChanged
+                        , text = enterUXModel.input
+                        , placeholder =
+                            Just <|
+                                Element.Input.placeholder
+                                    [ Element.Font.medium
+                                    , Element.Font.color <| Element.rgba 1 1 1 0.25
+                                    ]
+                                    (Element.text "Enter Amount")
+                        , label = Element.Input.labelHidden "bid amount"
+                        }
+                    , Element.row
+                        [ Element.centerY
+                        , Element.spacing 10
+                        ]
+                        [ Images.enteringTokenSymbol
+                            |> Images.toElement [ Element.height <| Element.px 30 ]
+                        , Element.text Config.enteringTokenCurrencyLabel
+                        ]
+                    ]
+                , Maybe.map
+                    (\totalValueEntered ->
+                        pricePerTokenMsg
+                            totalValueEntered
+                            (enterUXModel.amount
+                                |> Maybe.map Result.toMaybe
+                                |> Maybe.Extra.join
+                            )
+                            testMode
+                            dProfile
+                    )
+                    bucketInfo.bucketData.totalValueEntered
+                    |> Maybe.withDefault loadingElement
+                ]
+
+            SmallDesktop ->
+                let
+                    totalValueEntered =
+                        case bucketInfo.bucketData.totalValueEntered of
+                            Just totalEntered ->
+                                totalEntered
+
+                            _ ->
+                                TokenValue.zero
+                in
+                [ Element.row
+                    [ Element.width Element.fill ]
+                    [ emphasizedText ActiveStyle <| "I want to bid:"
+                    , Element.column
+                        [ Element.width Element.fill ]
+                        [ Element.row
+                            [ Element.alignRight ]
+                            [ emphasizedText
+                                ActiveStyle
+                              <|
+                                TokenValue.toConciseString
+                                    totalValueEntered
+                                    ++ " "
+                                    ++ Config.enteringTokenCurrencyLabel
+                                    ++ " already bid"
+                            ]
+                        ]
+                    ]
+                , Element.row
+                    [ Element.Background.color <|
+                        Element.rgba 1 1 1 0.08
+                    , Element.Border.rounded 4
+                    , Element.padding 4
+                    , Element.width Element.fill
+                    ]
+                    [ Element.Input.text
+                        [ Element.Font.size 12
+                        , Element.Font.medium
+                        , Element.Font.color EH.white
+                        , Element.Border.width 0
+                        , Element.width Element.fill
+                        , Element.Background.color EH.transparent
+                        ]
+                        { onChange = EnterInputChanged
+                        , text = enterUXModel.input
+                        , placeholder =
+                            Just <|
+                                Element.Input.placeholder
+                                    [ Element.Font.medium
+                                    , Element.Font.color <|
+                                        Element.rgba 1 1 1 0.25
+                                    ]
+                                    (Element.text "Enter Amount")
+                        , label = Element.Input.labelHidden "bid amount"
+                        }
+                    , Element.row
+                        [ Element.centerY
+                        , Element.spacing 8
+                        ]
+                        [ Images.enteringTokenSymbol
+                            |> Images.toElement [ Element.height <| Element.px 20 ]
+                        , Element.text Config.enteringTokenCurrencyLabel
+                        ]
+                    ]
+                , Maybe.map
+                    (\totalValue ->
+                        pricePerTokenMsg
+                            totalValue
+                            (enterUXModel.amount
+                                |> Maybe.map Result.toMaybe
+                                |> Maybe.Extra.join
+                            )
+                            testMode
+                            dProfile
+                    )
+                    bucketInfo.bucketData.totalValueEntered
+                    |> Maybe.withDefault loadingElement
+                ]
+
+
+pricePerTokenMsg : TokenValue -> Maybe TokenValue -> TestMode -> DisplayProfile -> Element Msg
+pricePerTokenMsg totalValueEntered maybeEnterAmount testMode dProfile =
+    case dProfile of
+        Desktop ->
+            Element.paragraph
+                [ Element.Font.size 14
+                , Element.Font.medium
+                ]
+                ([ Element.text <|
+                    "The current "
+                        ++ Config.exitingTokenCurrencyLabel
+                        ++ " price is "
+                        ++ (calcEffectivePricePerToken
+                                totalValueEntered
+                                testMode
+                                |> TokenValue.toConciseString
+                           )
+                        ++ " "
+                        ++ Config.enteringTokenCurrencyLabel
+                        ++ "/"
+                        ++ Config.exitingTokenCurrencyLabel
+                        ++ "."
+                 ]
+                    ++ (case maybeEnterAmount of
+                            Just amount ->
+                                [ Element.text " This bid will increase the price to "
+                                , emphasizedText ActiveStyle <|
+                                    (calcEffectivePricePerToken
+                                        (TokenValue.add
+                                            totalValueEntered
+                                            amount
+                                        )
+                                        testMode
+                                        |> TokenValue.toConciseString
+                                    )
+                                        ++ " "
+                                        ++ Config.enteringTokenCurrencyLabel
+                                        ++ "/"
+                                        ++ Config.exitingTokenCurrencyLabel
+                                        ++ "."
+                                ]
+
+                            _ ->
+                                []
+                       )
+                )
+
+        SmallDesktop ->
+            let
+                listEl =
+                    Element.el [ Element.paddingXY 0 3 ]
+            in
+            Element.column
+                [ Element.Font.size 10
+                , Element.Font.medium
+                ]
+                ([ listEl
+                    (Element.text <|
+                        "Current price: "
+                            ++ (calcEffectivePricePerToken
+                                    totalValueEntered
+                                    testMode
+                                    |> TokenValue.toConciseString
+                               )
+                            ++ " "
+                            ++ Config.enteringTokenCurrencyLabel
+                            ++ "/"
+                            ++ Config.exitingTokenCurrencyLabel
+                            ++ "."
+                    )
+                 ]
+                    ++ (case maybeEnterAmount of
+                            Just amount ->
+                                [ listEl
+                                    (Element.text <|
+                                        "After this bid: "
+                                            ++ (calcEffectivePricePerToken
+                                                    (TokenValue.add
+                                                        totalValueEntered
+                                                        amount
+                                                    )
+                                                    testMode
+                                                    |> TokenValue.toConciseString
+                                               )
+                                            ++ " "
+                                            ++ Config.enteringTokenCurrencyLabel
+                                            ++ "/"
+                                            ++ Config.exitingTokenCurrencyLabel
+                                            ++ "."
+                                    )
+                                ]
+
+                            _ ->
+                                []
+                       )
+                )
+
+
+bidImpactBlock :
+    EnterUXModel
+    -> ValidBucketInfo
+    -> Wallet.State
+    -> List EnterInfo
+    -> TestMode
+    -> DisplayProfile
+    -> Element Msg
+bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode dProfile =
     centerpaneBlockContainer PassiveStyle
-        [ Element.height <| Element.px 310 ]
+        dProfile
+        []
     <|
         case Wallet.userInfo wallet of
             Nothing ->
-                [ connectToWeb3Button wallet ]
+                [ connectToWeb3Button wallet dProfile ]
 
             Just _ ->
                 [ emphasizedText PassiveStyle "Your current bid standing:" ]
@@ -1151,17 +1548,17 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
                     [ Element.alignRight
                     , Element.spacing 6
                     ]
-                    [ Element.el
+                    [ Element.paragraph
                         [ Element.Font.color grayTextColor
                         , Element.alignRight
                         ]
-                      <|
-                        Element.text <|
+                        [ Element.text <|
                             if totalValueEntered /= totalValueEnteredAfterBidAndMining then
                                 "Resulting total bids in bucket"
 
                             else
                                 "Total bids in bucket"
+                        ]
                     , Element.el
                         [ Element.alignRight ]
                         (Element.text <|
@@ -1189,43 +1586,48 @@ bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUs
             ]
 
 
-otherBidsImpactMsg : Element Msg
-otherBidsImpactMsg =
+otherBidsImpactMsg : DisplayProfile -> Element Msg
+otherBidsImpactMsg dProfile =
     centerpaneBlockContainer PassiveStyle
+        dProfile
         []
         [ emphasizedText PassiveStyle "If other bids are made:"
         , Element.paragraph
             [ Element.width Element.fill
             , Element.Font.color grayTextColor
             ]
-            [ Element.text <| "The price per token will increase further, and the amount of " ++ Config.exitingTokenCurrencyLabel ++ " you can claim from the bucket will decrease proportionally. For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve." ]
+            [ Element.text <|
+                "The price per token will increase further, and the amount of "
+                    ++ Config.exitingTokenCurrencyLabel
+                    ++ " you can claim from the bucket will decrease proportionally. For example, if the total bid amount doubles, the effective price per token will also double, and your amount of claimable tokens will halve."
+            ]
         ]
 
 
-msgInsteadOfButton : String -> Element.Color -> Element Msg
-msgInsteadOfButton text color =
+msgInsteadOfButton : String -> Element.Color -> DisplayProfile -> Element Msg
+msgInsteadOfButton text color dProfile =
     Element.el
         [ Element.centerX
-        , Element.Font.size 22
+        , Element.Font.size <| responsiveVal dProfile 22 14
         , Element.Font.italic
         , Element.Font.color color
         ]
         (Element.text text)
 
 
-verifyJurisdictionButtonOrResult : JurisdictionCheckStatus -> Element Msg
-verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
+verifyJurisdictionButtonOrResult : JurisdictionCheckStatus -> DisplayProfile -> Element Msg
+verifyJurisdictionButtonOrResult jurisdictionCheckStatus dProfile =
     case jurisdictionCheckStatus of
         WaitingForClick ->
             EH.redButton
-                Desktop
+                dProfile
                 [ Element.width Element.fill ]
                 [ "Confirm you are not a US citizen" ]
                 VerifyJurisdictionClicked
 
         Checking ->
             EH.disabledButton
-                Desktop
+                dProfile
                 [ Element.width Element.fill ]
                 "Verifying Jurisdiction..."
                 Nothing
@@ -1235,7 +1637,7 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 [ Element.spacing 10
                 , Element.width Element.fill
                 ]
-                [ msgInsteadOfButton "Error verifying jurisdiction." EH.red
+                [ msgInsteadOfButton "Error verifying jurisdiction." EH.red dProfile
                 , Element.paragraph
                     [ Element.Font.color grayTextColor ]
                     [ Element.text errStr ]
@@ -1245,41 +1647,49 @@ verifyJurisdictionButtonOrResult jurisdictionCheckStatus =
                 ]
 
         Checked ForbiddenJurisdictions ->
-            msgInsteadOfButton "Sorry, US citizens and residents are excluded." EH.red
+            msgInsteadOfButton "Sorry, US citizens and residents are excluded." EH.red dProfile
 
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
-            msgInsteadOfButton "Jurisdiction Verified." green
+            msgInsteadOfButton "Jurisdiction Verified." green dProfile
 
 
-enableTokenButton : Element Msg
-enableTokenButton =
+enableTokenButton : DisplayProfile -> Element Msg
+enableTokenButton dProfile =
     EH.redButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
         [ "Enable " ++ Config.enteringTokenCurrencyLabel ]
         EnableTokenButtonClicked
 
 
-disabledButton : String -> Element Msg
-disabledButton disableText =
+disabledButton : String -> DisplayProfile -> Element Msg
+disabledButton disableText dProfile =
     EH.disabledButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
         disableText
         Nothing
 
 
-successButton : String -> Element Msg
-successButton text =
+successButton : String -> DisplayProfile -> Element Msg
+successButton text dProfile =
     EH.disabledSuccessButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
         text
         Nothing
 
 
-continueButton : UserInfo -> Int -> TokenValue -> Maybe Address -> TokenValue -> TokenValue -> Element Msg
-continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal =
+continueButton :
+    UserInfo
+    -> Int
+    -> TokenValue
+    -> Maybe Address
+    -> TokenValue
+    -> TokenValue
+    -> DisplayProfile
+    -> Element Msg
+continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal dProfile =
     let
         maybeMining =
             if miningTotal == TokenValue.zero then
@@ -1315,7 +1725,7 @@ continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal =
         alreadyEnteredWithDescription =
             case maybeAlreadyEnteredString of
                 Just alreadyEnteredString ->
-                    " (You have "
+                    "(You have "
                         ++ alreadyEnteredString
                         ++ ")"
 
@@ -1323,9 +1733,23 @@ continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal =
                     ""
     in
     EH.redButton
-        Desktop
-        [ Element.width Element.fill ]
-        [ "Enter with " ++ TokenValue.toFloatString (Just 2) enterAmount ++ " " ++ Config.enteringTokenCurrencyLabel ++ "" ++ alreadyEnteredWithDescription ]
+        dProfile
+        ([ Element.width Element.fill ]
+            ++ (case dProfile of
+                    Desktop ->
+                        []
+
+                    SmallDesktop ->
+                        [ Element.padding 10 ]
+               )
+        )
+        [ "Enter with "
+            ++ TokenValue.toFloatString (Just 2) enterAmount
+            ++ " "
+            ++ Config.enteringTokenCurrencyLabel
+            ++ " "
+            ++ alreadyEnteredWithDescription
+        ]
         (EnterButtonClicked <|
             EnterInfo
                 userInfo
@@ -1339,28 +1763,47 @@ alreadyEnteredBucketButton enterAmount =
     Element.none
 
 
-actionButton : JurisdictionCheckStatus -> Maybe Address -> Wallet.State -> Maybe UserStateInfo -> Bool -> EnterUXModel -> ValidBucketInfo -> List TrackedTx -> TestMode -> Element Msg
-actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
+actionButton :
+    JurisdictionCheckStatus
+    -> Maybe Address
+    -> Wallet.State
+    -> Maybe UserStateInfo
+    -> Bool
+    -> EnterUXModel
+    -> ValidBucketInfo
+    -> List TrackedTx
+    -> TestMode
+    -> DisplayProfile
+    -> Element Msg
+actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode dProfile =
     case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
                 Nothing ->
-                    connectToWeb3Button wallet
+                    connectToWeb3Button wallet dProfile
 
                 Just userInfo ->
                     case maybeExtraUserInfo of
                         Nothing ->
-                            msgInsteadOfButton "Fetching user balance info..." grayTextColor
+                            msgInsteadOfButton
+                                "Fetching user balance info..."
+                                grayTextColor
+                                dProfile
 
                         Just extraUserInfo ->
                             if unlockMining then
-                                msgInsteadOfButton "Mining token enable..." grayTextColor
+                                msgInsteadOfButton "Mining token enable..."
+                                    grayTextColor
+                                    dProfile
 
                             else if TokenValue.isZero extraUserInfo.ethBalance then
-                                msgInsteadOfButton "You have no Ethereum in your wallet..." orangeWarningColor
+                                msgInsteadOfButton
+                                    "You have no Ethereum in your wallet..."
+                                    orangeWarningColor
+                                    dProfile
 
                             else if TokenValue.isZero extraUserInfo.enteringTokenAllowance then
-                                enableTokenButton
+                                enableTokenButton dProfile
 
                             else
                                 let
@@ -1421,26 +1864,48 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
                                 case enterUXModel.amount of
                                     Just (Ok enterAmount) ->
                                         if List.any (\tx -> tx.status == Signing) trackedTxs then
-                                            disabledButton "Sign or reject pending transactions to continue"
+                                            disabledButton
+                                                "Sign or reject pending transactions to continue"
+                                                dProfile
 
                                         else if TokenValue.compare enterAmount extraUserInfo.enteringTokenAllowance /= GT && TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= LT then
-                                            disabledButton <| "You only have " ++ toConciseString extraUserInfo.enteringTokenBalance ++ " " ++ Config.enteringTokenCurrencyLabel ++ ""
+                                            disabledButton
+                                                ("You only have "
+                                                    ++ toConciseString extraUserInfo.enteringTokenBalance
+                                                    ++ " "
+                                                    ++ Config.enteringTokenCurrencyLabel
+                                                    ++ ""
+                                                )
+                                                dProfile
 
                                         else if TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= GT then
-                                            continueButton userInfo bucketInfo.id enterAmount maybeReferrer enteredIntoThisBucket miningTotalForThisBucket
+                                            continueButton
+                                                userInfo
+                                                bucketInfo.id
+                                                enterAmount
+                                                maybeReferrer
+                                                enteredIntoThisBucket
+                                                miningTotalForThisBucket
+                                                dProfile
 
                                         else
-                                            enableTokenButton
+                                            enableTokenButton dProfile
 
                                     _ ->
                                         if lastTransactionsForThisBucketWasSuccessful then
-                                            successButton "Successfully entered!"
+                                            successButton
+                                                "Successfully entered!"
+                                                dProfile
 
                                         else
-                                            disabledButton "Enter bid amount to continue"
+                                            disabledButton
+                                                "Enter bid amount to continue"
+                                                dProfile
 
         _ ->
-            verifyJurisdictionButtonOrResult jurisdictionCheckStatus
+            verifyJurisdictionButtonOrResult
+                jurisdictionCheckStatus
+                dProfile
 
 
 lastElem : List a -> Maybe a
@@ -1453,8 +1918,8 @@ noBucketsLeftBlock =
     Element.text "There are no more future blocks."
 
 
-maybeBucketsLeftBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
-maybeBucketsLeftBlock bucketSale now testMode =
+maybeBucketsLeftBlock : BucketSale -> Time.Posix -> TestMode -> DisplayProfile -> Element Msg
+maybeBucketsLeftBlock bucketSale now testMode dProfile =
     let
         currentBucketId =
             getCurrentBucketId
@@ -1463,6 +1928,7 @@ maybeBucketsLeftBlock bucketSale now testMode =
                 testMode
     in
     sidepaneBlockContainer PassiveStyle
+        dProfile
         [ bigNumberElement
             [ Element.centerX ]
             (IntegerNum
@@ -1472,6 +1938,7 @@ maybeBucketsLeftBlock bucketSale now testMode =
             )
             "buckets"
             PassiveStyle
+            dProfile
         , Element.paragraph
             [ Element.centerX
             , Element.width Element.shrink
@@ -1480,8 +1947,8 @@ maybeBucketsLeftBlock bucketSale now testMode =
         ]
 
 
-maybeSoldTokenInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> Element Msg
-maybeSoldTokenInFutureBucketsBlock bucketSale now testMode =
+maybeSoldTokenInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> DisplayProfile -> Element Msg
+maybeSoldTokenInFutureBucketsBlock bucketSale now testMode dProfile =
     let
         currentBucketId =
             getCurrentBucketId
@@ -1490,6 +1957,7 @@ maybeSoldTokenInFutureBucketsBlock bucketSale now testMode =
                 testMode
     in
     sidepaneBlockContainer PassiveStyle
+        dProfile
         [ bigNumberElement
             [ Element.centerX ]
             (TokenNum
@@ -1502,6 +1970,7 @@ maybeSoldTokenInFutureBucketsBlock bucketSale now testMode =
             )
             Config.exitingTokenCurrencyLabel
             PassiveStyle
+            dProfile
         , Element.paragraph
             [ Element.centerX
             , Element.width Element.shrink
@@ -1646,8 +2115,8 @@ makeDescription action =
             "Claim " ++ Config.exitingTokenCurrencyLabel ++ ""
 
 
-viewModals : Model -> Maybe Address -> List (Element Msg)
-viewModals model maybeReferrer =
+viewModals : Model -> Maybe Address -> DisplayProfile -> List (Element Msg)
+viewModals model maybeReferrer dProfile =
     Maybe.Extra.values
         [ case model.enterInfoToConfirm of
             Just enterInfo ->
@@ -1658,7 +2127,7 @@ viewModals model maybeReferrer =
                         NoOp
                         CancelClicked
                     <|
-                        viewAgreeToTosModal model.confirmTosModel enterInfo
+                        viewAgreeToTosModal model.confirmTosModel enterInfo dProfile
 
             _ ->
                 Nothing
@@ -1676,18 +2145,38 @@ viewModals model maybeReferrer =
         ]
 
 
-viewYoutubeLinksBlock : Element Msg
-viewYoutubeLinksBlock =
+viewYoutubeLinksBlock : DisplayProfile -> Bool -> Element Msg
+viewYoutubeLinksBlock dProfile showBlock =
     Element.column
         (commonPaneAttributes
             ++ [ Element.padding 20
                , Element.alignTop
                , Element.width Element.fill
-               , Element.paddingXY 32 25
+               , responsiveVal
+                    dProfile
+                    (Element.paddingXY 32 25)
+                    (Element.paddingXY 15 5)
                ]
+            ++ (case dProfile of
+                    Desktop ->
+                        []
+
+                    SmallDesktop ->
+                        [ Element.spacing 5 ]
+               )
         )
         [ blockTitleText "Not sure where to start?"
-        , viewYoutubeLinksColumn
+            (case dProfile of
+                Desktop ->
+                    []
+
+                SmallDesktop ->
+                    [ Element.Events.onClick YoutubeBlockClicked
+                    , Element.Font.size 16
+                    ]
+            )
+        , viewYoutubeLinksColumn dProfile
+            showBlock
             [ ( "Foundry:", "What you're buying", "https://foundrydao.com/presentation.pdf" )
             , ( "Video 1:", "Install Metamask", "https://www.youtube.com/watch?v=HTvgY5Xac78" )
             , ( "Video 2:", "Turn ETH into DAI", "https://www.youtube.com/watch?v=gkt-Wv104RU" )
@@ -1697,40 +2186,63 @@ viewYoutubeLinksBlock =
         ]
 
 
-viewYoutubeLinksColumn : List ( String, String, String ) -> Element Msg
-viewYoutubeLinksColumn linkInfoList =
-    Element.column
-        [ Element.width Element.fill
-        , Element.spacing 10
-        ]
-        (linkInfoList
-            |> List.map
-                (\( preTitle, title, url ) ->
-                    Element.row
-                        [ Element.spacing 10
-                        ]
-                        [ Element.el
-                            [ Element.Font.bold
-                            , Element.width <| Element.px 75
+viewYoutubeLinksColumn : DisplayProfile -> Bool -> List ( String, String, String ) -> Element Msg
+viewYoutubeLinksColumn dProfile showBlock linkInfoList =
+    if dProfile == SmallDesktop && showBlock == False then
+        Element.none
+
+    else
+        Element.column
+            [ Element.width Element.fill
+            , Element.spacing <| responsiveVal dProfile 10 5
+            ]
+            (linkInfoList
+                |> List.map
+                    (\( preTitle, title, url ) ->
+                        Element.row
+                            [ Element.spacing <| responsiveVal dProfile 10 5
                             ]
-                          <|
-                            Element.text preTitle
-                        , Element.newTabLink
-                            [ Element.Font.color EH.lightBlue ]
-                            { url = url
-                            , label = Element.text title
-                            }
-                        ]
-                )
-        )
+                            [ Element.el
+                                ([ Element.Font.bold
+                                 , Element.width <|
+                                    Element.px <|
+                                        responsiveVal dProfile 75 60
+                                 ]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 14 ]
+                                       )
+                                )
+                              <|
+                                Element.text preTitle
+                            , Element.newTabLink
+                                ([ Element.Font.color EH.lightBlue
+                                 ]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 14 ]
+                                       )
+                                )
+                                { url = url
+                                , label = Element.text title
+                                }
+                            ]
+                    )
+            )
 
 
-viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> Element Msg
-viewAgreeToTosModal confirmTosModel enterInfo =
+viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> DisplayProfile -> Element Msg
+viewAgreeToTosModal confirmTosModel enterInfo dProfile =
     Element.el
         [ Element.centerX
         , Element.paddingEach
-            { top = 100
+            { top = responsiveVal dProfile 100 0
             , bottom = 0
             , right = 0
             , left = 0
@@ -1738,44 +2250,54 @@ viewAgreeToTosModal confirmTosModel enterInfo =
         ]
     <|
         Element.el
-            [ Element.centerX
-            , Element.alignTop
-            , Element.width <| Element.px 700
-            , Element.height <| Element.px 800
-            , Element.Border.rounded 10
-            , Element.Border.glow
+            ([ Element.centerX
+             , Element.alignTop
+             , Element.Border.rounded 10
+             , Element.Border.glow
                 (Element.rgba 0 0 0 0.2)
                 5
-            , Element.Background.color <| Element.rgb 0.7 0.8 1
-            , Element.padding 20
-            ]
+             , Element.Background.color <| Element.rgb 0.7 0.8 1
+             ]
+                ++ (case dProfile of
+                        Desktop ->
+                            [ Element.width <| Element.px 700
+                            , Element.height <| Element.px 800
+                            , Element.padding 20
+                            ]
+
+                        SmallDesktop ->
+                            [ Element.height <| Element.px 500
+                            , Element.padding 5
+                            ]
+                   )
+            )
         <|
             Element.column
                 [ Element.width Element.fill
                 , Element.height Element.fill
-                , Element.spacing 10
-                , Element.padding 20
+                , Element.spacing (responsiveVal dProfile 10 5)
+                , Element.padding (responsiveVal dProfile 20 10)
                 ]
-                [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points)
+                [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points) dProfile
                 , Element.el
                     [ Element.centerY
                     , Element.width Element.fill
                     ]
                   <|
-                    viewTosPage confirmTosModel
+                    viewTosPage confirmTosModel dProfile
                 , Element.el
                     [ Element.alignBottom
                     , Element.width Element.fill
                     ]
                   <|
-                    viewTosPageNavigationButtons confirmTosModel enterInfo
+                    viewTosPageNavigationButtons confirmTosModel enterInfo dProfile
                 ]
 
 
-viewTosTitle : Int -> Int -> Element Msg
-viewTosTitle pageNum totalPages =
+viewTosTitle : Int -> Int -> DisplayProfile -> Element Msg
+viewTosTitle pageNum totalPages dProfile =
     Element.el
-        [ Element.Font.size 40
+        [ Element.Font.size (responsiveVal dProfile 40 20)
         , Element.Font.bold
         , Element.centerX
         ]
@@ -1788,8 +2310,8 @@ viewTosTitle pageNum totalPages =
                 ++ ")"
 
 
-viewTosPage : ConfirmTosModel -> Element Msg
-viewTosPage agreeToTosModel =
+viewTosPage : ConfirmTosModel -> DisplayProfile -> Element Msg
+viewTosPage agreeToTosModel dProfile =
     let
         ( boundedPageNum, pagePoints ) =
             case List.Extra.getAt agreeToTosModel.page agreeToTosModel.points of
@@ -1806,38 +2328,39 @@ viewTosPage agreeToTosModel =
     in
     Element.column
         [ Element.width Element.fill
-        , Element.spacing 30
-        , Element.padding 20
+        , Element.spacing (responsiveVal dProfile 30 10)
+        , Element.padding (responsiveVal dProfile 20 5)
         ]
         (pagePoints
             |> List.indexedMap
                 (\pointNum point ->
-                    viewTosPoint ( boundedPageNum, pointNum ) point
+                    viewTosPoint ( boundedPageNum, pointNum ) point dProfile
                 )
         )
 
 
-viewTosPoint : ( Int, Int ) -> TosCheckbox -> Element Msg
-viewTosPoint pointRef point =
+viewTosPoint : ( Int, Int ) -> TosCheckbox -> DisplayProfile -> Element Msg
+viewTosPoint pointRef point dProfile =
     Element.row
         [ Element.width Element.fill
-        , Element.spacing 15
+        , Element.spacing (responsiveVal dProfile 15 5)
         ]
         [ Element.el
-            [ Element.Font.size 40
+            [ Element.Font.size
+                (responsiveVal dProfile 40 25)
             , Element.alignTop
             ]
           <|
             Element.text EH.bulletPointString
         , Element.column
             [ Element.width Element.fill
-            , Element.spacing 10
+            , Element.spacing (responsiveVal dProfile 10 3)
             ]
             [ Element.paragraph []
                 point.textEls
             , case point.maybeCheckedString of
                 Just checkedString ->
-                    viewTosCheckbox checkedString pointRef
+                    viewTosCheckbox checkedString pointRef dProfile
 
                 Nothing ->
                     Element.none
@@ -1845,8 +2368,8 @@ viewTosPoint pointRef point =
         ]
 
 
-viewTosCheckbox : ( String, Bool ) -> ( Int, Int ) -> Element Msg
-viewTosCheckbox ( checkboxText, checked ) pointRef =
+viewTosCheckbox : ( String, Bool ) -> ( Int, Int ) -> DisplayProfile -> Element Msg
+viewTosCheckbox ( checkboxText, checked ) pointRef dProfile =
     Element.row
         [ Element.Border.rounded 5
         , Element.Background.color <|
@@ -1855,17 +2378,17 @@ viewTosCheckbox ( checkboxText, checked ) pointRef =
 
             else
                 Element.rgb 1 0.3 0.3
-        , Element.padding 10
-        , Element.spacing 15
-        , Element.Font.size 26
+        , Element.padding (responsiveVal dProfile 10 5)
+        , Element.spacing (responsiveVal dProfile 15 5)
+        , Element.Font.size (responsiveVal dProfile 26 12)
         , Element.Font.color EH.white
         , Element.pointer
         , Element.Events.onClick <|
             TosCheckboxClicked pointRef
         ]
         [ Element.el
-            [ Element.width <| Element.px 30
-            , Element.height <| Element.px 30
+            [ Element.width <| Element.px (responsiveVal dProfile 30 20)
+            , Element.height <| Element.px (responsiveVal dProfile 30 20)
             , Element.Border.rounded 3
             , Element.Border.width 2
             , Element.Border.color <|
@@ -1888,8 +2411,8 @@ viewTosCheckbox ( checkboxText, checked ) pointRef =
         ]
 
 
-viewTosPageNavigationButtons : ConfirmTosModel -> EnterInfo -> Element Msg
-viewTosPageNavigationButtons confirmTosModel enterInfo =
+viewTosPageNavigationButtons : ConfirmTosModel -> EnterInfo -> DisplayProfile -> Element Msg
+viewTosPageNavigationButtons confirmTosModel enterInfo dProfile =
     let
         navigationButton text msg =
             Element.el
@@ -1897,8 +2420,8 @@ viewTosPageNavigationButtons confirmTosModel enterInfo =
                 , Element.Border.rounded 5
                 , Element.Background.color EH.blue
                 , Element.Font.color EH.white
-                , Element.Font.size 30
-                , Element.paddingXY 20 10
+                , Element.Font.size (responsiveVal dProfile 30 12)
+                , responsiveVal dProfile (Element.paddingXY 20 10) (Element.padding 8)
                 , Element.pointer
                 , Element.Events.onClick msg
                 , EH.noSelectText
@@ -1931,7 +2454,7 @@ viewTosPageNavigationButtons confirmTosModel enterInfo =
 
             else if isAllPointsChecked confirmTosModel then
                 EH.redButton
-                    Desktop
+                    dProfile
                     [ Element.width Element.fill ]
                     [ "Confirm & deposit "
                         ++ TokenValue.toConciseString enterInfo.amount
@@ -1946,8 +2469,8 @@ viewTosPageNavigationButtons confirmTosModel enterInfo =
         ]
 
 
-referralBonusIndicator : Maybe Address -> Bool -> Element Msg
-referralBonusIndicator maybeReferrer focusedStyle =
+referralBonusIndicator : Maybe Address -> Bool -> DisplayProfile -> Element Msg
+referralBonusIndicator maybeReferrer focusedStyle dProfile =
     let
         hasReferral =
             maybeReferrer /= Nothing
@@ -1955,7 +2478,7 @@ referralBonusIndicator maybeReferrer focusedStyle =
     Element.el
         [ Element.paddingXY 16 7
         , Element.Font.bold
-        , Element.Font.size 18
+        , Element.Font.size (responsiveVal dProfile 18 12)
         , Element.pointer
         , Element.Events.onClick (ReferralIndicatorClicked maybeReferrer)
         , Element.Background.color
@@ -1992,8 +2515,8 @@ referralBonusIndicator maybeReferrer focusedStyle =
         )
 
 
-referralModal : UserInfo -> Maybe Address -> TestMode -> Element Msg
-referralModal userInfo maybeReferrer testMode =
+referralModal : UserInfo -> Maybe Address -> TestMode -> DisplayProfile -> Element Msg
+referralModal userInfo maybeReferrer testMode dProfile =
     let
         highlightedText text =
             Element.el
@@ -2015,7 +2538,7 @@ referralModal userInfo maybeReferrer testMode =
             case maybeReferrer of
                 Nothing ->
                     ( [ Element.paragraph
-                            [ Element.Font.size 24
+                            [ Element.Font.size <| responsiveVal dProfile 24 14
                             , Element.Font.bold
                             , Element.Font.color EH.red
                             ]
@@ -2023,30 +2546,66 @@ referralModal userInfo maybeReferrer testMode =
                       , Element.column
                             [ Element.spacing 20
                             , Element.width Element.fill
-                            , Element.Font.size 18
+                            , Element.Font.size <| responsiveVal dProfile 18 9
                             ]
-                            [ Element.paragraph []
+                            [ Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "You're missing out. Help us market the sale and your friends get an extra "
                                 , highlightedText "10% bonus"
                                 , Element.text " on their purchase. In addition, you can earn "
                                 , highlightedText "10%-20%"
                                 , Element.text <| " extra " ++ Config.exitingTokenCurrencyLabel ++ " tokens, based on how much " ++ Config.enteringTokenCurrencyLabel ++ " you refer with this code."
                                 ]
-                            , Element.paragraph []
+                            , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "You can also use your own reference code and get both benefits." ]
-                            , Element.paragraph []
+                            , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.newTabLink [ Element.Font.color <| EH.lightBlue ]
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "More info on how this works"
                                     }
                                 ]
-                            , Element.paragraph []
+                            , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "If you haven’t been given a referral link you can generate one for yourself below!" ]
                             ]
                       ]
                     , Just <|
                         [ Element.paragraph
-                            [ Element.Font.size 24
+                            [ Element.Font.size <| responsiveVal dProfile 24 14
                             , Element.Font.bold
                             , Element.Font.color deepBlue
                             ]
@@ -2064,14 +2623,32 @@ referralModal userInfo maybeReferrer testMode =
                 Just referrer ->
                     if referrer == userInfo.address then
                         ( [ Element.paragraph
-                                [ Element.Font.size 24
+                                [ Element.Font.size <| responsiveVal dProfile 24 14
                                 , Element.Font.bold
                                 , Element.Font.color green
                                 ]
                                 [ Element.text "Nice! You're using your own referral link." ]
-                          , Element.paragraph []
+                          , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "This means you'll get both bonuses! More info "
-                                , Element.newTabLink [ Element.Font.color EH.lightBlue ]
+                                , Element.newTabLink
+                                    ([ Element.Font.color EH.lightBlue ]
+                                        ++ (case dProfile of
+                                                Desktop ->
+                                                    []
+
+                                                SmallDesktop ->
+                                                    [ Element.Font.size 12 ]
+                                           )
+                                    )
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
                                     }
@@ -2080,35 +2657,62 @@ referralModal userInfo maybeReferrer testMode =
                           ]
                         , Just <|
                             [ Element.paragraph
-                                [ Element.Font.size 24
+                                [ Element.Font.size <| responsiveVal dProfile 24 14
                                 , Element.Font.bold
                                 , Element.Font.color deepBlue
                                 ]
                                 [ Element.text "Your Referral Link" ]
-                            , referralLinkElement referrer testMode
-                            , referralLinkCopyButton
+                            , referralLinkElement referrer testMode dProfile
+                            , referralLinkCopyButton dProfile
                             ]
                         )
 
                     else
                         ( [ Element.paragraph
-                                [ Element.Font.size 24
+                                [ Element.Font.size <| responsiveVal dProfile 24 14
                                 , Element.Font.bold
                                 , Element.Font.color green
                                 ]
                                 [ Element.text "Nice! You’ve got a referral bonus." ]
-                          , Element.paragraph []
+                          , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text "Every bid you make will result in a bonus bid into the next bucket, at 10% of the first bid amount. Check the next bucket after you enter your bid!" ]
-                          , Element.paragraph []
+                          , Element.paragraph
+                                ([]
+                                    ++ (case dProfile of
+                                            Desktop ->
+                                                []
+
+                                            SmallDesktop ->
+                                                [ Element.Font.size 12 ]
+                                       )
+                                )
                                 [ Element.text <| "Share your own referral code with others to earn " ++ Config.exitingTokenCurrencyLabel ++ "! More info "
-                                , Element.newTabLink [ Element.Font.color EH.lightBlue ]
+                                , Element.newTabLink
+                                    ([ Element.Font.color EH.lightBlue ]
+                                        ++ (case dProfile of
+                                                Desktop ->
+                                                    []
+
+                                                SmallDesktop ->
+                                                    [ Element.Font.size 12 ]
+                                           )
+                                    )
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
                                     }
                                 , Element.text "."
                                 ]
-                          , referralLinkElement userInfo.address testMode
-                          , referralLinkCopyButton
+                          , referralLinkElement userInfo.address testMode dProfile
+                          , referralLinkCopyButton dProfile
                           ]
                         , Nothing
                         )
@@ -2116,7 +2720,8 @@ referralModal userInfo maybeReferrer testMode =
     Element.column
         [ Element.Border.rounded 6
         , Element.Background.color EH.white
-        , Element.width <| Element.px 480
+        , Element.width <|
+            responsiveVal dProfile (Element.px 480) Element.fill
         ]
         [ Element.column
             [ Element.width Element.fill
@@ -2133,15 +2738,15 @@ referralModal userInfo maybeReferrer testMode =
                 }
             , Element.Border.dashed
             , Element.Border.color <| Element.rgb 0.5 0.5 0.5
-            , Element.padding 30
-            , Element.spacing 30
+            , Element.padding <| responsiveVal dProfile 30 15
+            , Element.spacing <| responsiveVal dProfile 30 15
             ]
             firstElsChunk
         , Maybe.map
             (Element.column
                 [ Element.width Element.fill
-                , Element.padding 30
-                , Element.spacing 30
+                , Element.padding <| responsiveVal dProfile 30 15
+                , Element.spacing <| responsiveVal dProfile 30 15
                 ]
             )
             maybeSecondElsChunk
@@ -2149,35 +2754,51 @@ referralModal userInfo maybeReferrer testMode =
         ]
 
 
-referralLinkElement : Address -> TestMode -> Element Msg
-referralLinkElement referrerAddress testMode =
+referralLinkElement : Address -> TestMode -> DisplayProfile -> Element Msg
+referralLinkElement referrerAddress testMode dProfile =
     Element.el
         [ Element.width Element.fill
         , Element.Background.color <| deepBlueWithAlpha 0.05
-        , Element.paddingXY 0 15
+        , Element.paddingXY 5 15
         , Element.Font.color deepBlue
-        , Element.Font.size 12
+        , Element.Font.size <| responsiveVal dProfile 12 10
         , Element.clipX
         , Element.scrollbarX
         ]
-        (Element.el
-            [ EH.withIdAttribute "copyable-link" ]
-         <|
-            Element.text
-                (Routing.FullRoute
-                    testMode
-                    Routing.Sale
-                    (Just referrerAddress)
-                    |> Routing.routeToString
-                    |> (\path -> "https://sale.foundrydao.com" ++ path)
-                )
+        (case dProfile of
+            Desktop ->
+                Element.el
+                    [ EH.withIdAttribute "copyable-link" ]
+                <|
+                    Element.text
+                        (Routing.FullRoute
+                            testMode
+                            Routing.Sale
+                            (Just referrerAddress)
+                            |> Routing.routeToString
+                            |> (\path -> "https://sale.foundrydao.com" ++ path)
+                        )
+
+            SmallDesktop ->
+                Element.paragraph
+                    [ EH.withIdAttribute "copyable-link" ]
+                <|
+                    [ Element.text
+                        (Routing.FullRoute
+                            testMode
+                            Routing.Sale
+                            (Just referrerAddress)
+                            |> Routing.routeToString
+                            |> (\path -> "https://sale.foundrydao.com" ++ path)
+                        )
+                    ]
         )
 
 
-referralLinkCopyButton : Element Msg
-referralLinkCopyButton =
+referralLinkCopyButton : DisplayProfile -> Element Msg
+referralLinkCopyButton dProfile =
     EH.button
-        Desktop
+        dProfile
         [ Element.width Element.fill
         , Element.htmlAttribute <|
             Html.Attributes.attribute
@@ -2247,14 +2868,17 @@ type CommonBlockStyle
     | PassiveStyle
 
 
-centerpaneBlockContainer : CommonBlockStyle -> List (Attribute Msg) -> List (Element Msg) -> Element Msg
-centerpaneBlockContainer styleType attributes =
+centerpaneBlockContainer : CommonBlockStyle -> DisplayProfile -> List (Attribute Msg) -> List (Element Msg) -> Element Msg
+centerpaneBlockContainer styleType dProfile attributes =
     Element.column
         ([ Element.width Element.fill
          , Element.Border.rounded 4
-         , Element.padding 20
-         , Element.spacing 13
-         , Element.Font.size 16
+         , Element.padding <|
+            responsiveVal dProfile 20 10
+         , Element.spacing <|
+            responsiveVal dProfile 13 7
+         , Element.Font.size <|
+            responsiveVal dProfile 16 10
          ]
             ++ attributes
             ++ (case styleType of
@@ -2269,13 +2893,16 @@ centerpaneBlockContainer styleType attributes =
         )
 
 
-sidepaneBlockContainer : CommonBlockStyle -> List (Element Msg) -> Element Msg
-sidepaneBlockContainer styleType =
+sidepaneBlockContainer : CommonBlockStyle -> DisplayProfile -> List (Element Msg) -> Element Msg
+sidepaneBlockContainer styleType dProfile =
     Element.column
         ([ Element.width Element.fill
          , Element.Border.rounded 4
-         , Element.paddingXY 22 18
-         , Element.spacing 16
+         , Element.paddingXY
+            (responsiveVal dProfile 22 11)
+            (responsiveVal dProfile 18 9)
+         , Element.spacing
+            (responsiveVal dProfile 16 8)
          ]
             ++ (case styleType of
                     ActiveStyle ->
@@ -2306,11 +2933,11 @@ numberValToString numberVal =
             TokenValue.toConciseString tokenValue
 
 
-bigNumberElement : List (Attribute Msg) -> NumberVal -> String -> CommonBlockStyle -> Element Msg
-bigNumberElement attributes numberVal numberLabel blockStyle =
+bigNumberElement : List (Attribute Msg) -> NumberVal -> String -> CommonBlockStyle -> DisplayProfile -> Element Msg
+bigNumberElement attributes numberVal numberLabel blockStyle dProfile =
     Element.el
         (attributes
-            ++ [ Element.Font.size 27
+            ++ [ Element.Font.size (responsiveVal dProfile 27 12)
                , Element.Font.bold
                , Element.Font.color
                     (case blockStyle of
@@ -2330,23 +2957,33 @@ bigNumberElement attributes numberVal numberLabel blockStyle =
         )
 
 
-makeClaimButton : UserInfo -> ExitInfo -> Element Msg
-makeClaimButton userInfo exitInfo =
+makeClaimButton : UserInfo -> ExitInfo -> DisplayProfile -> Element Msg
+makeClaimButton userInfo exitInfo dProfile =
     EH.lightBlueButton
-        Desktop
+        dProfile
         [ Element.width Element.fill ]
         [ "Claim your " ++ Config.exitingTokenCurrencyLabel ++ "" ]
         (ClaimClicked userInfo exitInfo)
 
 
-jumpToCurrentBucketButton : Int -> Element Msg
-jumpToCurrentBucketButton currentBucketId =
-    Element.el
-        [ Element.pointer
-        , Element.Events.onClick (FocusToBucket currentBucketId)
-        , Element.Font.color EH.lightBlue
-        ]
-        (Element.text "Return to Current Bucket")
+jumpToCurrentBucketButton : Int -> DisplayProfile -> Element Msg
+jumpToCurrentBucketButton currentBucketId dProfile =
+    case dProfile of
+        Desktop ->
+            Element.el
+                [ Element.pointer
+                , Element.Events.onClick (FocusToBucket currentBucketId)
+                , Element.Font.color EH.lightBlue
+                , Element.Font.size (responsiveVal dProfile 20 10)
+                ]
+                (Element.text "Return to Current Bucket")
+
+        SmallDesktop ->
+            EH.lightBlueButton
+                dProfile
+                [ Element.alignRight ]
+                [ "Return to Current Bucket" ]
+                (FocusToBucket currentBucketId)
 
 
 loadingElement : Element Msg
@@ -2395,14 +3032,14 @@ green =
     Element.rgb255 0 162 149
 
 
-connectToWeb3Button : Wallet.State -> Element Msg
-connectToWeb3Button wallet =
+connectToWeb3Button : Wallet.State -> DisplayProfile -> Element Msg
+connectToWeb3Button wallet dProfile =
     let
         commonButtonStyles =
             [ Element.width Element.fill
             , Element.padding 17
             , Element.Border.rounded 4
-            , Element.Font.size 20
+            , Element.Font.size <| responsiveVal dProfile 20 16
             , Element.Font.semiBold
             , Element.Font.center
             , Element.Background.color EH.softRed
@@ -2413,7 +3050,7 @@ connectToWeb3Button wallet =
         commonTextStyles =
             [ Element.Font.bold
             , Element.Font.italic
-            , Element.Font.size 20
+            , Element.Font.size <| responsiveVal dProfile 20 16
             , Element.Font.center
             , Element.padding 17
             , Element.centerX

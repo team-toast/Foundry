@@ -132,8 +132,9 @@ init flags url key =
             , userNotices = []
             , dProfile = dProfile
             , maybeReferrer = maybeReferrer
-            , displayMobileWarning =
-                flags.width < 1024
+            , displayMobileWarning = False
+
+            --flags.width < 1024
             , nonRepeatingGTagsSent = []
             }
 
@@ -267,6 +268,7 @@ update msg prevModel =
                                                             prevModel.testMode
                                                             prevModel.wallet
                                                             prevModel.now
+                                                            prevModel.dProfile
                                                 in
                                                 ( { prevModel
                                                     | submodel =
@@ -376,6 +378,7 @@ update msg prevModel =
                                                 prevModel.testMode
                                                 prevModel.wallet
                                                 newNow
+                                                prevModel.dProfile
                                     in
                                     ( { modelWithUpdatedNow
                                         | submodel = BucketSaleModel bucketSaleModel

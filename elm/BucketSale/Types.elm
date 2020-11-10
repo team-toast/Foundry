@@ -41,6 +41,8 @@ type alias Model =
     , showReferralModal : Bool
     , showFeedbackUXModel : Bool
     , feedbackUXModel : FeedbackUXModel
+    , dProfile : DisplayProfile
+    , showYoutubeBlock : Bool
     }
 
 
@@ -80,6 +82,7 @@ type Msg
     | ConfirmClicked EnterInfo
     | TxSigned Int ActionData (Result String TxHash)
     | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
+    | YoutubeBlockClicked
 
 
 type alias ExtraUserInfo =

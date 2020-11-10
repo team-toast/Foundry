@@ -54,82 +54,67 @@ root model =
 
 pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
 pageElementAndModal model =
-    if model.dProfile /= Desktop && model.displayMobileWarning then
-        ( Element.column
-            [ Element.width Element.fill
-            , Element.height Element.fill
-            , Element.Background.color <| Element.rgb255 20 53 138
-            , Element.spacing 30
-            , Element.paddingXY 10 30
-            , Element.Font.size 22
-            , Element.Font.color EH.white
-            ]
-            [ Element.paragraph [ Element.Font.center ]
-                [ Element.text "This interface is not designed for screens this small. To participate in this sale, visit on a larger screen. Alternatively, some mobile browsers have a \"desktop mode\" that might help." ]
-            , Element.paragraph [ Element.Font.center ]
-                [ Element.text "If you're just looking for info on Foundry, FRY, or the sale, check out "
-                , Element.newTabLink
-                    [ Element.Font.color EH.lightBlue
-                    ]
-                    { url = "https://foundrydao.com"
-                    , label = Element.text "foundrydao.com"
-                    }
-                , Element.text "."
+    let
+        ( submodelEl, modalEls ) =
+            submodelElementAndModal model
+
+        maybeTestnetIndicator =
+            Element.el
+                [ Element.centerX
+                , Element.Font.size <|
+                    responsiveVal model.dProfile 24 10
+                , Element.Font.bold
+                , Element.Font.italic
+                , Element.Font.color EH.softRed
                 ]
-            ]
-        , []
-        )
+            <|
+                case model.testMode of
+                    None ->
+                        Element.none
 
-    else
-        let
-            ( submodelEl, modalEls ) =
-                submodelElementAndModal model
+                    TestMainnet ->
+                        Element.text "In Test (Mainnet) mode"
 
-            maybeTestnetIndicator =
-                Element.el
-                    [ Element.centerX
-                    , Element.Font.size 24
-                    , Element.Font.bold
-                    , Element.Font.italic
-                    , Element.Font.color EH.softRed
-                    ]
-                <|
-                    case model.testMode of
-                        None ->
-                            Element.none
+                    TestKovan ->
+                        Element.text "In Test (Kovan) mode"
 
-                        TestMainnet ->
-                            Element.text "In Test (Mainnet) mode"
-
-                        TestKovan ->
-                            Element.text "In Test (Kovan) mode"
-
-                        TestGanache ->
-                            Element.text "In Test (Local) mode"
-        in
-        ( Element.column
+                    TestGanache ->
+                        Element.text "In Test (Local) mode"
+    in
+    ( Element.column
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        , Element.spacing (responsiveVal model.dProfile 20 2)
+        , Element.behindContent <|
+            headerBackground model.dProfile
+        ]
+        [ header model.dProfile
+        , maybeTestnetIndicator
+        , Element.el
             [ Element.width Element.fill
-            , Element.height Element.fill
-            , Element.spacing 20
-            , Element.behindContent <| headerBackground model.dProfile
+            , Element.paddingXY (responsiveVal model.dProfile 20 10) 0
             ]
-            [ header model.dProfile
-            , maybeTestnetIndicator
-            , Element.el
-                [ Element.width Element.fill
-                , Element.paddingXY 20 0
-                ]
-                submodelEl
-            ]
-        , modalEls ++ userNoticeEls model.dProfile model.userNotices
-        )
+            submodelEl
+        ]
+    , modalEls
+        ++ userNoticeEls
+            model.dProfile
+            model.userNotices
+    )
 
 
 headerBackground : DisplayProfile -> Element Msg
 headerBackground dProfile =
     Element.el
         [ Element.width Element.fill
-        , Element.height <| Element.px 600
+        , Element.height
+            (case dProfile of
+                Desktop ->
+                    Element.px 600
+
+                SmallDesktop ->
+                    Element.fill
+            )
         , Element.Background.color <| Element.rgb255 20 53 138
         ]
         Element.none
@@ -137,58 +122,113 @@ headerBackground dProfile =
 
 header : DisplayProfile -> Element Msg
 header dProfile =
-    Element.row
-        [ Element.height <| Element.px 100
-        , Element.width Element.fill
-        , Element.Background.color <| Element.rgb255 10 33 108
-        ]
-        [ Element.el
-            [ Element.alignLeft
-            , Element.centerY
-            ]
-            (brandAndLogo dProfile)
-        , Element.el
-            [ Element.alignRight
-            , Element.centerY
-            ]
-            (smLinks dProfile)
-        ]
+    case dProfile of
+        Desktop ->
+            Element.row
+                [ Element.height <|
+                    Element.px 100
+                , Element.width Element.fill
+                , Element.Background.color <|
+                    Element.rgb255 10 33 108
+                ]
+                [ Element.el
+                    [ Element.alignLeft
+                    , Element.centerY
+                    ]
+                    (brandAndLogo dProfile)
+                , Element.el
+                    [ Element.alignRight
+                    , Element.centerY
+                    ]
+                    (smLinks dProfile)
+                ]
+
+        SmallDesktop ->
+            Element.column
+                [ Element.width Element.fill ]
+                [ Element.el
+                    [ Element.width Element.fill
+                    , Element.centerX
+                    , Element.Background.color <|
+                        Element.rgb255 10 33 108
+                    ]
+                    (brandAndLogo dProfile)
+                , smLinks dProfile
+                ]
 
 
 brandAndLogo : DisplayProfile -> Element Msg
 brandAndLogo dProfile =
-    Element.row
-        [ Element.height Element.fill
-        , Element.padding 20
-        , Element.spacing 10
-        ]
-        [ Images.toElement
-            [ Element.centerY ]
-            Images.exitingTokenIcon
-        , Element.column
-            [ Element.spacing 5 ]
-            [ Element.el
-                [ Element.Font.color EH.white
-                , Element.Font.size 35
-                , Element.Font.bold
-                , Element.centerY
+    case dProfile of
+        Desktop ->
+            Element.row
+                [ Element.height Element.fill
+                , Element.padding 20
+                , Element.spacing 10
                 ]
-              <|
-                Element.text "Foundry Sale"
-            , Element.newTabLink
-                [ Element.alignLeft
-                , Element.Background.color EH.lightBlue
-                , Element.paddingXY 10 3
-                , Element.Border.rounded 4
-                , Element.Font.color EH.white
-                , Element.Font.size 18
+                [ Images.toElement
+                    [ Element.centerY ]
+                    Images.exitingTokenIcon
+                , Element.column
+                    [ Element.spacing 5 ]
+                    [ Element.el
+                        [ Element.Font.color EH.white
+                        , Element.Font.size 35
+                        , Element.Font.bold
+                        , Element.centerY
+                        ]
+                      <|
+                        Element.text "Foundry Sale"
+                    , Element.newTabLink
+                        [ Element.alignLeft
+                        , Element.Background.color EH.lightBlue
+                        , Element.paddingXY 10 3
+                        , Element.Border.rounded 4
+                        , Element.Font.color EH.white
+                        , Element.Font.size 18
+                        ]
+                        { url = "https://foundrydao.com"
+                        , label =
+                            Element.text "What is Foundry?"
+                        }
+                    ]
                 ]
-                { url = "https://foundrydao.com"
-                , label =
-                    Element.text "What is Foundry?"
-                }
-            ]
-        ]
+
+        SmallDesktop ->
+            Element.row
+                [ Element.height Element.fill
+                , Element.centerX
+                , Element.padding 5
+                , Element.spacing 5
+                ]
+                [ Images.toElement
+                    [ Element.centerY
+                    , Element.width <|
+                        Element.px 25
+                    , Element.height <|
+                        Element.px 25
+                    ]
+                    Images.exitingTokenIcon
+                , Element.el
+                    [ Element.Font.color EH.white
+                    , Element.Font.size 20
+                    , Element.Font.bold
+                    , Element.centerY
+                    ]
+                  <|
+                    Element.text "Foundry Sale"
+                , Element.newTabLink
+                    [ Element.Background.color EH.lightBlue
+                    , Element.paddingXY 5 2
+                    , Element.Border.rounded 4
+                    , Element.Font.color EH.white
+                    , Element.Font.size 10
+                    ]
+                    { url = "https://foundrydao.com"
+                    , label =
+                        Element.text "What is Foundry?"
+                    }
+                ]
 
 
 smLinks : DisplayProfile -> Element Msg
@@ -207,14 +247,28 @@ smLinks dProfile =
                     { url = url
                     , label =
                         Images.toElement
-                            [ Element.height <| Element.px 40 ]
+                            [ Element.height <|
+                                Element.px <|
+                                    responsiveVal dProfile 40 20
+                            ]
                             image
                     }
             )
         |> Element.row
-            [ Element.padding 10
-            , Element.spacing 20
-            ]
+            ([ Element.padding <|
+                responsiveVal dProfile 10 5
+             , Element.spacing <|
+                responsiveVal dProfile 20 10
+             ]
+                ++ (case dProfile of
+                        Desktop ->
+                            []
+
+                        SmallDesktop ->
+                            [ Element.centerX
+                            ]
+                   )
+            )
 
 
 type HeaderLinkStyle
@@ -321,7 +375,7 @@ submodelElementAndModal model =
         ( submodelEl, modalEls ) =
             case model.submodel of
                 LoadingSaleModel bucketSaleLoadingModel ->
-                    ( viewBucketSaleLoading bucketSaleLoadingModel model.wallet model.now
+                    ( viewBucketSaleLoading bucketSaleLoadingModel model.wallet model.now model.dProfile
                     , []
                     )
 
@@ -444,17 +498,17 @@ userNotice dProfile ( id, notice ) =
         )
 
 
-viewBucketSaleLoading : BucketSaleLoadingModel -> Wallet.State -> Time.Posix -> Element Msg
-viewBucketSaleLoading bucketSaleLoadingModel wallet now =
+viewBucketSaleLoading : BucketSaleLoadingModel -> Wallet.State -> Time.Posix -> DisplayProfile -> Element Msg
+viewBucketSaleLoading bucketSaleLoadingModel wallet now dProfile =
     case bucketSaleLoadingModel.loadingState of
         Loading ->
-            bigCenteredText "Fetching Sale Contract State..."
+            bigCenteredText "Fetching Sale Contract State..." dProfile
 
         Error SaleNotDeployed ->
-            bigCenteredText "The sale contract doesn't seem to be deployed yet."
+            bigCenteredText "The sale contract doesn't seem to be deployed yet." dProfile
 
         Error (SaleNotStarted startTime) ->
-            bigCenteredText "The sale hasn't started yet!"
+            bigCenteredText "The sale hasn't started yet!" dProfile
 
 
 
@@ -465,12 +519,15 @@ viewBucketSaleLoading bucketSaleLoadingModel wallet now =
 --     bucketSaleLoadingModel.userBalance
 
 
-bigCenteredText : String -> Element Msg
-bigCenteredText text =
+bigCenteredText : String -> DisplayProfile -> Element Msg
+bigCenteredText text dProfile =
     Element.paragraph
         [ Element.centerX
-        , Element.paddingXY 50 20
-        , Element.Font.size 30
+        , Element.paddingXY
+            (responsiveVal dProfile 50 25)
+            (responsiveVal dProfile 20 10)
+        , Element.Font.size <|
+            responsiveVal dProfile 30 12
         , Element.Font.color EH.white
         , Element.Font.center
         ]
