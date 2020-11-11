@@ -717,8 +717,8 @@ greenButton dProfile attributes text msg =
         msg
 
 
-commonButtonArgs : DisplayProfile -> List (Attribute msg)
-commonButtonArgs dProfile =
+commonButtonAttributes : DisplayProfile -> List (Attribute msg)
+commonButtonAttributes dProfile =
     [ Element.Border.rounded 4
     , responsiveVal dProfile
         (Element.paddingXY 25 17)
@@ -736,7 +736,7 @@ disabledButton : DisplayProfile -> List (Attribute msg) -> String -> Maybe Strin
 disabledButton dProfile attributes text maybeTipText =
     Element.el
         (attributes
-            ++ commonButtonArgs dProfile
+            ++ commonButtonAttributes dProfile
             ++ [ Element.above <|
                     maybeErrorElement
                         [ Element.moveUp 5 ]
@@ -750,7 +750,7 @@ disabledSuccessButton : DisplayProfile -> List (Attribute msg) -> String -> Mayb
 disabledSuccessButton dProfile attributes text maybeTipText =
     Element.el
         (attributes
-            ++ commonButtonArgs dProfile
+            ++ commonButtonAttributes dProfile
             ++ [ Element.above <|
                     maybeErrorElement
                         [ Element.moveUp 5 ]
