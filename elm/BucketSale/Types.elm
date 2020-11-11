@@ -9,8 +9,10 @@ import Contracts.BucketSale.Generated.BucketSale as BucketSaleBindings
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers exposing (ExitInfo)
 import Dict exposing (Dict)
 import Element exposing (Element)
+import Element.Font
 import Eth.Types exposing (Address, Tx, TxHash, TxReceipt)
 import Eth.Utils
+import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
@@ -41,7 +43,6 @@ type alias Model =
     , showReferralModal : Bool
     , showFeedbackUXModel : Bool
     , feedbackUXModel : FeedbackUXModel
-    , dProfile : DisplayProfile
     , showYoutubeBlock : Bool
     }
 
@@ -497,3 +498,186 @@ type alias ValidatedFeedbackInput =
     , description : String
     , debugString : Maybe String
     }
+
+
+tosLines : DisplayProfile -> List (List ( List (Element Msg), Maybe String ))
+tosLines dProfile =
+    case dProfile of
+        Desktop ->
+            [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
+                  , Element.newTabLink
+                        [ Element.Font.color EH.blue ]
+                        { url = "https://foundrydao.com/contact"
+                        , label = Element.text "Contact info"
+                        }
+                  , Element.text ")."
+                  ]
+                , Just "I understand."
+                )
+              , ( List.singleton <| Element.text "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit."
+                , Just "I agree."
+                )
+              , ( [ Element.text "A text version if this agreement can be found "
+                  , Element.newTabLink
+                        [ Element.Font.color EH.blue ]
+                        { url = "https://foundrydao.com/sale/terms/"
+                        , label = Element.text "here"
+                        }
+                  , Element.text "."
+                  ]
+                , Nothing
+                )
+              ]
+            , [ ( List.singleton <| Element.text "Foundry and/or FRY are extremely experimental and could enter into several failure modes."
+                , Nothing
+                )
+              , ( List.singleton <| Element.text "Foundry and/or FRY could fail technically through a software vulnerability."
+                , Just "I understand."
+                )
+              , ( List.singleton <| Element.text "While Foundry and/or FRY have been audited, bugs may have nonetheless snuck through."
+                , Just "I understand."
+                )
+              , ( List.singleton <| Element.text "Foundry and/or FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch."
+                , Just "I understand."
+                )
+              ]
+            , [ ( List.singleton <| Element.text "The projects that Foundry funds may turn out to be flawed technically or have economic attack vectors that make them infeasible."
+                , Just "I understand."
+                )
+              , ( List.singleton <| Element.text "FRY, and the projects funded by Foundry, might never find profitable returns."
+                , Just "I understand."
+                )
+              ]
+            , [ ( List.singleton <| Element.text "You will not hold DAOAI liable for damages or losses."
+                , Just "I agree."
+                )
+              , ( List.singleton <| Element.text "Even if you did, DAOAI will be unlikely to have the resources to settle."
+                , Just "I understand."
+                )
+              , ( List.singleton <| Element.text "DAI deposited into this will be held in smart contracts, which DAOAI might not have complete or significant control over."
+                , Just "I understand."
+                )
+              ]
+            , [ ( List.singleton <| Element.text "I agree Foundry may track anonymized data about my interactions with the sale."
+                , Just "I understand."
+                )
+              , ( List.singleton <| Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded."
+                , Just "I understand."
+                )
+              , ( List.singleton <| Element.text "US citizens and residents are strictly prohibited from this sale."
+                , Just "I am not a citizen or resident of the USA."
+                )
+              ]
+            ]
+
+        SmallDesktop ->
+            [ [ ( [ Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
+                        , Element.newTabLink
+                            [ Element.Font.color EH.blue ]
+                            { url = "https://foundrydao.com/contact"
+                            , label = Element.text "Contact info"
+                            }
+                        , Element.text ")."
+                        ]
+                  ]
+                , Just "I understand."
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "You are an adult capable of making your own decisions, evaluating your own risks and engaging with others for mutual benefit." ]
+                , Just "I agree."
+                )
+              , ( [ Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "A text version if this agreement can be found "
+                        , Element.newTabLink
+                            [ Element.Font.color EH.blue ]
+                            { url = "https://foundrydao.com/sale/terms/"
+                            , label = Element.text "here"
+                            }
+                        , Element.text "."
+                        ]
+                  ]
+                , Nothing
+                )
+              ]
+            , [ ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "Foundry and/or FRY are extremely experimental and could enter into several failure modes." ]
+                , Nothing
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "Foundry and/or FRY could fail technically through a software vulnerability." ]
+                , Just "I understand."
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "While Foundry and/or FRY have been audited, bugs may have nonetheless snuck through." ]
+                , Just "I understand."
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "Foundry and/or FRY could fail due to an economic attack, the details of which might not even be suspected at the time of launch." ]
+                , Just "I understand."
+                )
+              ]
+            , [ ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "The projects that Foundry funds may turn out to be flawed technically or have economic attack vectors that make them infeasible." ]
+                , Just "I understand."
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "FRY, and the projects funded by Foundry, might never find profitable returns." ]
+                , Just "I understand."
+                )
+              ]
+            , [ ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "You will not hold DAOAI liable for damages or losses." ]
+                , Just "I agree."
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "Even if you did, DAOAI will be unlikely to have the resources to settle." ]
+                , Just "I understand."
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "DAI deposited into this will be held in smart contracts, which DAOAI might not have complete or significant control over." ]
+                , Just "I understand."
+                )
+              ]
+            , [ ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "I agree Foundry may track anonymized data about my interactions with the sale." ]
+                , Just "I understand."
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "Entering DAI into the sale is irrevocable, even if the bucket has not yet concluded." ]
+                , Just "I understand."
+                )
+              , ( List.singleton <|
+                    Element.paragraph
+                        [ Element.Font.size 12 ]
+                        [ Element.text "US citizens and residents are strictly prohibited from this sale." ]
+                , Just "I am not a citizen or resident of the USA."
+                )
+              ]
+            ]

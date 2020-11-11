@@ -31,8 +31,8 @@ import TokenValue exposing (TokenValue, toConciseString)
 import Wallet
 
 
-root : Model -> Maybe Address -> DisplayProfile -> ( Element Msg, List (Element Msg) )
-root model maybeReferrer dProfile =
+root : DisplayProfile -> Model -> Maybe Address -> ( Element Msg, List (Element Msg) )
+root dProfile model maybeReferrer =
     ( Element.column
         ([ Element.width Element.fill
          , Element.paddingEach
@@ -43,7 +43,10 @@ root model maybeReferrer dProfile =
             }
          ]
             ++ (List.map Element.inFront <|
-                    viewModals model maybeReferrer dProfile
+                    viewModals
+                        dProfile
+                        model
+                        maybeReferrer
                )
         )
         [ case dProfile of
@@ -58,10 +61,10 @@ root model maybeReferrer dProfile =
                         , Element.spacing 20
                         ]
                         ([ viewYoutubeLinksBlock dProfile True
-                         , closedBucketsPane model dProfile
+                         , closedBucketsPane dProfile model
                          ]
                             ++ (if dProfile == SmallDesktop then
-                                    [ futureBucketsPane model
+                                    [ futureBucketsPane dProfile model
                                     , trackedTxsElement model.trackedTxs
                                     ]
 
@@ -105,7 +108,7 @@ root model maybeReferrer dProfile =
                             , Element.alignTop
                             ]
                             [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-                            , futureBucketsPane model
+                            , futureBucketsPane dProfile model
                             , trackedTxsElement model.trackedTxs
                             ]
 
@@ -171,8 +174,8 @@ blockTitleText text attributes =
         Element.text text
 
 
-closedBucketsPane : Model -> DisplayProfile -> Element Msg
-closedBucketsPane model dProfile =
+closedBucketsPane : DisplayProfile -> Model -> Element Msg
+closedBucketsPane dProfile model =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
@@ -192,16 +195,16 @@ closedBucketsPane model dProfile =
                     ++ " to claim it will show below."
             ]
         , maybeUserBalanceBlock
+            dProfile
             model.wallet
             model.extraUserInfo
-            dProfile
         , maybeClaimBlock
+            dProfile
             model.wallet
             (model.extraUserInfo |> Maybe.map .exitInfo)
-            dProfile
         , totalExitedBlock
-            model.totalTokensExited
             dProfile
+            model.totalTokensExited
         ]
 
 
@@ -238,20 +241,25 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                     ValidBucket bucketInfo ->
                         case bucketInfo.state of
                             Closed ->
-                                [ focusedBucketClosedPane bucketInfo
+                                [ focusedBucketClosedPane
+                                    dProfile
+                                    bucketInfo
                                     (getRelevantTimingInfo bucketInfo now testMode)
                                     wallet
                                     testMode
-                                    dProfile
                                 ]
 
                             _ ->
-                                [ focusedBucketSubheaderEl bucketInfo dProfile
+                                [ focusedBucketSubheaderEl
+                                    dProfile
+                                    bucketInfo
                                 , focusedBucketTimeLeftEl
+                                    dProfile
                                     (getRelevantTimingInfo bucketInfo now testMode)
                                     testMode
+                                , enterBidUX
                                     dProfile
-                                , enterBidUX wallet
+                                    wallet
                                     maybeReferrer
                                     maybeExtraUserInfo
                                     enterUXModel
@@ -259,14 +267,19 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                                     jurisdictionCheckStatus
                                     trackedTxs
                                     testMode
-                                    dProfile
                                 ]
                )
         )
 
 
-focusedBucketClosedPane : ValidBucketInfo -> RelevantTimingInfo -> Wallet.State -> TestMode -> DisplayProfile -> Element Msg
-focusedBucketClosedPane bucketInfo timingInfo wallet testMode dProfile =
+focusedBucketClosedPane :
+    DisplayProfile
+    -> ValidBucketInfo
+    -> RelevantTimingInfo
+    -> Wallet.State
+    -> TestMode
+    -> Element Msg
+focusedBucketClosedPane dProfile bucketInfo timingInfo wallet testMode =
     let
         intervalString =
             TimeHelpers.toConciseIntervalString timingInfo.relevantTimeFromNow
@@ -345,8 +358,8 @@ focusedBucketClosedPane bucketInfo timingInfo wallet testMode dProfile =
                 ]
 
 
-futureBucketsPane : Model -> Element Msg
-futureBucketsPane model =
+futureBucketsPane : DisplayProfile -> Model -> Element Msg
+futureBucketsPane dProfile model =
     let
         fetchedNextBucketInfo =
             getBucketInfo
@@ -359,9 +372,6 @@ futureBucketsPane model =
                 )
                 model.now
                 model.testMode
-
-        dProfile =
-            model.dProfile
     in
     case fetchedNextBucketInfo of
         InvalidBucket ->
@@ -387,15 +397,15 @@ futureBucketsPane model =
                                 model.now
                     ]
                 , maybeBucketsLeftBlock
+                    dProfile
                     model.bucketSale
                     model.now
                     model.testMode
-                    dProfile
                 , maybeSoldTokenInFutureBucketsBlock
+                    dProfile
                     model.bucketSale
                     model.now
                     model.testMode
-                    dProfile
                 ]
 
 
@@ -544,8 +554,8 @@ viewFeedbackForm feedbackUXModel =
         )
 
 
-maybeUserBalanceBlock : Wallet.State -> Maybe UserStateInfo -> DisplayProfile -> Element Msg
-maybeUserBalanceBlock wallet maybeExtraUserInfo dProfile =
+maybeUserBalanceBlock : DisplayProfile -> Wallet.State -> Maybe UserStateInfo -> Element Msg
+maybeUserBalanceBlock dProfile wallet maybeExtraUserInfo =
     case ( Wallet.userInfo wallet, maybeExtraUserInfo ) of
         ( Nothing, _ ) ->
             Element.none
@@ -601,8 +611,8 @@ maybeUserBalanceBlock wallet maybeExtraUserInfo dProfile =
                 ]
 
 
-maybeClaimBlock : Wallet.State -> Maybe ExitInfo -> DisplayProfile -> Element Msg
-maybeClaimBlock wallet maybeExitInfo dProfile =
+maybeClaimBlock : DisplayProfile -> Wallet.State -> Maybe ExitInfo -> Element Msg
+maybeClaimBlock dProfile wallet maybeExitInfo =
     case ( Wallet.userInfo wallet, maybeExitInfo ) of
         ( Nothing, _ ) ->
             Element.none
@@ -619,7 +629,10 @@ maybeClaimBlock wallet maybeExitInfo dProfile =
                     else
                         ( ActiveStyle
                         , Just <|
-                            makeClaimButton userInfo exitInfo dProfile
+                            makeClaimButton
+                                dProfile
+                                userInfo
+                                exitInfo
                         , exitInfo.totalExitable
                         )
             in
@@ -627,16 +640,17 @@ maybeClaimBlock wallet maybeExitInfo dProfile =
                 Element.none
 
             else
-                sidepaneBlockContainer blockStyle
+                sidepaneBlockContainer
                     dProfile
+                    blockStyle
                     (case dProfile of
                         Desktop ->
                             [ bigNumberElement
+                                dProfile
                                 [ Element.centerX ]
                                 (TokenNum exitInfo.totalExitable)
                                 Config.exitingTokenCurrencyLabel
                                 blockStyle
-                                dProfile
                             , Element.paragraph
                                 ([ Element.centerX
                                  , Element.width Element.shrink
@@ -662,11 +676,11 @@ maybeClaimBlock wallet maybeExitInfo dProfile =
                         SmallDesktop ->
                             [ Element.row [ Element.width Element.fill, Element.spacing 5 ]
                                 [ bigNumberElement
+                                    dProfile
                                     [ Element.centerX ]
                                     (TokenNum exitInfo.totalExitable)
                                     Config.exitingTokenCurrencyLabel
                                     blockStyle
-                                    dProfile
                                 , Element.paragraph
                                     ([ Element.centerX
                                      , Element.width Element.shrink
@@ -692,8 +706,8 @@ maybeClaimBlock wallet maybeExitInfo dProfile =
                     )
 
 
-totalExitedBlock : Maybe TokenValue -> DisplayProfile -> Element Msg
-totalExitedBlock maybeTotalExited dProfile =
+totalExitedBlock : DisplayProfile -> Maybe TokenValue -> Element Msg
+totalExitedBlock dProfile maybeTotalExited =
     case maybeTotalExited of
         Nothing ->
             loadingElement
@@ -702,11 +716,11 @@ totalExitedBlock maybeTotalExited dProfile =
             sidepaneBlockContainer PassiveStyle
                 dProfile
                 [ bigNumberElement
+                    dProfile
                     [ Element.centerX ]
                     (TokenNum totalExited)
                     Config.exitingTokenCurrencyLabel
                     PassiveStyle
-                    dProfile
                 , Element.paragraph
                     [ Element.centerX
                     , Element.width Element.shrink
@@ -717,7 +731,15 @@ totalExitedBlock maybeTotalExited dProfile =
                 ]
 
 
-focusedBucketHeaderEl : DisplayProfile -> Int -> Int -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
+focusedBucketHeaderEl :
+    DisplayProfile
+    -> Int
+    -> Int
+    -> Maybe UserInfo
+    -> Maybe Address
+    -> Bool
+    -> TestMode
+    -> Element Msg
 focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeReferrer referralModalActive testMode =
     Element.column
         [ Element.width Element.fill ]
@@ -756,7 +778,9 @@ focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeRefer
                             [ Element.centerX
                             ]
                             [ if currentBucketId /= bucketId then
-                                jumpToCurrentBucketButton currentBucketId dProfile
+                                jumpToCurrentBucketButton
+                                    dProfile
+                                    currentBucketId
 
                               else
                                 Element.none
@@ -771,7 +795,9 @@ focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeRefer
                     [ Element.centerX
                     ]
                     [ if currentBucketId /= bucketId then
-                        jumpToCurrentBucketButton currentBucketId dProfile
+                        jumpToCurrentBucketButton
+                            dProfile
+                            currentBucketId
 
                       else
                         Element.none
@@ -790,7 +816,13 @@ edges =
     }
 
 
-maybeReferralIndicatorAndModal : DisplayProfile -> Maybe UserInfo -> Maybe Address -> Bool -> TestMode -> Element Msg
+maybeReferralIndicatorAndModal :
+    DisplayProfile
+    -> Maybe UserInfo
+    -> Maybe Address
+    -> Bool
+    -> TestMode
+    -> Element Msg
 maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModalActive testMode =
     case maybeUserInfo of
         Nothing ->
@@ -811,7 +843,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                                 , Element.moveUp (responsiveVal dProfile 50 0)
                                 , EH.moveToFront
                                 ]
-                                (referralModal userInfo maybeReferrer testMode dProfile)
+                                (referralModal dProfile userInfo maybeReferrer testMode)
 
                         else
                             Element.none
@@ -840,8 +872,8 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                     dProfile
 
 
-focusedBucketSubheaderEl : ValidBucketInfo -> DisplayProfile -> Element Msg
-focusedBucketSubheaderEl bucketInfo dProfile =
+focusedBucketSubheaderEl : DisplayProfile -> ValidBucketInfo -> Element Msg
+focusedBucketSubheaderEl dProfile bucketInfo =
     let
         bidText =
             case bucketInfo.state of
@@ -904,8 +936,8 @@ nextTenBucketArrow currentBucketId =
     navigateElementDetail (currentBucketId + 10) Images.rightTen
 
 
-focusedBucketTimeLeftEl : RelevantTimingInfo -> TestMode -> DisplayProfile -> Element Msg
-focusedBucketTimeLeftEl timingInfo testMode dProfile =
+focusedBucketTimeLeftEl : DisplayProfile -> RelevantTimingInfo -> TestMode -> Element Msg
+focusedBucketTimeLeftEl dProfile timingInfo testMode =
     Element.row
         [ Element.width Element.fill
         , Element.spacing 22
@@ -952,8 +984,18 @@ focusedBucketTimeLeftEl timingInfo testMode dProfile =
         ]
 
 
-enterBidUX : Wallet.State -> Maybe Address -> Maybe UserStateInfo -> EnterUXModel -> ValidBucketInfo -> JurisdictionCheckStatus -> List TrackedTx -> TestMode -> DisplayProfile -> Element Msg
-enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode dProfile =
+enterBidUX :
+    DisplayProfile
+    -> Wallet.State
+    -> Maybe Address
+    -> Maybe UserStateInfo
+    -> EnterUXModel
+    -> ValidBucketInfo
+    -> JurisdictionCheckStatus
+    -> List TrackedTx
+    -> TestMode
+    -> Element Msg
+enterBidUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
     let
         miningEnters =
             trackedTxs
@@ -1067,8 +1109,8 @@ enterBidUX wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo juris
         )
 
 
-bidInputBlock : EnterUXModel -> ValidBucketInfo -> TestMode -> DisplayProfile -> Element Msg
-bidInputBlock enterUXModel bucketInfo testMode dProfile =
+bidInputBlock : DisplayProfile -> EnterUXModel -> ValidBucketInfo -> TestMode -> Element Msg
+bidInputBlock dProfile enterUXModel bucketInfo testMode =
     centerpaneBlockContainer ActiveStyle
         dProfile
         []
@@ -1206,8 +1248,8 @@ bidInputBlock enterUXModel bucketInfo testMode dProfile =
                 ]
 
 
-pricePerTokenMsg : TokenValue -> Maybe TokenValue -> TestMode -> DisplayProfile -> Element Msg
-pricePerTokenMsg totalValueEntered maybeEnterAmount testMode dProfile =
+pricePerTokenMsg : DisplayProfile -> TokenValue -> Maybe TokenValue -> TestMode -> Element Msg
+pricePerTokenMsg dProfile totalValueEntered maybeEnterAmount testMode =
     case dProfile of
         Desktop ->
             Element.paragraph
@@ -1305,14 +1347,14 @@ pricePerTokenMsg totalValueEntered maybeEnterAmount testMode dProfile =
 
 
 bidImpactBlock :
-    EnterUXModel
+    DisplayProfile
+    -> EnterUXModel
     -> ValidBucketInfo
     -> Wallet.State
     -> List EnterInfo
     -> TestMode
-    -> DisplayProfile
     -> Element Msg
-bidImpactBlock enterUXModel bucketInfo wallet miningEnters testMode dProfile =
+bidImpactBlock dProfile enterUXModel bucketInfo wallet miningEnters testMode =
     centerpaneBlockContainer PassiveStyle
         dProfile
         []
@@ -1604,8 +1646,8 @@ otherBidsImpactMsg dProfile =
         ]
 
 
-msgInsteadOfButton : String -> Element.Color -> DisplayProfile -> Element Msg
-msgInsteadOfButton text color dProfile =
+msgInsteadOfButton : DisplayProfile -> String -> Element.Color -> Element Msg
+msgInsteadOfButton dProfile text color =
     Element.el
         [ Element.centerX
         , Element.Font.size <| responsiveVal dProfile 22 14
@@ -1615,8 +1657,8 @@ msgInsteadOfButton text color dProfile =
         (Element.text text)
 
 
-verifyJurisdictionButtonOrResult : JurisdictionCheckStatus -> DisplayProfile -> Element Msg
-verifyJurisdictionButtonOrResult jurisdictionCheckStatus dProfile =
+verifyJurisdictionButtonOrResult : DisplayProfile -> JurisdictionCheckStatus -> Element Msg
+verifyJurisdictionButtonOrResult dProfile jurisdictionCheckStatus =
     case jurisdictionCheckStatus of
         WaitingForClick ->
             EH.redButton
@@ -1662,8 +1704,8 @@ enableTokenButton dProfile =
         EnableTokenButtonClicked
 
 
-disabledButton : String -> DisplayProfile -> Element Msg
-disabledButton disableText dProfile =
+disabledButton : DisplayProfile -> String -> Element Msg
+disabledButton dProfile disableText =
     EH.disabledButton
         dProfile
         [ Element.width Element.fill ]
@@ -1671,8 +1713,8 @@ disabledButton disableText dProfile =
         Nothing
 
 
-successButton : String -> DisplayProfile -> Element Msg
-successButton text dProfile =
+successButton : DisplayProfile -> String -> Element Msg
+successButton dProfile text =
     EH.disabledSuccessButton
         dProfile
         [ Element.width Element.fill ]
@@ -1681,15 +1723,15 @@ successButton text dProfile =
 
 
 continueButton :
-    UserInfo
+    DisplayProfile
+    -> UserInfo
     -> Int
     -> TokenValue
     -> Maybe Address
     -> TokenValue
     -> TokenValue
-    -> DisplayProfile
     -> Element Msg
-continueButton userInfo bucketId enterAmount referrer minedTotal miningTotal dProfile =
+continueButton dProfile userInfo bucketId enterAmount referrer minedTotal miningTotal =
     let
         maybeMining =
             if miningTotal == TokenValue.zero then
@@ -1764,7 +1806,8 @@ alreadyEnteredBucketButton enterAmount =
 
 
 actionButton :
-    JurisdictionCheckStatus
+    DisplayProfile
+    -> JurisdictionCheckStatus
     -> Maybe Address
     -> Wallet.State
     -> Maybe UserStateInfo
@@ -1773,9 +1816,8 @@ actionButton :
     -> ValidBucketInfo
     -> List TrackedTx
     -> TestMode
-    -> DisplayProfile
     -> Element Msg
-actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode dProfile =
+actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
     case jurisdictionCheckStatus of
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             case Wallet.userInfo wallet of
@@ -1865,28 +1907,28 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
                                     Just (Ok enterAmount) ->
                                         if List.any (\tx -> tx.status == Signing) trackedTxs then
                                             disabledButton
-                                                "Sign or reject pending transactions to continue"
                                                 dProfile
+                                                "Sign or reject pending transactions to continue"
 
                                         else if TokenValue.compare enterAmount extraUserInfo.enteringTokenAllowance /= GT && TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= LT then
                                             disabledButton
+                                                dProfile
                                                 ("You only have "
                                                     ++ toConciseString extraUserInfo.enteringTokenBalance
                                                     ++ " "
                                                     ++ Config.enteringTokenCurrencyLabel
                                                     ++ ""
                                                 )
-                                                dProfile
 
                                         else if TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= GT then
                                             continueButton
+                                                dProfile
                                                 userInfo
                                                 bucketInfo.id
                                                 enterAmount
                                                 maybeReferrer
                                                 enteredIntoThisBucket
                                                 miningTotalForThisBucket
-                                                dProfile
 
                                         else
                                             enableTokenButton dProfile
@@ -1894,18 +1936,18 @@ actionButton jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unl
                                     _ ->
                                         if lastTransactionsForThisBucketWasSuccessful then
                                             successButton
-                                                "Successfully entered!"
                                                 dProfile
+                                                "Successfully entered!"
 
                                         else
                                             disabledButton
-                                                "Enter bid amount to continue"
                                                 dProfile
+                                                "Enter bid amount to continue"
 
         _ ->
             verifyJurisdictionButtonOrResult
-                jurisdictionCheckStatus
                 dProfile
+                jurisdictionCheckStatus
 
 
 lastElem : List a -> Maybe a
@@ -1918,8 +1960,8 @@ noBucketsLeftBlock =
     Element.text "There are no more future blocks."
 
 
-maybeBucketsLeftBlock : BucketSale -> Time.Posix -> TestMode -> DisplayProfile -> Element Msg
-maybeBucketsLeftBlock bucketSale now testMode dProfile =
+maybeBucketsLeftBlock : DisplayProfile -> BucketSale -> Time.Posix -> TestMode -> Element Msg
+maybeBucketsLeftBlock dProfile bucketSale now testMode =
     let
         currentBucketId =
             getCurrentBucketId
@@ -1927,9 +1969,11 @@ maybeBucketsLeftBlock bucketSale now testMode dProfile =
                 now
                 testMode
     in
-    sidepaneBlockContainer PassiveStyle
+    sidepaneBlockContainer
         dProfile
+        PassiveStyle
         [ bigNumberElement
+            dProfile
             [ Element.centerX ]
             (IntegerNum
                 (Config.bucketSaleNumBuckets
@@ -1938,7 +1982,6 @@ maybeBucketsLeftBlock bucketSale now testMode dProfile =
             )
             "buckets"
             PassiveStyle
-            dProfile
         , Element.paragraph
             [ Element.centerX
             , Element.width Element.shrink
@@ -1947,8 +1990,8 @@ maybeBucketsLeftBlock bucketSale now testMode dProfile =
         ]
 
 
-maybeSoldTokenInFutureBucketsBlock : BucketSale -> Time.Posix -> TestMode -> DisplayProfile -> Element Msg
-maybeSoldTokenInFutureBucketsBlock bucketSale now testMode dProfile =
+maybeSoldTokenInFutureBucketsBlock : DisplayProfile -> BucketSale -> Time.Posix -> TestMode -> Element Msg
+maybeSoldTokenInFutureBucketsBlock dProfile bucketSale now testMode =
     let
         currentBucketId =
             getCurrentBucketId
@@ -2115,8 +2158,8 @@ makeDescription action =
             "Claim " ++ Config.exitingTokenCurrencyLabel ++ ""
 
 
-viewModals : Model -> Maybe Address -> DisplayProfile -> List (Element Msg)
-viewModals model maybeReferrer dProfile =
+viewModals : DisplayProfile -> Model -> Maybe Address -> List (Element Msg)
+viewModals dProfile model maybeReferrer =
     Maybe.Extra.values
         [ case model.enterInfoToConfirm of
             Just enterInfo ->
@@ -2127,7 +2170,7 @@ viewModals model maybeReferrer dProfile =
                         NoOp
                         CancelClicked
                     <|
-                        viewAgreeToTosModal model.confirmTosModel enterInfo dProfile
+                        viewAgreeToTosModal dProfile model.confirmTosModel enterInfo
 
             _ ->
                 Nothing
@@ -2237,8 +2280,8 @@ viewYoutubeLinksColumn dProfile showBlock linkInfoList =
             )
 
 
-viewAgreeToTosModal : ConfirmTosModel -> EnterInfo -> DisplayProfile -> Element Msg
-viewAgreeToTosModal confirmTosModel enterInfo dProfile =
+viewAgreeToTosModal : DisplayProfile -> ConfirmTosModel -> EnterInfo -> Element Msg
+viewAgreeToTosModal dProfile confirmTosModel enterInfo =
     Element.el
         [ Element.centerX
         , Element.paddingEach
@@ -2278,24 +2321,24 @@ viewAgreeToTosModal confirmTosModel enterInfo dProfile =
                 , Element.spacing (responsiveVal dProfile 10 5)
                 , Element.padding (responsiveVal dProfile 20 10)
                 ]
-                [ viewTosTitle confirmTosModel.page (List.length confirmTosModel.points) dProfile
+                [ viewTosTitle dProfile confirmTosModel.page (List.length confirmTosModel.points)
                 , Element.el
                     [ Element.centerY
                     , Element.width Element.fill
                     ]
                   <|
-                    viewTosPage confirmTosModel dProfile
+                    viewTosPage dProfile confirmTosModel
                 , Element.el
                     [ Element.alignBottom
                     , Element.width Element.fill
                     ]
                   <|
-                    viewTosPageNavigationButtons confirmTosModel enterInfo dProfile
+                    viewTosPageNavigationButtons dProfile confirmTosModel enterInfo
                 ]
 
 
-viewTosTitle : Int -> Int -> DisplayProfile -> Element Msg
-viewTosTitle pageNum totalPages dProfile =
+viewTosTitle : DisplayProfile -> Int -> Int -> Element Msg
+viewTosTitle dProfile pageNum totalPages =
     Element.el
         [ Element.Font.size (responsiveVal dProfile 40 20)
         , Element.Font.bold
@@ -2310,8 +2353,8 @@ viewTosTitle pageNum totalPages dProfile =
                 ++ ")"
 
 
-viewTosPage : ConfirmTosModel -> DisplayProfile -> Element Msg
-viewTosPage agreeToTosModel dProfile =
+viewTosPage : DisplayProfile -> ConfirmTosModel -> Element Msg
+viewTosPage dProfile agreeToTosModel =
     let
         ( boundedPageNum, pagePoints ) =
             case List.Extra.getAt agreeToTosModel.page agreeToTosModel.points of
@@ -2334,13 +2377,13 @@ viewTosPage agreeToTosModel dProfile =
         (pagePoints
             |> List.indexedMap
                 (\pointNum point ->
-                    viewTosPoint ( boundedPageNum, pointNum ) point dProfile
+                    viewTosPoint dProfile ( boundedPageNum, pointNum ) point
                 )
         )
 
 
-viewTosPoint : ( Int, Int ) -> TosCheckbox -> DisplayProfile -> Element Msg
-viewTosPoint pointRef point dProfile =
+viewTosPoint : DisplayProfile -> ( Int, Int ) -> TosCheckbox -> Element Msg
+viewTosPoint dProfile pointRef point =
     Element.row
         [ Element.width Element.fill
         , Element.spacing (responsiveVal dProfile 15 5)
@@ -2360,7 +2403,7 @@ viewTosPoint pointRef point dProfile =
                 point.textEls
             , case point.maybeCheckedString of
                 Just checkedString ->
-                    viewTosCheckbox checkedString pointRef dProfile
+                    viewTosCheckbox dProfile checkedString pointRef
 
                 Nothing ->
                     Element.none
@@ -2368,8 +2411,8 @@ viewTosPoint pointRef point dProfile =
         ]
 
 
-viewTosCheckbox : ( String, Bool ) -> ( Int, Int ) -> DisplayProfile -> Element Msg
-viewTosCheckbox ( checkboxText, checked ) pointRef dProfile =
+viewTosCheckbox : DisplayProfile -> ( String, Bool ) -> ( Int, Int ) -> Element Msg
+viewTosCheckbox dProfile ( checkboxText, checked ) pointRef =
     Element.row
         [ Element.Border.rounded 5
         , Element.Background.color <|
@@ -2411,8 +2454,8 @@ viewTosCheckbox ( checkboxText, checked ) pointRef dProfile =
         ]
 
 
-viewTosPageNavigationButtons : ConfirmTosModel -> EnterInfo -> DisplayProfile -> Element Msg
-viewTosPageNavigationButtons confirmTosModel enterInfo dProfile =
+viewTosPageNavigationButtons : DisplayProfile -> ConfirmTosModel -> EnterInfo -> Element Msg
+viewTosPageNavigationButtons dProfile confirmTosModel enterInfo =
     let
         navigationButton text msg =
             Element.el
@@ -2469,8 +2512,8 @@ viewTosPageNavigationButtons confirmTosModel enterInfo dProfile =
         ]
 
 
-referralBonusIndicator : Maybe Address -> Bool -> DisplayProfile -> Element Msg
-referralBonusIndicator maybeReferrer focusedStyle dProfile =
+referralBonusIndicator : DisplayProfile -> Maybe Address -> Bool -> Element Msg
+referralBonusIndicator dProfile maybeReferrer focusedStyle =
     let
         hasReferral =
             maybeReferrer /= Nothing
@@ -2515,8 +2558,8 @@ referralBonusIndicator maybeReferrer focusedStyle dProfile =
         )
 
 
-referralModal : UserInfo -> Maybe Address -> TestMode -> DisplayProfile -> Element Msg
-referralModal userInfo maybeReferrer testMode dProfile =
+referralModal : DisplayProfile -> UserInfo -> Maybe Address -> TestMode -> Element Msg
+referralModal dProfile userInfo maybeReferrer testMode =
     let
         highlightedText text =
             Element.el
@@ -2662,7 +2705,7 @@ referralModal userInfo maybeReferrer testMode dProfile =
                                 , Element.Font.color deepBlue
                                 ]
                                 [ Element.text "Your Referral Link" ]
-                            , referralLinkElement referrer testMode dProfile
+                            , referralLinkElement dProfile referrer testMode
                             , referralLinkCopyButton dProfile
                             ]
                         )
@@ -2711,7 +2754,7 @@ referralModal userInfo maybeReferrer testMode dProfile =
                                     }
                                 , Element.text "."
                                 ]
-                          , referralLinkElement userInfo.address testMode dProfile
+                          , referralLinkElement dProfile userInfo.address testMode
                           , referralLinkCopyButton dProfile
                           ]
                         , Nothing
@@ -2754,8 +2797,8 @@ referralModal userInfo maybeReferrer testMode dProfile =
         ]
 
 
-referralLinkElement : Address -> TestMode -> DisplayProfile -> Element Msg
-referralLinkElement referrerAddress testMode dProfile =
+referralLinkElement : DisplayProfile -> Address -> TestMode -> Element Msg
+referralLinkElement dProfile referrerAddress testMode =
     Element.el
         [ Element.width Element.fill
         , Element.Background.color <| deepBlueWithAlpha 0.05
@@ -2868,8 +2911,8 @@ type CommonBlockStyle
     | PassiveStyle
 
 
-centerpaneBlockContainer : CommonBlockStyle -> DisplayProfile -> List (Attribute Msg) -> List (Element Msg) -> Element Msg
-centerpaneBlockContainer styleType dProfile attributes =
+centerpaneBlockContainer : DisplayProfile -> CommonBlockStyle -> List (Attribute Msg) -> List (Element Msg) -> Element Msg
+centerpaneBlockContainer dProfile styleType attributes =
     Element.column
         ([ Element.width Element.fill
          , Element.Border.rounded 4
@@ -2893,8 +2936,8 @@ centerpaneBlockContainer styleType dProfile attributes =
         )
 
 
-sidepaneBlockContainer : CommonBlockStyle -> DisplayProfile -> List (Element Msg) -> Element Msg
-sidepaneBlockContainer styleType dProfile =
+sidepaneBlockContainer : DisplayProfile -> CommonBlockStyle -> List (Element Msg) -> Element Msg
+sidepaneBlockContainer dProfile styleType =
     Element.column
         ([ Element.width Element.fill
          , Element.Border.rounded 4
@@ -2933,8 +2976,14 @@ numberValToString numberVal =
             TokenValue.toConciseString tokenValue
 
 
-bigNumberElement : List (Attribute Msg) -> NumberVal -> String -> CommonBlockStyle -> DisplayProfile -> Element Msg
-bigNumberElement attributes numberVal numberLabel blockStyle dProfile =
+bigNumberElement :
+    DisplayProfile
+    -> List (Attribute Msg)
+    -> NumberVal
+    -> String
+    -> CommonBlockStyle
+    -> Element Msg
+bigNumberElement dProfile attributes numberVal numberLabel blockStyle =
     Element.el
         (attributes
             ++ [ Element.Font.size (responsiveVal dProfile 27 12)
@@ -2957,8 +3006,8 @@ bigNumberElement attributes numberVal numberLabel blockStyle dProfile =
         )
 
 
-makeClaimButton : UserInfo -> ExitInfo -> DisplayProfile -> Element Msg
-makeClaimButton userInfo exitInfo dProfile =
+makeClaimButton : DisplayProfile -> UserInfo -> ExitInfo -> Element Msg
+makeClaimButton dProfile userInfo exitInfo =
     EH.lightBlueButton
         dProfile
         [ Element.width Element.fill ]
@@ -2966,8 +3015,8 @@ makeClaimButton userInfo exitInfo dProfile =
         (ClaimClicked userInfo exitInfo)
 
 
-jumpToCurrentBucketButton : Int -> DisplayProfile -> Element Msg
-jumpToCurrentBucketButton currentBucketId dProfile =
+jumpToCurrentBucketButton : DisplayProfile -> Int -> Element Msg
+jumpToCurrentBucketButton dProfile currentBucketId =
     case dProfile of
         Desktop ->
             Element.el
@@ -3032,8 +3081,8 @@ green =
     Element.rgb255 0 162 149
 
 
-connectToWeb3Button : Wallet.State -> DisplayProfile -> Element Msg
-connectToWeb3Button wallet dProfile =
+connectToWeb3Button : DisplayProfile -> Wallet.State -> Element Msg
+connectToWeb3Button dProfile wallet =
     let
         commonButtonStyles =
             [ Element.width Element.fill
