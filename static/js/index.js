@@ -3,10 +3,11 @@ var clipboardLib = require('clipboard');
 var networkChangeNotifier = require('./networkChangeNotifier');
 var locationCheck = require('./dualLocationCheck.js');
 var addFryToMetaMask = require('./addFryToMetaMask.js');
+require('@metamask/legacy-web3');
+ 
+const { web3 } = window;
 
 import { Elm } from '../../elm/App'
-
-
 
 //window.testStuff = secureComms.testStuff;
 window.web3Connected = false;
