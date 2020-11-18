@@ -3314,7 +3314,7 @@ verifyJurisdictionErrorEl dProfile jurisdictionCheckStatus attributes =
                     responsiveVal
                         dProfile
                         16
-                        10
+                        8
                  ]
                     ++ attributes
                 )
