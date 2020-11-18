@@ -337,7 +337,7 @@ focusedBucketClosedPane dProfile bucketInfo timingInfo wallet testMode =
     <|
         case Wallet.userInfo wallet of
             Nothing ->
-                [ connectToWeb3Button dProfile wallet ]
+                []
 
             Just _ ->
                 [ Element.column
@@ -1062,15 +1062,6 @@ enterBidUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketI
                             enterUXModel
                             bucketInfo
                             testMode
-                        , bidImpactBlock
-                            dProfile
-                            enterUXModel
-                            bucketInfo
-                            wallet
-                            miningEnters
-                            testMode
-                        , otherBidsImpactMsg
-                            dProfile
                         , actionButton
                             dProfile
                             jurisdictionCheckStatus
@@ -1082,6 +1073,15 @@ enterBidUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketI
                             bucketInfo
                             trackedTxs
                             testMode
+                        , bidImpactBlock
+                            dProfile
+                            enterUXModel
+                            bucketInfo
+                            wallet
+                            miningEnters
+                            testMode
+                        , otherBidsImpactMsg
+                            dProfile
                         ]
 
                     SmallDesktop ->
@@ -1376,19 +1376,16 @@ bidImpactBlock :
     -> TestMode
     -> Element Msg
 bidImpactBlock dProfile enterUXModel bucketInfo wallet miningEnters testMode =
-    centerpaneBlockContainer
-        dProfile
-        PassiveStyle
-        []
-    <|
-        case Wallet.userInfo wallet of
-            Nothing ->
-                [ connectToWeb3Button
-                    dProfile
-                    wallet
-                ]
+    case Wallet.userInfo wallet of
+        Nothing ->
+            Element.none
 
-            Just _ ->
+        Just _ ->
+            centerpaneBlockContainer
+                dProfile
+                PassiveStyle
+                []
+            <|
                 [ emphasizedText PassiveStyle "Your current bid standing:" ]
                     ++ (case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
                             ( Just totalValueEntered, Just userBuy ) ->
@@ -1876,15 +1873,15 @@ actionButton :
     -> TestMode
     -> Element Msg
 actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
-    case jurisdictionCheckStatus of
-        Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
-            case Wallet.userInfo wallet of
-                Nothing ->
-                    connectToWeb3Button
-                        dProfile
-                        wallet
+    case Wallet.userInfo wallet of
+        Nothing ->
+            connectToWeb3Button
+                dProfile
+                wallet
 
-                Just userInfo ->
+        Just userInfo ->
+            case jurisdictionCheckStatus of
+                Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
                     case maybeExtraUserInfo of
                         Nothing ->
                             msgInsteadOfButton
@@ -2005,10 +2002,10 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                                 dProfile
                                                 "Enter bid amount to continue"
 
-        _ ->
-            verifyJurisdictionButtonOrResult
-                dProfile
-                jurisdictionCheckStatus
+                _ ->
+                    verifyJurisdictionButtonOrResult
+                        dProfile
+                        jurisdictionCheckStatus
 
 
 lastElem :
