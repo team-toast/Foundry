@@ -232,7 +232,10 @@ type alias Buy =
     }
 
 
-updateAllBuckets : (BucketData -> BucketData) -> BucketSale -> BucketSale
+updateAllBuckets :
+    (BucketData -> BucketData)
+    -> BucketSale
+    -> BucketSale
 updateAllBuckets func bucketSale =
     { bucketSale
         | buckets =
@@ -241,7 +244,11 @@ updateAllBuckets func bucketSale =
     }
 
 
-updateBucketAt : Int -> (BucketData -> BucketData) -> BucketSale -> Maybe BucketSale
+updateBucketAt :
+    Int
+    -> (BucketData -> BucketData)
+    -> BucketSale
+    -> Maybe BucketSale
 updateBucketAt id func bucketSale =
     if id < List.length bucketSale.buckets then
         Just
@@ -255,7 +262,12 @@ updateBucketAt id func bucketSale =
         Nothing
 
 
-getBucketInfo : BucketSale -> Int -> Time.Posix -> TestMode -> FetchedBucketInfo
+getBucketInfo :
+    BucketSale
+    -> Int
+    -> Time.Posix
+    -> TestMode
+    -> FetchedBucketInfo
 getBucketInfo bucketSale bucketId now testMode =
     List.Extra.getAt bucketId bucketSale.buckets
         |> Maybe.map
@@ -277,14 +289,22 @@ getBucketInfo bucketSale bucketId now testMode =
         |> Maybe.withDefault InvalidBucket
 
 
-getBucketEndTime : BucketData -> TestMode -> Time.Posix
+getBucketEndTime :
+    BucketData
+    -> TestMode
+    -> Time.Posix
 getBucketEndTime bucket testMode =
     TimeHelpers.add
         bucket.startTime
         (Config.bucketSaleBucketInterval testMode)
 
 
-getFocusedBucketId : BucketSale -> BucketView -> Time.Posix -> TestMode -> Int
+getFocusedBucketId :
+    BucketSale
+    -> BucketView
+    -> Time.Posix
+    -> TestMode
+    -> Int
 getFocusedBucketId bucketSale bucketView now testMode =
     case bucketView of
         ViewCurrent ->
@@ -294,7 +314,11 @@ getFocusedBucketId bucketSale bucketView now testMode =
             id
 
 
-getCurrentBucketId : BucketSale -> Time.Posix -> TestMode -> Int
+getCurrentBucketId :
+    BucketSale
+    -> Time.Posix
+    -> TestMode
+    -> Int
 getCurrentBucketId bucketSale now testMode =
     (TimeHelpers.sub now bucketSale.startTime
         |> TimeHelpers.posixToSeconds
@@ -304,7 +328,11 @@ getCurrentBucketId bucketSale now testMode =
            )
 
 
-getCurrentBucket : BucketSale -> Time.Posix -> TestMode -> FetchedBucketInfo
+getCurrentBucket :
+    BucketSale
+    -> Time.Posix
+    -> TestMode
+    -> FetchedBucketInfo
 getCurrentBucket bucketSale now testMode =
     getBucketInfo
         bucketSale
@@ -313,7 +341,11 @@ getCurrentBucket bucketSale now testMode =
         testMode
 
 
-currentBucketTimeLeft : BucketSale -> Time.Posix -> TestMode -> Maybe Time.Posix
+currentBucketTimeLeft :
+    BucketSale
+    -> Time.Posix
+    -> TestMode
+    -> Maybe Time.Posix
 currentBucketTimeLeft bucketSale now testMode =
     case getCurrentBucket bucketSale now testMode of
         InvalidBucket ->
@@ -326,7 +358,11 @@ currentBucketTimeLeft bucketSale now testMode =
                     now
 
 
-makeBlankBucket : TestMode -> Time.Posix -> Int -> BucketData
+makeBlankBucket :
+    TestMode
+    -> Time.Posix
+    -> Int
+    -> BucketData
 makeBlankBucket testMode bucketSaleStartTime bucketId =
     BucketData
         (TimeHelpers.posixToSeconds bucketSaleStartTime
@@ -339,14 +375,20 @@ makeBlankBucket testMode bucketSaleStartTime bucketId =
         Nothing
 
 
-buyFromBindingBuy : BucketSaleBindings.Buy -> Buy
+buyFromBindingBuy :
+    BucketSaleBindings.Buy
+    -> Buy
 buyFromBindingBuy bindingBuy =
     Buy
         (TokenValue.tokenValue bindingBuy.valueEntered)
         (BigInt.compare bindingBuy.buyerTokensExited (BigInt.fromInt 0) /= EQ)
 
 
-calcClaimableTokens : TokenValue -> TokenValue -> TestMode -> TokenValue
+calcClaimableTokens :
+    TokenValue
+    -> TokenValue
+    -> TestMode
+    -> TokenValue
 calcClaimableTokens totalValueEntered tokensIn testMode =
     if TokenValue.isZero tokensIn then
         TokenValue.zero
@@ -365,7 +407,10 @@ calcClaimableTokens totalValueEntered tokensIn testMode =
             claimableRatio
 
 
-calcEffectivePricePerToken : TokenValue -> TestMode -> TokenValue
+calcEffectivePricePerToken :
+    TokenValue
+    -> TestMode
+    -> TokenValue
 calcEffectivePricePerToken totalValueEntered testMode =
     TokenValue.toFloatWithWarning totalValueEntered
         / (TokenValue.toFloatWithWarning <| Config.bucketSaleTokensPerBucket testMode)
@@ -378,7 +423,11 @@ type alias RelevantTimingInfo =
     }
 
 
-getRelevantTimingInfo : ValidBucketInfo -> Time.Posix -> TestMode -> RelevantTimingInfo
+getRelevantTimingInfo :
+    ValidBucketInfo
+    -> Time.Posix
+    -> TestMode
+    -> RelevantTimingInfo
 getRelevantTimingInfo bucketInfo now testMode =
     RelevantTimingInfo
         bucketInfo.state
@@ -426,7 +475,9 @@ type JurisdictionCheckStatus
     | Error String
 
 
-maybeReferrerToString : Maybe Address -> String
+maybeReferrerToString :
+    Maybe Address
+    -> String
 maybeReferrerToString =
     Maybe.map Eth.Utils.addressToString
         >> Maybe.withDefault "no referrer"
@@ -458,7 +509,9 @@ initFeedbackUXModel =
         Nothing
 
 
-validateFeedbackInput : FeedbackUXModel -> Result String ValidatedFeedbackInput
+validateFeedbackInput :
+    FeedbackUXModel
+    -> Result String ValidatedFeedbackInput
 validateFeedbackInput feedbackUXModel =
     if String.isEmpty feedbackUXModel.description then
         Err "Description is required."
@@ -475,7 +528,9 @@ validateFeedbackInput feedbackUXModel =
             "Email is invalid."
 
 
-updateAnyFeedbackUXErrors : FeedbackUXModel -> FeedbackUXModel
+updateAnyFeedbackUXErrors :
+    FeedbackUXModel
+    -> FeedbackUXModel
 updateAnyFeedbackUXErrors feedbackUXModel =
     case feedbackUXModel.maybeError of
         Nothing ->
@@ -500,7 +555,9 @@ type alias ValidatedFeedbackInput =
     }
 
 
-tosLines : DisplayProfile -> List (List ( List (Element Msg), Maybe String ))
+tosLines :
+    DisplayProfile
+    -> List (List ( List (Element Msg), Maybe String ))
 tosLines dProfile =
     case dProfile of
         Desktop ->

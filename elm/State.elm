@@ -263,12 +263,12 @@ update msg prevModel =
                                                 let
                                                     ( bucketSaleModel, submodelCmd ) =
                                                         BucketSale.init
+                                                            prevModel.dProfile
                                                             sale
                                                             prevModel.maybeReferrer
                                                             prevModel.testMode
                                                             prevModel.wallet
                                                             prevModel.now
-                                                            prevModel.dProfile
                                                 in
                                                 ( { prevModel
                                                     | submodel =
@@ -373,12 +373,12 @@ update msg prevModel =
                                     let
                                         ( bucketSaleModel, bucketSaleCmd ) =
                                             BucketSale.init
+                                                prevModel.dProfile
                                                 bucketSale
                                                 prevModel.maybeReferrer
                                                 prevModel.testMode
                                                 prevModel.wallet
                                                 newNow
-                                                prevModel.dProfile
                                     in
                                     ( { modelWithUpdatedNow
                                         | submodel = BucketSaleModel bucketSaleModel

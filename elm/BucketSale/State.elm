@@ -37,9 +37,19 @@ import Utils
 import Wallet
 
 
-init : BucketSale -> Maybe Address -> TestMode -> Wallet.State -> Time.Posix -> ( Model, Cmd Msg )
-init bucketSale maybeReferrer testMode wallet now =
-    ( { wallet = verifyWalletCorrectNetwork wallet testMode
+init :
+    DisplayProfile
+    -> BucketSale
+    -> Maybe Address
+    -> TestMode
+    -> Wallet.State
+    -> Time.Posix
+    -> ( Model, Cmd Msg )
+init dProfile bucketSale maybeReferrer testMode wallet now =
+    ( { wallet =
+            verifyWalletCorrectNetwork
+                wallet
+                testMode
       , extraUserInfo = Nothing
       , testMode = testMode
       , now = now
@@ -49,9 +59,13 @@ init bucketSale maybeReferrer testMode wallet now =
       , totalTokensExited = Nothing
       , bucketView = ViewCurrent
       , jurisdictionCheckStatus = WaitingForClick
-      , enterUXModel = initEnterUXModel maybeReferrer
+      , enterUXModel =
+            initEnterUXModel
+                maybeReferrer
       , trackedTxs = []
-      , confirmTosModel = initConfirmTosModel
+      , confirmTosModel =
+            initConfirmTosModel
+                dProfile
       , enterInfoToConfirm = Nothing
       , showReferralModal = False
       , showFeedbackUXModel = False
@@ -77,7 +91,9 @@ init bucketSale maybeReferrer testMode wallet now =
     )
 
 
-initConfirmTosModel : DisplayProfile -> ConfirmTosModel
+initConfirmTosModel :
+    DisplayProfile
+    -> ConfirmTosModel
 initConfirmTosModel dProfile =
     { points =
         tosLines dProfile
@@ -94,7 +110,10 @@ initConfirmTosModel dProfile =
     }
 
 
-verifyWalletCorrectNetwork : Wallet.State -> TestMode -> Wallet.State
+verifyWalletCorrectNetwork :
+    Wallet.State
+    -> TestMode
+    -> Wallet.State
 verifyWalletCorrectNetwork wallet testMode =
     case ( testMode, Wallet.network wallet ) of
         ( None, Just Eth.Net.Mainnet ) ->
@@ -113,7 +132,9 @@ verifyWalletCorrectNetwork wallet testMode =
             Wallet.WrongNetwork
 
 
-initEnterUXModel : Maybe Address -> EnterUXModel
+initEnterUXModel :
+    Maybe Address
+    -> EnterUXModel
 initEnterUXModel maybeReferrer =
     { input = ""
     , amount = Nothing
@@ -1116,7 +1137,10 @@ update msg prevModel =
                 []
 
 
-runCmdDown : CmdDown -> Model -> UpdateResult
+runCmdDown :
+    CmdDown
+    -> Model
+    -> UpdateResult
 runCmdDown cmdDown prevModel =
     case cmdDown of
         CmdDown.UpdateWallet newWallet ->
@@ -1205,7 +1229,10 @@ runCmdDown cmdDown prevModel =
                 prevModel
 
 
-toggleAssentForPoint : ( Int, Int ) -> ConfirmTosModel -> ConfirmTosModel
+toggleAssentForPoint :
+    ( Int, Int )
+    -> ConfirmTosModel
+    -> ConfirmTosModel
 toggleAssentForPoint ( pageNum, pointNum ) prevTosModel =
     { prevTosModel
         | points =
@@ -1228,7 +1255,11 @@ toggleAssentForPoint ( pageNum, pointNum ) prevTosModel =
     }
 
 
-fetchBucketDataCmd : Int -> Maybe UserInfo -> TestMode -> Cmd Msg
+fetchBucketDataCmd :
+    Int
+    -> Maybe UserInfo
+    -> TestMode
+    -> Cmd Msg
 fetchBucketDataCmd id maybeUserInfo testMode =
     Cmd.batch
         [ fetchTotalValueEnteredCmd id testMode
@@ -1241,7 +1272,10 @@ fetchBucketDataCmd id maybeUserInfo testMode =
         ]
 
 
-fetchTotalValueEnteredCmd : Int -> TestMode -> Cmd Msg
+fetchTotalValueEnteredCmd :
+    Int
+    -> TestMode
+    -> Cmd Msg
 fetchTotalValueEnteredCmd id testMode =
     BucketSaleWrappers.getTotalValueEnteredForBucket
         testMode
@@ -1249,7 +1283,11 @@ fetchTotalValueEnteredCmd id testMode =
         (BucketValueEnteredFetched id)
 
 
-fetchBucketUserBuyCmd : Int -> UserInfo -> TestMode -> Cmd Msg
+fetchBucketUserBuyCmd :
+    Int
+    -> UserInfo
+    -> TestMode
+    -> Cmd Msg
 fetchBucketUserBuyCmd id userInfo testMode =
     BucketSaleWrappers.getUserBuyForBucket
         testMode
@@ -1258,14 +1296,20 @@ fetchBucketUserBuyCmd id userInfo testMode =
         (UserBuyFetched userInfo.address id)
 
 
-fetchTotalTokensExitedCmd : TestMode -> Cmd Msg
+fetchTotalTokensExitedCmd :
+    TestMode
+    -> Cmd Msg
 fetchTotalTokensExitedCmd testMode =
     BucketSaleWrappers.getTotalExitedTokens
         testMode
         TotalTokensExitedFetched
 
 
-fetchStateUpdateInfoCmd : Maybe UserInfo -> Maybe Int -> TestMode -> Cmd Msg
+fetchStateUpdateInfoCmd :
+    Maybe UserInfo
+    -> Maybe Int
+    -> TestMode
+    -> Cmd Msg
 fetchStateUpdateInfoCmd maybeUserInfo maybeBucketId testMode =
     BucketSaleWrappers.getStateUpdateInfo
         testMode
@@ -1287,7 +1331,10 @@ fetchFastGasPriceCmd =
         }
 
 
-sendFeedbackCmd : ValidatedFeedbackInput -> Maybe String -> Cmd Msg
+sendFeedbackCmd :
+    ValidatedFeedbackInput
+    -> Maybe String
+    -> Cmd Msg
 sendFeedbackCmd validatedFeedbackInput maybeDebugString =
     Http.request
         { method = "POST"
@@ -1301,7 +1348,9 @@ sendFeedbackCmd validatedFeedbackInput maybeDebugString =
         }
 
 
-encodeFeedback : ValidatedFeedbackInput -> Json.Encode.Value
+encodeFeedback :
+    ValidatedFeedbackInput
+    -> Json.Encode.Value
 encodeFeedback feedback =
     Json.Encode.object
         [ ( "Id", Json.Encode.int 0 )
@@ -1324,7 +1373,9 @@ fastGasPriceDecoder =
         |> Json.Decode.map BigInt.fromInt
 
 
-clearBucketSaleExitInfo : BucketSale -> BucketSale
+clearBucketSaleExitInfo :
+    BucketSale
+    -> BucketSale
 clearBucketSaleExitInfo =
     updateAllBuckets
         (\bucket ->
@@ -1332,7 +1383,9 @@ clearBucketSaleExitInfo =
         )
 
 
-validateTokenInput : String -> Result String TokenValue
+validateTokenInput :
+    String
+    -> Result String TokenValue
 validateTokenInput input =
     case String.toFloat input of
         Just floatVal ->
@@ -1346,7 +1399,10 @@ validateTokenInput input =
             Err "Can't interpret that number"
 
 
-trackNewTx : TrackedTx -> List TrackedTx -> ( Int, List TrackedTx )
+trackNewTx :
+    TrackedTx
+    -> List TrackedTx
+    -> ( Int, List TrackedTx )
 trackNewTx newTrackedTx prevTrackedTxs =
     ( List.length prevTrackedTxs
     , List.append
@@ -1355,7 +1411,11 @@ trackNewTx newTrackedTx prevTrackedTxs =
     )
 
 
-updateTrackedTxStatus : Int -> TxStatus -> List TrackedTx -> List TrackedTx
+updateTrackedTxStatus :
+    Int
+    -> TxStatus
+    -> List TrackedTx
+    -> List TrackedTx
 updateTrackedTxStatus id newStatus =
     List.Extra.updateAt id
         (\trackedTx ->
@@ -1363,7 +1423,9 @@ updateTrackedTxStatus id newStatus =
         )
 
 
-locationCheckResultToJurisdictionStatus : Result Json.Decode.Error (Result String LocationInfo) -> JurisdictionCheckStatus
+locationCheckResultToJurisdictionStatus :
+    Result Json.Decode.Error (Result String LocationInfo)
+    -> JurisdictionCheckStatus
 locationCheckResultToJurisdictionStatus decodeResult =
     decodeResult
         |> Result.map
@@ -1387,7 +1449,10 @@ locationCheckResultToJurisdictionStatus decodeResult =
         |> Result.Extra.merge
 
 
-countryCodeToJurisdiction : String -> String -> Jurisdiction
+countryCodeToJurisdiction :
+    String
+    -> String
+    -> Jurisdiction
 countryCodeToJurisdiction ipCode geoCode =
     let
         allowedJurisdiction =
