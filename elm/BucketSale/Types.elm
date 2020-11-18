@@ -577,7 +577,7 @@ tosLines dProfile =
               , ( [ Element.text "A text version if this agreement can be found "
                   , Element.newTabLink
                         [ Element.Font.color EH.blue ]
-                        { url = "https://foundrydao.com/sale/terms/"
+                        { url = "https://foundrydao.com/blog/sale-terms"
                         , label = Element.text "here"
                         }
                   , Element.text "."
@@ -652,7 +652,7 @@ tosLines dProfile =
                         [ Element.text "A text version if this agreement can be found "
                         , Element.newTabLink
                             [ Element.Font.color EH.blue ]
-                            { url = "https://foundrydao.com/sale/terms/"
+                            { url = "https://foundrydao.com/blog/sale-terms"
                             , label = Element.text "here"
                             }
                         , Element.text "."
