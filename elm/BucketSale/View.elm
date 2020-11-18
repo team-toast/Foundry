@@ -1703,7 +1703,11 @@ verifyJurisdictionButtonOrResult dProfile jurisdictionCheckStatus =
         WaitingForClick ->
             EH.redButton
                 dProfile
-                [ Element.width Element.fill ]
+                [ Element.width Element.fill
+                , Element.Font.size 16
+                , Element.paddingXY 0 17
+                , Element.spacing 3
+                ]
                 [ "Confirm you are not a US citizen" ]
                 VerifyJurisdictionClicked
 
