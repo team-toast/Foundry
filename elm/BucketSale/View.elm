@@ -1726,12 +1726,10 @@ verifyJurisdictionButtonOrResult dProfile jurisdictionCheckStatus =
                     dProfile
                     "Error verifying jurisdiction."
                     EH.red
-                , Element.paragraph
-                    [ Element.Font.color grayTextColor ]
-                    [ Element.text errStr ]
-                , Element.paragraph
-                    [ Element.Font.color grayTextColor ]
-                    [ Element.text "There may be more info in the console." ]
+                , verifyJurisdictionErrorEl
+                    dProfile
+                    jurisdictionCheckStatus
+                    [ Element.Font.color EH.red ]
                 ]
 
         Checked ForbiddenJurisdictions ->
@@ -3294,3 +3292,39 @@ connectToWeb3Button dProfile wallet =
                     ++ [ Element.Font.color EH.green ]
                 )
                 (Element.text "Wallet connected!")
+
+
+verifyJurisdictionErrorEl :
+    DisplayProfile
+    -> JurisdictionCheckStatus
+    -> List (Attribute Msg)
+    -> Element Msg
+verifyJurisdictionErrorEl dProfile jurisdictionCheckStatus attributes =
+    case jurisdictionCheckStatus of
+        Error errStr ->
+            Element.column
+                ([ Element.spacing <|
+                    responsiveVal
+                        dProfile
+                        20
+                        10
+                 , Element.width Element.fill
+                 , Element.Font.size <|
+                    responsiveVal
+                        dProfile
+                        16
+                        10
+                 ]
+                    ++ attributes
+                )
+                [ Element.paragraph
+                    []
+                    [ Element.text errStr
+                    ]
+                , Element.paragraph
+                    []
+                    [ Element.text "There may be more info in the console." ]
+                ]
+
+        _ ->
+            Element.none
