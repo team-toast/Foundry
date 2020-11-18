@@ -2704,11 +2704,23 @@ referralModal dProfile userInfo maybeReferrer testMode =
                 ]
                 (Element.text text)
 
+        mobileFontAttribute =
+            case dProfile of
+                Desktop ->
+                    []
+
+                SmallDesktop ->
+                    [ Element.Font.size 12 ]
+
         ( firstElsChunk, maybeSecondElsChunk ) =
             case maybeReferrer of
                 Nothing ->
                     ( [ Element.paragraph
-                            [ Element.Font.size <| responsiveVal dProfile 24 14
+                            [ Element.Font.size <|
+                                responsiveVal
+                                    dProfile
+                                    24
+                                    14
                             , Element.Font.bold
                             , Element.Font.color EH.red
                             ]
@@ -2716,18 +2728,14 @@ referralModal dProfile userInfo maybeReferrer testMode =
                       , Element.column
                             [ Element.spacing 20
                             , Element.width Element.fill
-                            , Element.Font.size <| responsiveVal dProfile 18 9
+                            , Element.Font.size <|
+                                responsiveVal
+                                    dProfile
+                                    18
+                                    9
                             ]
                             [ Element.paragraph
-                                ([]
-                                    ++ (case dProfile of
-                                            Desktop ->
-                                                []
-
-                                            SmallDesktop ->
-                                                [ Element.Font.size 12 ]
-                                       )
-                                )
+                                mobileFontAttribute
                                 [ Element.text "You're missing out. Help us market the sale and your friends get an extra "
                                 , highlightedText "10% bonus"
                                 , Element.text " on their purchase. In addition, you can earn "
@@ -2735,47 +2743,30 @@ referralModal dProfile userInfo maybeReferrer testMode =
                                 , Element.text <| " extra " ++ Config.exitingTokenCurrencyLabel ++ " tokens, based on how much " ++ Config.enteringTokenCurrencyLabel ++ " you refer with this code."
                                 ]
                             , Element.paragraph
-                                ([]
-                                    ++ (case dProfile of
-                                            Desktop ->
-                                                []
-
-                                            SmallDesktop ->
-                                                [ Element.Font.size 12 ]
-                                       )
-                                )
+                                mobileFontAttribute
                                 [ Element.text "You can also use your own reference code and get both benefits." ]
                             , Element.paragraph
-                                ([]
-                                    ++ (case dProfile of
-                                            Desktop ->
-                                                []
-
-                                            SmallDesktop ->
-                                                [ Element.Font.size 12 ]
-                                       )
-                                )
-                                [ Element.newTabLink [ Element.Font.color <| EH.lightBlue ]
+                                mobileFontAttribute
+                                [ Element.newTabLink
+                                    [ Element.Font.color <|
+                                        EH.lightBlue
+                                    ]
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "More info on how this works"
                                     }
                                 ]
                             , Element.paragraph
-                                ([]
-                                    ++ (case dProfile of
-                                            Desktop ->
-                                                []
-
-                                            SmallDesktop ->
-                                                [ Element.Font.size 12 ]
-                                       )
-                                )
+                                mobileFontAttribute
                                 [ Element.text "If you haven’t been given a referral link you can generate one for yourself below!" ]
                             ]
                       ]
                     , Just <|
                         [ Element.paragraph
-                            [ Element.Font.size <| responsiveVal dProfile 24 14
+                            [ Element.Font.size <|
+                                responsiveVal
+                                    dProfile
+                                    24
+                                    14
                             , Element.Font.bold
                             , Element.Font.color deepBlue
                             ]
@@ -2793,31 +2784,23 @@ referralModal dProfile userInfo maybeReferrer testMode =
                 Just referrer ->
                     if referrer == userInfo.address then
                         ( [ Element.paragraph
-                                [ Element.Font.size <| responsiveVal dProfile 24 14
+                                [ Element.Font.size <|
+                                    responsiveVal
+                                        dProfile
+                                        24
+                                        14
                                 , Element.Font.bold
                                 , Element.Font.color green
                                 ]
                                 [ Element.text "Nice! You're using your own referral link." ]
                           , Element.paragraph
                                 ([]
-                                    ++ (case dProfile of
-                                            Desktop ->
-                                                []
-
-                                            SmallDesktop ->
-                                                [ Element.Font.size 12 ]
-                                       )
+                                    ++ mobileFontAttribute
                                 )
                                 [ Element.text "This means you'll get both bonuses! More info "
                                 , Element.newTabLink
                                     ([ Element.Font.color EH.lightBlue ]
-                                        ++ (case dProfile of
-                                                Desktop ->
-                                                    []
-
-                                                SmallDesktop ->
-                                                    [ Element.Font.size 12 ]
-                                           )
+                                        ++ mobileFontAttribute
                                     )
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
@@ -2827,62 +2810,56 @@ referralModal dProfile userInfo maybeReferrer testMode =
                           ]
                         , Just <|
                             [ Element.paragraph
-                                [ Element.Font.size <| responsiveVal dProfile 24 14
+                                [ Element.Font.size <|
+                                    responsiveVal
+                                        dProfile
+                                        24
+                                        14
                                 , Element.Font.bold
                                 , Element.Font.color deepBlue
                                 ]
                                 [ Element.text "Your Referral Link" ]
-                            , referralLinkElement dProfile referrer testMode
-                            , referralLinkCopyButton dProfile
+                            , referralLinkElement
+                                dProfile
+                                referrer
+                                testMode
+                            , referralLinkCopyButton
+                                dProfile
                             ]
                         )
 
                     else
                         ( [ Element.paragraph
-                                [ Element.Font.size <| responsiveVal dProfile 24 14
+                                [ Element.Font.size <|
+                                    responsiveVal
+                                        dProfile
+                                        24
+                                        14
                                 , Element.Font.bold
                                 , Element.Font.color green
                                 ]
                                 [ Element.text "Nice! You’ve got a referral bonus." ]
                           , Element.paragraph
-                                ([]
-                                    ++ (case dProfile of
-                                            Desktop ->
-                                                []
-
-                                            SmallDesktop ->
-                                                [ Element.Font.size 12 ]
-                                       )
-                                )
+                                mobileFontAttribute
                                 [ Element.text "Every bid you make will result in a bonus bid into the next bucket, at 10% of the first bid amount. Check the next bucket after you enter your bid!" ]
                           , Element.paragraph
-                                ([]
-                                    ++ (case dProfile of
-                                            Desktop ->
-                                                []
-
-                                            SmallDesktop ->
-                                                [ Element.Font.size 12 ]
-                                       )
-                                )
+                                mobileFontAttribute
                                 [ Element.text <| "Share your own referral code with others to earn " ++ Config.exitingTokenCurrencyLabel ++ "! More info "
                                 , Element.newTabLink
                                     ([ Element.Font.color EH.lightBlue ]
-                                        ++ (case dProfile of
-                                                Desktop ->
-                                                    []
-
-                                                SmallDesktop ->
-                                                    [ Element.Font.size 12 ]
-                                           )
+                                        ++ mobileFontAttribute
                                     )
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "here"
                                     }
                                 , Element.text "."
                                 ]
-                          , referralLinkElement dProfile userInfo.address testMode
-                          , referralLinkCopyButton dProfile
+                          , referralLinkElement
+                                dProfile
+                                userInfo.address
+                                testMode
+                          , referralLinkCopyButton
+                                dProfile
                           ]
                         , Nothing
                         )
@@ -2891,7 +2868,10 @@ referralModal dProfile userInfo maybeReferrer testMode =
         [ Element.Border.rounded 6
         , Element.Background.color EH.white
         , Element.width <|
-            responsiveVal dProfile (Element.px 480) Element.fill
+            responsiveVal
+                dProfile
+                (Element.px 480)
+                Element.fill
         ]
         [ Element.column
             [ Element.width Element.fill
@@ -2908,15 +2888,31 @@ referralModal dProfile userInfo maybeReferrer testMode =
                 }
             , Element.Border.dashed
             , Element.Border.color <| Element.rgb 0.5 0.5 0.5
-            , Element.padding <| responsiveVal dProfile 30 15
-            , Element.spacing <| responsiveVal dProfile 30 15
+            , Element.padding <|
+                responsiveVal
+                    dProfile
+                    30
+                    15
+            , Element.spacing <|
+                responsiveVal
+                    dProfile
+                    30
+                    15
             ]
             firstElsChunk
         , Maybe.map
             (Element.column
                 [ Element.width Element.fill
-                , Element.padding <| responsiveVal dProfile 30 15
-                , Element.spacing <| responsiveVal dProfile 30 15
+                , Element.padding <|
+                    responsiveVal
+                        dProfile
+                        30
+                        15
+                , Element.spacing <|
+                    responsiveVal
+                        dProfile
+                        30
+                        15
                 ]
             )
             maybeSecondElsChunk
@@ -2935,7 +2931,11 @@ referralLinkElement dProfile referrerAddress testMode =
         , Element.Background.color <| deepBlueWithAlpha 0.05
         , Element.paddingXY 5 15
         , Element.Font.color deepBlue
-        , Element.Font.size <| responsiveVal dProfile 12 10
+        , Element.Font.size <|
+            responsiveVal
+                dProfile
+                12
+                10
         , Element.clipX
         , Element.scrollbarX
         ]
