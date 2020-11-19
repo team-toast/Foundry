@@ -18,7 +18,9 @@ import UserNotice as UN exposing (UserNotice)
 import Wallet
 
 
-root : Model -> Browser.Document Msg
+root :
+    Model
+    -> Browser.Document Msg
 root model =
     { title = Config.appTitle
     , body =
@@ -52,7 +54,9 @@ root model =
     }
 
 
-pageElementAndModal : Model -> ( Element Msg, List (Element Msg) )
+pageElementAndModal :
+    Model
+    -> ( Element Msg, List (Element Msg) )
 pageElementAndModal model =
     let
         ( submodelEl, modalEls ) =
@@ -103,7 +107,9 @@ pageElementAndModal model =
     )
 
 
-headerBackground : DisplayProfile -> Element Msg
+headerBackground :
+    DisplayProfile
+    -> Element Msg
 headerBackground dProfile =
     Element.el
         [ Element.width Element.fill
@@ -120,7 +126,9 @@ headerBackground dProfile =
         Element.none
 
 
-header : DisplayProfile -> Element Msg
+header :
+    DisplayProfile
+    -> Element Msg
 header dProfile =
     case dProfile of
         Desktop ->
@@ -157,7 +165,9 @@ header dProfile =
                 ]
 
 
-brandAndLogo : DisplayProfile -> Element Msg
+brandAndLogo :
+    DisplayProfile
+    -> Element Msg
 brandAndLogo dProfile =
     case dProfile of
         Desktop ->
@@ -231,7 +241,9 @@ brandAndLogo dProfile =
                 ]
 
 
-smLinks : DisplayProfile -> Element Msg
+smLinks :
+    DisplayProfile
+    -> Element Msg
 smLinks dProfile =
     [ ( Images.twitter, "https://twitter.com/FoundryDAO" )
     , ( Images.github, "https://github.com/burnable-tech/foundry/" )
@@ -289,7 +301,11 @@ headerLinkBaseStyles =
     ]
 
 
-headerExternalLink : DisplayProfile -> String -> String -> Element Msg
+headerExternalLink :
+    DisplayProfile
+    -> String
+    -> String
+    -> Element Msg
 headerExternalLink dProfile title url =
     Element.link
         [ Element.Font.size 16
@@ -309,7 +325,13 @@ headerExternalLink dProfile title url =
         }
 
 
-headerLink : DisplayProfile -> Maybe Image -> String -> Msg -> HeaderLinkStyle -> Element Msg
+headerLink :
+    DisplayProfile
+    -> Maybe Image
+    -> String
+    -> Msg
+    -> HeaderLinkStyle
+    -> Element Msg
 headerLink dProfile maybeIcon title onClick style =
     let
         extraStyles =
@@ -319,7 +341,8 @@ headerLink dProfile maybeIcon title onClick style =
 
                 Active ->
                     [ Element.Border.rounded 4
-                    , Element.Background.color <| Element.rgb255 2 172 214
+                    , Element.Background.color <|
+                        Element.rgb255 2 172 214
                     ]
 
                 Important ->
@@ -347,7 +370,9 @@ headerLink dProfile maybeIcon title onClick style =
         ]
 
 
-logoElement : DisplayProfile -> Element Msg
+logoElement :
+    DisplayProfile
+    -> Element Msg
 logoElement dProfile =
     Element.el
         [ Element.Font.size 29
@@ -356,7 +381,11 @@ logoElement dProfile =
         , Element.centerX
         , EH.noSelectText
         ]
-        (Element.el [ Element.Font.color EH.softRed ] <| Element.text "Foundry")
+        (Element.el
+            [ Element.Font.color EH.softRed ]
+         <|
+            Element.text "Foundry"
+        )
 
 
 headerMenuAttributes : List (Attribute Msg)
@@ -369,18 +398,27 @@ headerMenuAttributes =
     ]
 
 
-submodelElementAndModal : Model -> ( Element Msg, List (Element Msg) )
+submodelElementAndModal :
+    Model
+    -> ( Element Msg, List (Element Msg) )
 submodelElementAndModal model =
     let
         ( submodelEl, modalEls ) =
             case model.submodel of
                 LoadingSaleModel bucketSaleLoadingModel ->
-                    ( viewBucketSaleLoading bucketSaleLoadingModel model.wallet model.now model.dProfile
+                    ( viewBucketSaleLoading
+                        bucketSaleLoadingModel
+                        model.wallet
+                        model.now
+                        model.dProfile
                     , []
                     )
 
                 BucketSaleModel bucketSaleModel ->
-                    BucketSale.View.root bucketSaleModel model.maybeReferrer model.dProfile
+                    BucketSale.View.root
+                        model.dProfile
+                        bucketSaleModel
+                        model.maybeReferrer
                         |> Tuple.mapBoth
                             (Element.map BucketSaleMsg)
                             (List.map (Element.map BucketSaleMsg))
@@ -395,7 +433,10 @@ submodelElementAndModal model =
     )
 
 
-userNoticeEls : DisplayProfile -> List (UserNotice Msg) -> List (Element Msg)
+userNoticeEls :
+    DisplayProfile
+    -> List (UserNotice Msg)
+    -> List (Element Msg)
 userNoticeEls dProfile notices =
     if notices == [] then
         []
@@ -432,7 +473,10 @@ userNoticeEls dProfile notices =
         ]
 
 
-userNotice : DisplayProfile -> ( Int, UserNotice Msg ) -> Element Msg
+userNotice :
+    DisplayProfile
+    -> ( Int, UserNotice Msg )
+    -> Element Msg
 userNotice dProfile ( id, notice ) =
     let
         color =
@@ -498,7 +542,12 @@ userNotice dProfile ( id, notice ) =
         )
 
 
-viewBucketSaleLoading : BucketSaleLoadingModel -> Wallet.State -> Time.Posix -> DisplayProfile -> Element Msg
+viewBucketSaleLoading :
+    BucketSaleLoadingModel
+    -> Wallet.State
+    -> Time.Posix
+    -> DisplayProfile
+    -> Element Msg
 viewBucketSaleLoading bucketSaleLoadingModel wallet now dProfile =
     case bucketSaleLoadingModel.loadingState of
         Loading ->
@@ -519,7 +568,10 @@ viewBucketSaleLoading bucketSaleLoadingModel wallet now dProfile =
 --     bucketSaleLoadingModel.userBalance
 
 
-bigCenteredText : String -> DisplayProfile -> Element Msg
+bigCenteredText :
+    String
+    -> DisplayProfile
+    -> Element Msg
 bigCenteredText text dProfile =
     Element.paragraph
         [ Element.centerX
