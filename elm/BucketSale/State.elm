@@ -72,6 +72,7 @@ init dProfile bucketSale maybeReferrer testMode wallet now =
       , feedbackUXModel =
             initFeedbackUXModel
       , showYoutubeBlock = False
+      , saleType = Standard
       }
     , Cmd.batch
         [ fetchFastGasPriceCmd
@@ -1133,7 +1134,14 @@ update msg prevModel =
                             True
                 }
                 Cmd.none
-                ChainCmd.None
+                ChainCmd.none
+                []
+
+        SaleTypeToggleClicked newSaleType ->
+            UpdateResult
+                { prevModel | saleType = newSaleType }
+                Cmd.none
+                ChainCmd.none
                 []
 
 

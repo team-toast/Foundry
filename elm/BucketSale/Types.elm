@@ -44,6 +44,7 @@ type alias Model =
     , showFeedbackUXModel : Bool
     , feedbackUXModel : FeedbackUXModel
     , showYoutubeBlock : Bool
+    , saleType : SaleType
     }
 
 
@@ -84,6 +85,12 @@ type Msg
     | TxSigned Int ActionData (Result String TxHash)
     | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
     | YoutubeBlockClicked
+    | SaleTypeToggleClicked SaleType
+
+
+type SaleType
+    = Standard
+    | Advanced
 
 
 type alias ExtraUserInfo =

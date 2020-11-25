@@ -37,6 +37,31 @@ root :
     -> Maybe Address
     -> ( Element Msg, List (Element Msg) )
 root dProfile model maybeReferrer =
+    let
+        toggleStandardBgColor =
+            case model.saleType of
+                Standard ->
+                    EH.lightBlue
+
+                Advanced ->
+                    EH.white
+
+        toggleAdvancedBgColor =
+            case model.saleType of
+                Standard ->
+                    EH.white
+
+                Advanced ->
+                    EH.lightBlue
+
+        paneToShow =
+            case model.saleType of
+                Standard ->
+                    focusedBucketPane
+
+                Advanced ->
+                    multiBucketPane
+    in
     ( Element.column
         ([ Element.width Element.fill
          , Element.paddingEach
@@ -53,9 +78,28 @@ root dProfile model maybeReferrer =
                         maybeReferrer
                )
         )
-        [ case dProfile of
+        (case dProfile of
             Desktop ->
-                Element.row
+                [ Element.row
+                    (commonPaneAttributes ++ [ Element.centerX ])
+                    [ Element.el
+                        [ Element.Events.onClick <|
+                            SaleTypeToggleClicked Standard
+                        , Element.pointer
+                        , Element.Background.color toggleStandardBgColor
+                        ]
+                      <|
+                        Element.text "Standard Sale"
+                    , Element.el
+                        [ Element.Events.onClick <|
+                            SaleTypeToggleClicked Advanced
+                        , Element.pointer
+                        , Element.Background.color toggleAdvancedBgColor
+                        ]
+                      <|
+                        Element.text "Advanced Sale"
+                    ]
+                , Element.row
                     [ Element.centerX
                     , Element.spacing 50
                     ]
@@ -64,24 +108,15 @@ root dProfile model maybeReferrer =
                         , Element.alignTop
                         , Element.spacing 20
                         ]
-                        ([ viewYoutubeLinksBlock dProfile True
-                         , closedBucketsPane dProfile model
-                         ]
-                            ++ (if dProfile == SmallDesktop then
-                                    [ futureBucketsPane dProfile model
-                                    , trackedTxsElement model.trackedTxs
-                                    ]
-
-                                else
-                                    []
-                               )
-                        )
+                        [ viewYoutubeLinksBlock dProfile True
+                        , closedBucketsPane dProfile model
+                        ]
                     , Element.column
                         [ Element.width <| Element.fillPortion 2
                         , Element.spacing 20
                         , Element.alignTop
                         ]
-                        [ focusedBucketPane
+                        [ paneToShow
                             dProfile
                             maybeReferrer
                             model.bucketSale
@@ -99,29 +134,21 @@ root dProfile model maybeReferrer =
                             model.showReferralModal
                             model.now
                             model.testMode
-                        , if dProfile == SmallDesktop then
-                            feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-
-                          else
-                            Element.none
                         ]
-                    , if dProfile == Desktop then
-                        Element.column
-                            [ Element.spacing 20
-                            , Element.width Element.fill
-                            , Element.alignTop
-                            ]
-                            [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
-                            , futureBucketsPane dProfile model
-                            , trackedTxsElement model.trackedTxs
-                            ]
-
-                      else
-                        Element.none
+                    , Element.column
+                        [ Element.spacing 20
+                        , Element.width Element.fill
+                        , Element.alignTop
+                        ]
+                        [ feedbackButtonBlock model.showFeedbackUXModel model.feedbackUXModel
+                        , futureBucketsPane dProfile model
+                        , trackedTxsElement model.trackedTxs
+                        ]
                     ]
+                ]
 
             SmallDesktop ->
-                Element.column
+                [ Element.column
                     [ Element.width Element.fill
                     , Element.spacing 5
                     ]
@@ -145,7 +172,8 @@ root dProfile model maybeReferrer =
                         model.now
                         model.testMode
                     ]
-        ]
+                ]
+        )
     , []
     )
 
@@ -287,6 +315,42 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                                 ]
                )
         )
+
+
+multiBucketPane :
+    DisplayProfile
+    -> Maybe Address
+    -> BucketSale
+    -> Int
+    -> Wallet.State
+    -> Maybe UserStateInfo
+    -> EnterUXModel
+    -> JurisdictionCheckStatus
+    -> List TrackedTx
+    -> Bool
+    -> Time.Posix
+    -> TestMode
+    -> Element Msg
+multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
+    Element.column
+        (commonPaneAttributes
+            ++ [ Element.width Element.fill
+               , Element.paddingXY
+                    (responsiveVal dProfile 35 16)
+                    (responsiveVal dProfile 15 7)
+               , Element.spacing
+                    (responsiveVal dProfile 7 3)
+               ]
+        )
+        [ focusedBucketHeaderEl
+            dProfile
+            bucketId
+            (getCurrentBucketId bucketSale now testMode)
+            (Wallet.userInfo wallet)
+            maybeReferrer
+            referralModalActive
+            testMode
+        ]
 
 
 focusedBucketClosedPane :

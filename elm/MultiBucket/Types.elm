@@ -1,1 +1,0 @@
-module MultiBucket.Types exposing (..)
