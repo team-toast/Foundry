@@ -274,7 +274,7 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                                     dProfile
                                     (getRelevantTimingInfo bucketInfo now testMode)
                                     testMode
-                                , enterBidUX
+                                , bucketUX
                                     dProfile
                                     wallet
                                     maybeReferrer
@@ -1004,7 +1004,7 @@ focusedBucketTimeLeftEl dProfile timingInfo testMode =
         ]
 
 
-enterBidUX :
+bucketUX :
     DisplayProfile
     -> Wallet.State
     -> Maybe Address
@@ -1015,7 +1015,7 @@ enterBidUX :
     -> List TrackedTx
     -> TestMode
     -> Element Msg
-enterBidUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
+bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
     let
         miningEnters =
             trackedTxs
@@ -1077,7 +1077,6 @@ enterBidUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketI
                             dProfile
                             enterUXModel
                             bucketInfo
-                            wallet
                             miningEnters
                             testMode
                         , otherBidsImpactMsg
@@ -1118,7 +1117,6 @@ enterBidUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketI
                                 dProfile
                                 enterUXModel
                                 bucketInfo
-                                wallet
                                 miningEnters
                                 testMode
                             , otherBidsImpactMsg
@@ -1371,46 +1369,40 @@ bidImpactBlock :
     DisplayProfile
     -> EnterUXModel
     -> ValidBucketInfo
-    -> Wallet.State
     -> List EnterInfo
     -> TestMode
     -> Element Msg
-bidImpactBlock dProfile enterUXModel bucketInfo wallet miningEnters testMode =
-    case Wallet.userInfo wallet of
-        Nothing ->
-            Element.none
+bidImpactBlock dProfile enterUXModel bucketInfo miningEnters testMode =
+    centerpaneBlockContainer
+        dProfile
+        PassiveStyle
+        []
+    <|
+        [ emphasizedText PassiveStyle "Your current bid standing:" ]
+            ++ (case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
+                    ( Just totalValueEntered, Just userBuy ) ->
+                        let
+                            existingUserBidAmount =
+                                userBuy.valueEntered
 
-        Just _ ->
-            centerpaneBlockContainer
-                dProfile
-                PassiveStyle
-                []
-            <|
-                [ emphasizedText PassiveStyle "Your current bid standing:" ]
-                    ++ (case ( bucketInfo.bucketData.totalValueEntered, bucketInfo.bucketData.userBuy ) of
-                            ( Just totalValueEntered, Just userBuy ) ->
-                                let
-                                    existingUserBidAmount =
-                                        userBuy.valueEntered
+                            miningUserBidAmount =
+                                miningEnters
+                                    |> List.map .amount
+                                    |> List.foldl TokenValue.add TokenValue.zero
 
-                                    miningUserBidAmount =
-                                        miningEnters
-                                            |> List.map .amount
-                                            |> List.foldl TokenValue.add TokenValue.zero
+                            extraUserBidAmount =
+                                enterUXModel.amount
+                                    |> Maybe.map Result.toMaybe
+                                    |> Maybe.Extra.join
+                                    |> Maybe.withDefault TokenValue.zero
+                        in
+                        [ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
+                        , bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
+                        ]
 
-                                    extraUserBidAmount =
-                                        enterUXModel.amount
-                                            |> Maybe.map Result.toMaybe
-                                            |> Maybe.Extra.join
-                                            |> Maybe.withDefault TokenValue.zero
-                                in
-                                [ bidImpactParagraphEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
-                                , bidBarEl totalValueEntered ( existingUserBidAmount, miningUserBidAmount, extraUserBidAmount ) testMode
-                                ]
-
-                            _ ->
-                                [ loadingElement ]
-                       )
+                    _ ->
+                        [ loadingElement ]
+               )
 
 
 bidImpactParagraphEl :
