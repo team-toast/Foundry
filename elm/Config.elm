@@ -143,3 +143,19 @@ ipCountryCodeEndpointUrl =
 forbiddenJurisdictionCodes : Set String
 forbiddenJurisdictionCodes =
     Set.fromList [ "US" ]
+
+
+multiBucketBotAddress : TestMode -> Address
+multiBucketBotAddress testMode =
+    case testMode of
+        None ->
+            Eth.Utils.unsafeToAddress "0x7d6ea6ae58ddc0c237557035ad873b5a978d108b"
+
+        TestKovan ->
+            Debug.todo ""
+
+        TestMainnet ->
+            Eth.Utils.unsafeToAddress "0x7d6ea6ae58ddc0c237557035ad873b5a978d108b"
+
+        TestGanache ->
+            Debug.todo ""

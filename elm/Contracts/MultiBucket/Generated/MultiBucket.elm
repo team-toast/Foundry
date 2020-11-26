@@ -1,4 +1,4 @@
-module Contracts.MultiBucket.MultiBucket exposing
+module Contracts.MultiBucket.Generated.MultiBucket exposing
     (  agreeToTermsAndConditionsListedInThisBucketSaleContractAndEnterSaleWithDai
        --, agreeToTermsAndConditionsListedInThisBucketSaleContractAndEnterSaleWithErc20
 
