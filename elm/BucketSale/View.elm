@@ -44,12 +44,12 @@ root dProfile model maybeReferrer =
                     EH.lightBlue
 
                 Advanced ->
-                    EH.white
+                    EH.lightGray
 
         toggleAdvancedBgColor =
             case model.saleType of
                 Standard ->
-                    EH.white
+                    EH.lightGray
 
                 Advanced ->
                     EH.lightBlue
@@ -81,21 +81,34 @@ root dProfile model maybeReferrer =
         (case dProfile of
             Desktop ->
                 [ Element.row
-                    (commonPaneAttributes ++ [ Element.centerX ])
+                    (commonPaneAttributes
+                        ++ [ Element.centerX
+                           , Element.spacing 10
+                           , Element.padding 10
+                           ]
+                    )
                     [ Element.el
-                        [ Element.Events.onClick <|
-                            SaleTypeToggleClicked Standard
-                        , Element.pointer
-                        , Element.Background.color toggleStandardBgColor
-                        ]
+                        (commonPaneAttributes
+                            ++ [ Element.Events.onClick <|
+                                    SaleTypeToggleClicked Standard
+                               , Element.pointer
+                               , Element.Background.color toggleStandardBgColor
+                               , Element.padding 15
+                               , Element.spacing 20
+                               ]
+                        )
                       <|
                         Element.text "Standard Sale"
                     , Element.el
-                        [ Element.Events.onClick <|
-                            SaleTypeToggleClicked Advanced
-                        , Element.pointer
-                        , Element.Background.color toggleAdvancedBgColor
-                        ]
+                        (commonPaneAttributes
+                            ++ [ Element.Events.onClick <|
+                                    SaleTypeToggleClicked Advanced
+                               , Element.pointer
+                               , Element.Background.color toggleAdvancedBgColor
+                               , Element.padding 15
+                               , Element.spacing 20
+                               ]
+                        )
                       <|
                         Element.text "Advanced Sale"
                     ]
@@ -133,6 +146,7 @@ root dProfile model maybeReferrer =
                             model.trackedTxs
                             model.showReferralModal
                             model.now
+                            model.saleType
                             model.testMode
                         ]
                     , Element.column
@@ -170,6 +184,7 @@ root dProfile model maybeReferrer =
                         model.trackedTxs
                         model.showReferralModal
                         model.now
+                        model.saleType
                         model.testMode
                     ]
                 ]
@@ -252,9 +267,10 @@ focusedBucketPane :
     -> List TrackedTx
     -> Bool
     -> Time.Posix
+    -> SaleType
     -> TestMode
     -> Element Msg
-focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
+focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now saleType testMode =
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
@@ -311,6 +327,7 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                                     bucketInfo
                                     jurisdictionCheckStatus
                                     trackedTxs
+                                    saleType
                                     testMode
                                 ]
                )
@@ -329,9 +346,28 @@ multiBucketPane :
     -> List TrackedTx
     -> Bool
     -> Time.Posix
+    -> SaleType
     -> TestMode
     -> Element Msg
-multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now testMode =
+multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now saleType testMode =
+    let
+        unlockMining =
+            trackedTxs
+                |> List.any
+                    (\trackedTx ->
+                        case trackedTx.action of
+                            Unlock ->
+                                case trackedTx.status of
+                                    Signed _ Mining ->
+                                        True
+
+                                    _ ->
+                                        False
+
+                            _ ->
+                                False
+                    )
+    in
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
@@ -342,15 +378,125 @@ multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUser
                     (responsiveVal dProfile 7 3)
                ]
         )
-        [ focusedBucketHeaderEl
+        ([ maybeReferralIndicatorAndModal
             dProfile
-            bucketId
-            (getCurrentBucketId bucketSale now testMode)
             (Wallet.userInfo wallet)
             maybeReferrer
             referralModalActive
             testMode
-        ]
+         ]
+            ++ (case getBucketInfo bucketSale bucketId now testMode of
+                    InvalidBucket ->
+                        [ Element.el
+                            [ Element.Font.size 20
+                            , Element.centerX
+                            ]
+                            (Element.text "Invalid bucket Id")
+                        ]
+
+                    ValidBucket bucketInfo ->
+                        case bucketInfo.state of
+                            Closed ->
+                                [ focusedBucketClosedPane
+                                    dProfile
+                                    bucketInfo
+                                    (getRelevantTimingInfo bucketInfo now testMode)
+                                    wallet
+                                    testMode
+                                ]
+
+                            _ ->
+                                [ bidInputBlock
+                                    dProfile
+                                    enterUXModel
+                                    bucketInfo
+                                    saleType
+                                    testMode
+                                , centerpaneBlockContainer
+                                    dProfile
+                                    ActiveStyle
+                                    [ Element.Font.color EH.darkGray ]
+                                    [ Element.row
+                                        [ Element.width Element.fill
+                                        ]
+                                        [ Element.el
+                                            [ Element.Font.size 20
+                                            ]
+                                          <|
+                                            Element.text "Start bid at bucket: "
+                                        , Element.Input.text
+                                            [ Element.width <| Element.px 100
+                                            , Element.Font.color EH.darkGray
+                                            ]
+                                            { onChange = MultiBucketFromBucketChanged
+                                            , text = enterUXModel.fromBucket
+                                            , label = Element.Input.labelHidden "starting bucket"
+                                            , placeholder = Nothing
+                                            }
+                                        ]
+                                    , Element.row
+                                        [ Element.width Element.fill
+                                        ]
+                                        [ Element.el
+                                            [ Element.Font.size 20
+                                            ]
+                                          <|
+                                            Element.text "Number of buckets to bid on: "
+                                        , Element.Input.text
+                                            [ Element.width <| Element.px 100
+                                            , Element.Font.color EH.darkGray
+                                            ]
+                                            { onChange = MultiBucketNumberOfBucketsChanged
+                                            , text = enterUXModel.nrBuckets
+                                            , label = Element.Input.labelHidden "number of buckets"
+                                            , placeholder = Nothing
+                                            }
+                                        ]
+                                    ]
+                                , let
+                                    inputAmount =
+                                        enterUXModel.amount
+                                            |> Maybe.map Result.toMaybe
+                                            |> Maybe.Extra.join
+                                            |> Maybe.withDefault TokenValue.zero
+
+                                    nrBuckets =
+                                        enterUXModel.nrBucketsInt
+                                            |> Maybe.map Result.toMaybe
+                                            |> Maybe.Extra.join
+                                            |> Maybe.withDefault 1
+                                            |> toFloat
+
+                                    daiPerBucket =
+                                        String.fromFloat (TokenValue.toFloatWithWarning inputAmount / nrBuckets)
+                                  in
+                                  Element.paragraph
+                                    []
+                                    [ Element.text <|
+                                        "You will bid "
+                                            ++ daiPerBucket
+                                            ++ " "
+                                            ++ Config.enteringTokenCurrencyLabel
+                                            ++ " per bucket "
+                                            ++ " over the next "
+                                            ++ String.fromFloat nrBuckets
+                                            ++ " buckets."
+                                    ]
+                                , actionButton
+                                    dProfile
+                                    jurisdictionCheckStatus
+                                    maybeReferrer
+                                    wallet
+                                    maybeExtraUserInfo
+                                    unlockMining
+                                    enterUXModel
+                                    bucketInfo
+                                    trackedTxs
+                                    saleType
+                                    testMode
+                                ]
+               )
+        )
 
 
 focusedBucketClosedPane :
@@ -1077,9 +1223,10 @@ bucketUX :
     -> ValidBucketInfo
     -> JurisdictionCheckStatus
     -> List TrackedTx
+    -> SaleType
     -> TestMode
     -> Element Msg
-bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs testMode =
+bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs saleType testMode =
     let
         miningEnters =
             trackedTxs
@@ -1125,6 +1272,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                             dProfile
                             enterUXModel
                             bucketInfo
+                            saleType
                             testMode
                         , actionButton
                             dProfile
@@ -1136,6 +1284,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                             enterUXModel
                             bucketInfo
                             trackedTxs
+                            saleType
                             testMode
                         , bidImpactBlock
                             dProfile
@@ -1165,6 +1314,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                                     dProfile
                                     enterUXModel
                                     bucketInfo
+                                    saleType
                                     testMode
                             , actionButton
                                 dProfile
@@ -1176,6 +1326,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                                 enterUXModel
                                 bucketInfo
                                 trackedTxs
+                                saleType
                                 testMode
                             , bidImpactBlock
                                 dProfile
@@ -1191,8 +1342,14 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
         )
 
 
-bidInputBlock : DisplayProfile -> EnterUXModel -> ValidBucketInfo -> TestMode -> Element Msg
-bidInputBlock dProfile enterUXModel bucketInfo testMode =
+bidInputBlock :
+    DisplayProfile
+    -> EnterUXModel
+    -> ValidBucketInfo
+    -> SaleType
+    -> TestMode
+    -> Element Msg
+bidInputBlock dProfile enterUXModel bucketInfo saleType testMode =
     centerpaneBlockContainer
         dProfile
         ActiveStyle
@@ -1236,19 +1393,23 @@ bidInputBlock dProfile enterUXModel bucketInfo testMode =
                         , Element.text Config.enteringTokenCurrencyLabel
                         ]
                     ]
-                , Maybe.map
-                    (\totalValueEntered ->
-                        pricePerTokenMsg
-                            dProfile
-                            totalValueEntered
-                            (enterUXModel.amount
-                                |> Maybe.map Result.toMaybe
-                                |> Maybe.Extra.join
-                            )
-                            testMode
-                    )
-                    bucketInfo.bucketData.totalValueEntered
-                    |> Maybe.withDefault loadingElement
+                , if saleType == Standard then
+                    Maybe.map
+                        (\totalValueEntered ->
+                            pricePerTokenMsg
+                                dProfile
+                                totalValueEntered
+                                (enterUXModel.amount
+                                    |> Maybe.map Result.toMaybe
+                                    |> Maybe.Extra.join
+                                )
+                                testMode
+                        )
+                        bucketInfo.bucketData.totalValueEntered
+                        |> Maybe.withDefault loadingElement
+
+                  else
+                    Element.none
                 ]
 
             SmallDesktop ->
@@ -1804,13 +1965,14 @@ verifyJurisdictionButtonOrResult dProfile jurisdictionCheckStatus =
 
 enableTokenButton :
     DisplayProfile
+    -> SaleType
     -> Element Msg
-enableTokenButton dProfile =
+enableTokenButton dProfile saleType =
     EH.redButton
         dProfile
         [ Element.width Element.fill ]
         [ "Enable " ++ Config.enteringTokenCurrencyLabel ]
-        EnableTokenButtonClicked
+        (EnableTokenButtonClicked saleType)
 
 
 disabledButton :
@@ -1930,9 +2092,10 @@ actionButton :
     -> EnterUXModel
     -> ValidBucketInfo
     -> List TrackedTx
+    -> SaleType
     -> TestMode
     -> Element Msg
-actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs testMode =
+actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs saleType testMode =
     case Wallet.userInfo wallet of
         Nothing ->
             connectToWeb3Button
@@ -1963,7 +2126,9 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                     orangeWarningColor
 
                             else if TokenValue.isZero extraUserInfo.enteringTokenAllowance then
-                                enableTokenButton dProfile
+                                enableTokenButton
+                                    dProfile
+                                    saleType
 
                             else
                                 let
@@ -2049,7 +2214,9 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                                 miningTotalForThisBucket
 
                                         else
-                                            enableTokenButton dProfile
+                                            enableTokenButton
+                                                dProfile
+                                                saleType
 
                                     _ ->
                                         if lastTransactionsForThisBucketWasSuccessful then

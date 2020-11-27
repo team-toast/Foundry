@@ -159,3 +159,8 @@ multiBucketBotAddress testMode =
 
         TestGanache ->
             Debug.todo ""
+
+
+maxMultiBucketRange : Int
+maxMultiBucketRange =
+    100

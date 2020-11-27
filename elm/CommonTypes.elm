@@ -33,6 +33,11 @@ type alias UserInfo =
     }
 
 
+type SaleType
+    = Standard
+    | Advanced
+
+
 screenWidthToDisplayProfile : Int -> DisplayProfile
 screenWidthToDisplayProfile width =
     if width >= 1300 then

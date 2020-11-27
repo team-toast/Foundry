@@ -77,7 +77,7 @@ type Msg
     | ReferralIndicatorClicked (Maybe Address)
     | CloseReferralModal (Maybe Address)
     | GenerateReferralClicked Address
-    | EnableTokenButtonClicked
+    | EnableTokenButtonClicked SaleType
     | ClaimClicked UserInfo ExitInfo
     | CancelClicked
     | EnterButtonClicked EnterInfo
@@ -86,11 +86,8 @@ type Msg
     | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
     | YoutubeBlockClicked
     | SaleTypeToggleClicked SaleType
-
-
-type SaleType
-    = Standard
-    | Advanced
+    | MultiBucketFromBucketChanged String
+    | MultiBucketNumberOfBucketsChanged String
 
 
 type alias ExtraUserInfo =
@@ -121,6 +118,10 @@ justModelUpdate model =
 type alias EnterUXModel =
     { input : String
     , amount : Maybe (Result String TokenValue)
+    , fromBucket : String
+    , nrBuckets : String
+    , fromBucketId : Maybe (Result String Int)
+    , nrBucketsInt : Maybe (Result String Int)
     }
 
 

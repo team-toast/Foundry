@@ -16,14 +16,21 @@ import Task
 import TokenValue exposing (TokenValue)
 
 
-getSaleStartTimestampCmd : TestMode -> (Result Http.Error BigInt -> msg) -> Cmd msg
+getSaleStartTimestampCmd :
+    TestMode
+    -> (Result Http.Error BigInt -> msg)
+    -> Cmd msg
 getSaleStartTimestampCmd testMode msgConstructor =
     BucketSaleBindings.startOfSale (Config.bucketSaleAddress testMode)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
         |> Task.attempt msgConstructor
 
 
-getTotalValueEnteredForBucket : TestMode -> Int -> (Result Http.Error TokenValue -> msg) -> Cmd msg
+getTotalValueEnteredForBucket :
+    TestMode
+    -> Int
+    -> (Result Http.Error TokenValue -> msg)
+    -> Cmd msg
 getTotalValueEnteredForBucket testMode bucketId msgConstructor =
     BucketSaleBindings.buckets (Config.bucketSaleAddress testMode) (BigInt.fromInt bucketId)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
@@ -31,14 +38,22 @@ getTotalValueEnteredForBucket testMode bucketId msgConstructor =
         |> Task.attempt msgConstructor
 
 
-getUserBuyForBucket : TestMode -> Address -> Int -> (Result Http.Error BucketSaleBindings.Buy -> msg) -> Cmd msg
+getUserBuyForBucket :
+    TestMode
+    -> Address
+    -> Int
+    -> (Result Http.Error BucketSaleBindings.Buy -> msg)
+    -> Cmd msg
 getUserBuyForBucket testMode userAddress bucketId msgConstructor =
     BucketSaleBindings.buys (Config.bucketSaleAddress testMode) (BigInt.fromInt bucketId) userAddress
         |> Eth.call (EthHelpers.appHttpProvider testMode)
         |> Task.attempt msgConstructor
 
 
-getTotalExitedTokens : TestMode -> (Result Http.Error TokenValue -> msg) -> Cmd msg
+getTotalExitedTokens :
+    TestMode
+    -> (Result Http.Error TokenValue -> msg)
+    -> Cmd msg
 getTotalExitedTokens testMode msgConstructor =
     BucketSaleBindings.totalExitedTokens (Config.bucketSaleAddress testMode)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
@@ -46,7 +61,11 @@ getTotalExitedTokens testMode msgConstructor =
         |> Task.attempt msgConstructor
 
 
-getSoldTokenBalance : TestMode -> Address -> (Result Http.Error TokenValue -> msg) -> Cmd msg
+getSoldTokenBalance :
+    TestMode
+    -> Address
+    -> (Result Http.Error TokenValue -> msg)
+    -> Cmd msg
 getSoldTokenBalance testMode userAddress msgConstructor =
     Token.balanceOf
         (Config.exitingTokenAddress testMode)
@@ -62,7 +81,11 @@ type alias ExitInfo =
     }
 
 
-getUserExitInfo : TestMode -> Address -> (Result Http.Error (Maybe ExitInfo) -> msg) -> Cmd msg
+getUserExitInfo :
+    TestMode
+    -> Address
+    -> (Result Http.Error (Maybe ExitInfo) -> msg)
+    -> Cmd msg
 getUserExitInfo testMode userAddress msgConstructor =
     BucketSaleBindings.getExitInfo
         (Config.bucketSaleScriptsAddress testMode)
@@ -97,11 +120,23 @@ type alias UserStateInfo =
     }
 
 
-getStateUpdateInfo : TestMode -> Maybe Address -> Int -> (Result Http.Error (Maybe StateUpdateInfo) -> msg) -> Cmd msg
-getStateUpdateInfo testMode maybeUserAddress bucketId msgConstructor =
+getStateUpdateInfo :
+    TestMode
+    -> Maybe Address
+    -> Int
+    -> SaleType
+    -> (Result Http.Error (Maybe StateUpdateInfo) -> msg)
+    -> Cmd msg
+getStateUpdateInfo testMode maybeUserAddress bucketId saleType msgConstructor =
     BucketSaleBindings.getGeneralInfo
         (Config.bucketSaleScriptsAddress testMode)
-        (Config.bucketSaleAddress testMode)
+        (case saleType of
+            Standard ->
+                Config.bucketSaleAddress testMode
+
+            Advanced ->
+                Config.multiBucketBotAddress testMode
+        )
         (maybeUserAddress |> Maybe.withDefault EthHelpers.zeroAddress)
         (BigInt.fromInt bucketId)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
@@ -109,7 +144,11 @@ getStateUpdateInfo testMode maybeUserAddress bucketId msgConstructor =
         |> Task.attempt msgConstructor
 
 
-getGeneralInfoToStateUpdateInfo : Maybe Address -> Int -> BucketSaleBindings.GetGeneralInfo -> Maybe StateUpdateInfo
+getGeneralInfoToStateUpdateInfo :
+    Maybe Address
+    -> Int
+    -> BucketSaleBindings.GetGeneralInfo
+    -> Maybe StateUpdateInfo
 getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId bindingStruct =
     queryBigIntListToMaybExitInfo bindingStruct.exitInfo
         |> Maybe.map
@@ -138,15 +177,31 @@ getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId bindingStruct =
             )
 
 
-approveTransfer : TestMode -> Call Bool
-approveTransfer testMode =
+approveTransfer :
+    TestMode
+    -> SaleType
+    -> Call Bool
+approveTransfer testMode saleType =
     Token.approve
         (Config.enteringTokenAddress testMode)
-        (Config.bucketSaleAddress testMode)
+        (case saleType of
+            Standard ->
+                Config.bucketSaleAddress testMode
+
+            Advanced ->
+                Config.multiBucketBotAddress testMode
+        )
         EthHelpers.maxUintValue
 
 
-enter : Address -> Int -> TokenValue -> Maybe Address -> Maybe BigInt -> TestMode -> Call ()
+enter :
+    Address
+    -> Int
+    -> TokenValue
+    -> Maybe Address
+    -> Maybe BigInt
+    -> TestMode
+    -> Call ()
 enter userAddress bucketId amount maybeReferrer maybeGasPrice testMode =
     BucketSaleBindings.agreeToTermsAndConditionsListedInThisContractAndEnterSale
         (Config.bucketSaleAddress testMode)
@@ -162,7 +217,11 @@ enter userAddress bucketId amount maybeReferrer maybeGasPrice testMode =
            )
 
 
-exit : Address -> Int -> TestMode -> Call ()
+exit :
+    Address
+    -> Int
+    -> TestMode
+    -> Call ()
 exit userAddress bucketId testMode =
     BucketSaleBindings.exit
         (Config.bucketSaleAddress testMode)
@@ -170,7 +229,11 @@ exit userAddress bucketId testMode =
         userAddress
 
 
-exitMany : Address -> List Int -> TestMode -> Call ()
+exitMany :
+    Address
+    -> List Int
+    -> TestMode
+    -> Call ()
 exitMany userAddress bucketIds testMode =
     BucketSaleBindings.exitMany
         (Config.bucketSaleScriptsAddress testMode)
@@ -179,7 +242,9 @@ exitMany userAddress bucketIds testMode =
         (List.map BigInt.fromInt bucketIds)
 
 
-queryBigIntListToMaybExitInfo : List BigInt -> Maybe ExitInfo
+queryBigIntListToMaybExitInfo :
+    List BigInt
+    -> Maybe ExitInfo
 queryBigIntListToMaybExitInfo bigIntList =
     case ( List.head bigIntList, List.tail bigIntList ) of
         ( Just totalBigInt, Just idBigInts ) ->

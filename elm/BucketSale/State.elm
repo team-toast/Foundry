@@ -79,6 +79,7 @@ init dProfile bucketSale maybeReferrer testMode wallet now =
         , fetchStateUpdateInfoCmd
             (Wallet.userInfo wallet)
             Nothing
+            Standard
             testMode
         , fetchBucketDataCmd
             (getCurrentBucketId
@@ -139,6 +140,10 @@ initEnterUXModel :
 initEnterUXModel maybeReferrer =
     { input = ""
     , amount = Nothing
+    , fromBucket = ""
+    , nrBuckets = ""
+    , fromBucketId = Nothing
+    , nrBucketsInt = Nothing
     }
 
 
@@ -161,6 +166,7 @@ update msg prevModel =
                     fetchStateUpdateInfoCmd
                         (Wallet.userInfo prevModel.wallet)
                         (Just <| getFocusedBucketId prevModel.bucketSale prevModel.bucketView prevModel.now prevModel.testMode)
+                        prevModel.saleType
                         prevModel.testMode
 
                 checkTxsCmd =
@@ -794,7 +800,7 @@ update msg prevModel =
                 , CmdUp.gTag "generate referral" "referral" (Eth.Utils.addressToString address) 0
                 ]
 
-        EnableTokenButtonClicked ->
+        EnableTokenButtonClicked saleType ->
             let
                 ( trackedTxId, newTrackedTxs ) =
                     prevModel.trackedTxs
@@ -813,7 +819,9 @@ update msg prevModel =
                             }
 
                         txParams =
-                            BucketSaleWrappers.approveTransfer prevModel.testMode
+                            BucketSaleWrappers.approveTransfer
+                                prevModel.testMode
+                                prevModel.saleType
                                 |> Eth.toSend
                     in
                     ChainCmd.custom customSend txParams
@@ -1098,6 +1106,7 @@ update msg prevModel =
                                       fetchStateUpdateInfoCmd
                                         (Wallet.userInfo prevModel.wallet)
                                         maybeBucketRefreshId
+                                        prevModel.saleType
                                         prevModel.testMode
                                     , [ CmdUp.gTag
                                             (funnelIdStr ++ actionDataToString actionData ++ " tx success")
@@ -1140,6 +1149,70 @@ update msg prevModel =
         SaleTypeToggleClicked newSaleType ->
             UpdateResult
                 { prevModel | saleType = newSaleType }
+                (fetchStateUpdateInfoCmd
+                    (Wallet.userInfo prevModel.wallet)
+                    Nothing
+                    prevModel.saleType
+                    prevModel.testMode
+                )
+                ChainCmd.none
+                []
+
+        MultiBucketFromBucketChanged value ->
+            UpdateResult
+                { prevModel
+                    | enterUXModel =
+                        let
+                            oldEnterUXModel =
+                                prevModel.enterUXModel
+                        in
+                        { oldEnterUXModel
+                            | fromBucket = value
+                            , fromBucketId =
+                                if value == "" then
+                                    Nothing
+
+                                else
+                                    Just <|
+                                        validateMultiBucketStartBucket
+                                            value
+                                            (getCurrentBucketId
+                                                prevModel.bucketSale
+                                                prevModel.now
+                                                prevModel.testMode
+                                            )
+                        }
+                }
+                Cmd.none
+                ChainCmd.none
+                []
+
+        MultiBucketNumberOfBucketsChanged value ->
+            UpdateResult
+                { prevModel
+                    | enterUXModel =
+                        let
+                            oldEnterUXModel =
+                                prevModel.enterUXModel
+                        in
+                        { oldEnterUXModel
+                            | nrBuckets = value
+                            , nrBucketsInt =
+                                if value == "" then
+                                    Nothing
+
+                                else
+                                    Just <|
+                                        validateMultiBucketNrOfBuckets
+                                            value
+                                            prevModel.enterUXModel.fromBucket
+                                            (getCurrentBucketId
+                                                prevModel.bucketSale
+                                                prevModel.now
+                                                prevModel.testMode
+                                            )
+                        }
+                }
                 Cmd.none
                 ChainCmd.none
                 []
@@ -1175,6 +1248,7 @@ runCmdDown cmdDown prevModel =
                                 prevModel.now
                                 prevModel.testMode
                         )
+                        prevModel.saleType
                         prevModel.testMode
                     )
                     ChainCmd.none
@@ -1316,15 +1390,17 @@ fetchTotalTokensExitedCmd testMode =
 fetchStateUpdateInfoCmd :
     Maybe UserInfo
     -> Maybe Int
+    -> SaleType
     -> TestMode
     -> Cmd Msg
-fetchStateUpdateInfoCmd maybeUserInfo maybeBucketId testMode =
+fetchStateUpdateInfoCmd maybeUserInfo maybeBucketId saleType testMode =
     BucketSaleWrappers.getStateUpdateInfo
         testMode
         (maybeUserInfo |> Maybe.map .address)
         (maybeBucketId
             |> Maybe.withDefault 0
         )
+        saleType
         StateUpdateInfoFetched
 
 
@@ -1405,6 +1481,60 @@ validateTokenInput input =
 
         Nothing ->
             Err "Can't interpret that number"
+
+
+validateMultiBucketStartBucket :
+    String
+    -> Int
+    -> Result String Int
+validateMultiBucketStartBucket fromBucket currentBucket =
+    let
+        rangeError =
+            "Invalid Bucket Number Entered. Valid buckets are numbered 0 to 1999"
+    in
+    case String.toInt fromBucket of
+        Just intVal ->
+            if intVal < 0 || intVal > 1999 then
+                Err rangeError
+
+            else
+                Ok intVal
+
+        Nothing ->
+            Err rangeError
+
+
+validateMultiBucketNrOfBuckets :
+    String
+    -> String
+    -> Int
+    -> Result String Int
+validateMultiBucketNrOfBuckets nrBuckets fromBucket currentBucket =
+    let
+        validStartBucket =
+            case validateMultiBucketStartBucket fromBucket currentBucket of
+                Ok startBucket ->
+                    startBucket
+
+                _ ->
+                    currentBucket
+
+        maxRangeError =
+            "Please enter a valid number of buckets between 1 and " ++ String.fromInt Config.maxMultiBucketRange
+    in
+    case String.toInt nrBuckets of
+        Just intVal ->
+            if intVal < 1 || intVal > Config.maxMultiBucketRange then
+                Err maxRangeError
+
+            else if (1999 - validStartBucket + 1) < intVal then
+                Err <| "Please enter a valid option between 1 and " ++ String.fromInt (1999 - validStartBucket + 1)
+
+            else
+                Ok intVal
+
+        Nothing ->
+            Err maxRangeError
 
 
 trackNewTx :
