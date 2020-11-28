@@ -9,7 +9,7 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-143211145-4"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
+        window.gtag = function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
 
         gtag('config', 'UA-143211145-4', {
@@ -17,7 +17,11 @@
                 'domains':
                     [
                         'sale.foundrydao.com',
-                        'foundrydao.com'
+                        'dashboard.foundrydao.com',
+                        'foundrydao.com',
+                        'foundrydao.eth.link',
+                        'smokesignal.eth.link',
+                        'daihard.exchange'
                     ],
                 'linker': {
                     'accept_incoming': true
