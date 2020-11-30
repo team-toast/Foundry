@@ -6,9 +6,9 @@ module Contracts.BucketSale.Generated.BucketSaleScripts exposing
     , getGeneralInfoDecoder
     )
 
+import BigInt exposing (BigInt)
 import Eth.Abi.Decode as D exposing (abiDecode, andMap, data, toElmDecoder, topic)
 import Eth.Abi.Encode as E exposing (Encoding(..), abiEncode)
-import BigInt exposing (BigInt)
 import Eth.Types exposing (..)
 import Eth.Utils as U
 import Json.Decode as Decode exposing (Decoder, succeed)
@@ -25,7 +25,12 @@ import Json.Decode.Pipeline exposing (custom)
 -- exitMany(address,address,uint256[]) function
 
 
-exitMany : Address -> Address -> Address -> List (BigInt) -> Call ()
+exitMany :
+    Address
+    -> Address
+    -> Address
+    -> List BigInt
+    -> Call ()
 exitMany contractAddress bucketSale_ buyer_ bucketIds_ =
     { to = Just contractAddress
     , from = Nothing
@@ -38,10 +43,15 @@ exitMany contractAddress bucketSale_ buyer_ bucketIds_ =
     }
 
 
+
 -- getExitInfo(address,address) function
 
 
-getExitInfo : Address -> Address -> Address -> Call (List (BigInt))
+getExitInfo :
+    Address
+    -> Address
+    -> Address
+    -> Call (List BigInt)
 getExitInfo contractAddress bucketSale_ buyer_ =
     { to = Just contractAddress
     , from = Nothing
@@ -54,7 +64,8 @@ getExitInfo contractAddress bucketSale_ buyer_ =
     }
 
 
--- getGeneralInfo(address,address,uint256) function
+
+-- getGeneralInfo(uint256,address,address,address,address) function
 
 
 type alias GetGeneralInfo =
@@ -66,18 +77,25 @@ type alias GetGeneralInfo =
     , tokenSoldForBalance : BigInt
     , ethBalance : BigInt
     , tokenOnSaleBalance : BigInt
-    , exitInfo : List (BigInt)
+    , exitInfo : List BigInt
     }
 
 
-getGeneralInfo : Address -> Address -> Address -> BigInt -> Call GetGeneralInfo
-getGeneralInfo contractAddress bucketSale_ buyer_ bucketId_ =
+getGeneralInfo :
+    Address
+    -> BigInt
+    -> Address
+    -> Address
+    -> Address
+    -> Address
+    -> Call GetGeneralInfo
+getGeneralInfo contractAddress bucketId_ bucketSale_ buyer_ multiBucketEntry_ tokenSoldFor_ =
     { to = Just contractAddress
     , from = Nothing
     , gas = Nothing
     , gasPrice = Nothing
     , value = Nothing
-    , data = Just <| E.functionCall "9fe5d76c" [ E.address bucketSale_, E.address buyer_, E.uint bucketId_ ]
+    , data = Just <| E.functionCall "5d48a3ec" [ E.uint bucketId_, E.address bucketSale_, E.address buyer_, E.address multiBucketEntry_, E.address tokenSoldFor_ ]
     , nonce = Nothing
     , decoder = getGeneralInfoDecoder
     }
@@ -96,5 +114,3 @@ getGeneralInfoDecoder =
         |> andMap D.uint
         |> andMap (D.staticArray 1201 D.uint)
         |> toElmDecoder
-
-

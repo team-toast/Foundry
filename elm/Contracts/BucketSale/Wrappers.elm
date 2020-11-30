@@ -130,15 +130,16 @@ getStateUpdateInfo :
 getStateUpdateInfo testMode maybeUserAddress bucketId saleType msgConstructor =
     BucketSaleBindings.getGeneralInfo
         (Config.bucketSaleScriptsAddress testMode)
-        (case saleType of
-            Standard ->
-                Config.bucketSaleAddress testMode
-
-            Advanced ->
-                Config.multiBucketBotAddress testMode
-        )
-        (maybeUserAddress |> Maybe.withDefault EthHelpers.zeroAddress)
         (BigInt.fromInt bucketId)
+        (Config.bucketSaleAddress testMode)
+        (maybeUserAddress |> Maybe.withDefault EthHelpers.zeroAddress)
+        (if saleType == Advanced then
+            Config.multiBucketBotAddress testMode
+
+         else
+            EthHelpers.zeroAddress
+        )
+        (Config.enteringTokenAddress testMode)
         |> Eth.call (EthHelpers.appHttpProvider testMode)
         |> Task.map (getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId)
         |> Task.attempt msgConstructor
