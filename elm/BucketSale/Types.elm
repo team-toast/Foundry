@@ -158,6 +158,8 @@ type alias EnterInfo =
     , bucketId : Int
     , amount : TokenValue
     , maybeReferrer : Maybe Address
+    , nrBuckets : Int
+    , saleType : SaleType
     }
 
 

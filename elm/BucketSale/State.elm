@@ -8,6 +8,7 @@ import CmdUp exposing (CmdUp)
 import CommonTypes exposing (..)
 import Config exposing (forbiddenJurisdictionCodes)
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers
+import Contracts.MultiBucket.Wrappers as MultiBucketWrappers
 import Contracts.Wrappers as TokenWrappers
 import Css exposing (Display)
 import Dict exposing (Dict)
@@ -889,14 +890,28 @@ update msg prevModel =
                             }
 
                         txParams =
-                            BucketSaleWrappers.enter
-                                enterInfo.userInfo.address
-                                enterInfo.bucketId
-                                enterInfo.amount
-                                enterInfo.maybeReferrer
-                                prevModel.fastGasPrice
-                                prevModel.testMode
-                                |> Eth.toSend
+                            case enterInfo.saleType of
+                                Standard ->
+                                    BucketSaleWrappers.enter
+                                        enterInfo.userInfo.address
+                                        enterInfo.bucketId
+                                        enterInfo.amount
+                                        enterInfo.maybeReferrer
+                                        prevModel.fastGasPrice
+                                        prevModel.testMode
+                                        |> Eth.toSend
+
+                                Advanced ->
+                                    -- userAddress bucketId amount numberOfBuckets maybeReferrer maybeGasPrice testMode
+                                    MultiBucketWrappers.enter
+                                        enterInfo.userInfo.address
+                                        enterInfo.bucketId
+                                        enterInfo.amount
+                                        enterInfo.nrBuckets
+                                        enterInfo.maybeReferrer
+                                        prevModel.fastGasPrice
+                                        prevModel.testMode
+                                        |> Eth.toSend
                     in
                     ChainCmd.custom customSend txParams
             in
@@ -1490,12 +1505,15 @@ validateMultiBucketStartBucket :
 validateMultiBucketStartBucket fromBucket currentBucket =
     let
         rangeError =
-            "Invalid Bucket Number Entered. Valid buckets are numbered 0 to 1999"
+            "Valid buckets are numbered 0 to 1999"
     in
     case String.toInt fromBucket of
         Just intVal ->
             if intVal < 0 || intVal > 1999 then
                 Err rangeError
+
+            else if intVal < currentBucket then
+                Err <| "Cannot start before current bucket (" ++ String.fromInt currentBucket ++ ")"
 
             else
                 Ok intVal
@@ -1520,21 +1538,21 @@ validateMultiBucketNrOfBuckets nrBuckets fromBucket currentBucket =
                     currentBucket
 
         maxRangeError =
-            "Please enter a valid number of buckets between 1 and " ++ String.fromInt Config.maxMultiBucketRange
+            "Valid buckets range between 1 and "
     in
     case String.toInt nrBuckets of
         Just intVal ->
             if intVal < 1 || intVal > Config.maxMultiBucketRange then
-                Err maxRangeError
+                Err <| maxRangeError ++ String.fromInt Config.maxMultiBucketRange
 
             else if (1999 - validStartBucket + 1) < intVal then
-                Err <| "Please enter a valid option between 1 and " ++ String.fromInt (1999 - validStartBucket + 1)
+                Err <| maxRangeError ++ String.fromInt (1999 - validStartBucket + 1)
 
             else
                 Ok intVal
 
         Nothing ->
-            Err maxRangeError
+            Err <| maxRangeError ++ String.fromInt Config.maxMultiBucketRange
 
 
 trackNewTx :
