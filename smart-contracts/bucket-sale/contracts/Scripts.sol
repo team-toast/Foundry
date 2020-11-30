@@ -58,7 +58,12 @@ contract Scripts {
         return results;
     }
 
-    function getGeneralInfo(BucketSale _bucketSale, address _buyer, uint _bucketId)
+    function getGeneralInfo(
+            uint _bucketId,
+            BucketSale _bucketSale, 
+            address _buyer, 
+            address _multiBucketEntry,
+            IERC20 _tokenSoldFor)
         public
         view
         returns (
@@ -75,9 +80,19 @@ contract Scripts {
         _totalExitedTokens = _bucketSale.totalExitedTokens();
         _bucket_totalValueEntered = _bucketSale.buckets(_bucketId);
         (_buy_valueEntered, _buy_buyerTokensExited) = _bucketSale.buys(_bucketId, _buyer);
-        _tokenSoldForAllowance = _bucketSale.tokenSoldFor().allowance(_buyer, address(_bucketSale));
-        _tokenSoldForBalance = _bucketSale.tokenSoldFor().balanceOf(_buyer);
         _ethBalance = _buyer.balance;
+        if (address(_tokenSoldFor) == address(0))
+        {
+            _tokenSoldForAllowance = _ethBalance;
+            _tokenSoldForBalance = _ethBalance;
+        }
+        else
+        {
+            _tokenSoldForBalance = _tokenSoldFor.balanceOf(_buyer);
+            _tokenSoldForAllowance = _multiBucketEntry == address(0) ? 
+                _tokenSoldFor.allowance(_buyer, address(_bucketSale)) :
+                _tokenSoldFor.allowance(_buyer, _multiBucketEntry);
+        }
         _tokenOnSaleBalance = _bucketSale.tokenOnSale().balanceOf(_buyer);
         _exitInfo = getExitInfo(_bucketSale, _buyer);
     }
