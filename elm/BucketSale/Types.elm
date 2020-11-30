@@ -90,14 +90,6 @@ type Msg
     | MultiBucketNumberOfBucketsChanged String
 
 
-type alias ExtraUserInfo =
-    { ethBalance : TokenValue
-    , enteringTokenBalance : TokenValue
-    , exitingTokenBalance : TokenValue
-    , enteringTokenAllowance : TokenValue
-    }
-
-
 type alias UpdateResult =
     { model : Model
     , cmd : Cmd Msg

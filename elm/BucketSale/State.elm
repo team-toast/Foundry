@@ -1,4 +1,4 @@
-port module BucketSale.State exposing (init, runCmdDown, subscriptions, update)
+port module BucketSale.State exposing (fetchFastGasPriceCmd, init, runCmdDown, subscriptions, update)
 
 import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
@@ -148,7 +148,10 @@ initEnterUXModel maybeReferrer =
     }
 
 
-update : Msg -> Model -> UpdateResult
+update :
+    Msg
+    -> Model
+    -> UpdateResult
 update msg prevModel =
     case msg of
         NoOp ->
@@ -1163,11 +1166,14 @@ update msg prevModel =
 
         SaleTypeToggleClicked newSaleType ->
             UpdateResult
-                { prevModel | saleType = newSaleType }
+                { prevModel
+                    | saleType = newSaleType
+                    , extraUserInfo = Nothing
+                }
                 (fetchStateUpdateInfoCmd
                     (Wallet.userInfo prevModel.wallet)
                     Nothing
-                    prevModel.saleType
+                    newSaleType
                     prevModel.testMode
                 )
                 ChainCmd.none
