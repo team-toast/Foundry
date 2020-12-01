@@ -1186,16 +1186,33 @@ update msg prevModel =
                         let
                             oldEnterUXModel =
                                 prevModel.enterUXModel
-                        in
-                        { oldEnterUXModel
-                            | fromBucket = value
-                            , fromBucketId =
+
+                            newFromBucketId =
                                 if value == "" then
                                     Nothing
 
                                 else
                                     Just <|
                                         validateMultiBucketStartBucket
+                                            value
+                                            (getCurrentBucketId
+                                                prevModel.bucketSale
+                                                prevModel.now
+                                                prevModel.testMode
+                                            )
+                        in
+                        { oldEnterUXModel
+                            | fromBucket = value
+                            , fromBucketId =
+                                newFromBucketId
+                            , nrBucketsInt =
+                                if value == "" then
+                                    Nothing
+
+                                else
+                                    Just <|
+                                        validateMultiBucketNrOfBuckets
+                                            oldEnterUXModel.nrBuckets
                                             value
                                             (getCurrentBucketId
                                                 prevModel.bucketSale
