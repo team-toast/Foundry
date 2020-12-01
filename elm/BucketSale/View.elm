@@ -2130,6 +2130,10 @@ continueButton dProfile userInfo bucketId enterAmount referrer minedTotal mining
                     ++ alreadyEnteredWithDescription
 
             Advanced ->
+                let
+                    perBucketAmount =
+                        TokenValue.toFloatWithWarning enterAmount / toFloat nrBuckets
+                in
                 "Enter "
                     ++ String.fromInt nrBuckets
                     ++ " buckets with "
@@ -2137,7 +2141,7 @@ continueButton dProfile userInfo bucketId enterAmount referrer minedTotal mining
                     ++ " "
                     ++ Config.enteringTokenCurrencyLabel
                     ++ " at "
-                    ++ String.fromFloat (TokenValue.toFloatWithWarning enterAmount / toFloat nrBuckets)
+                    ++ formatFloat 4 perBucketAmount
                     ++ " "
                     ++ Config.enteringTokenCurrencyLabel
                     ++ " per bucket"
