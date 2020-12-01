@@ -2120,12 +2120,26 @@ continueButton dProfile userInfo bucketId enterAmount referrer minedTotal mining
                         [ Element.padding 10 ]
                )
         )
-        [ "Enter with "
-            ++ TokenValue.toFloatString (Just 2) enterAmount
-            ++ " "
-            ++ Config.enteringTokenCurrencyLabel
-            ++ " "
-            ++ alreadyEnteredWithDescription
+        [ case saleType of
+            Standard ->
+                "Enter with "
+                    ++ TokenValue.toFloatString (Just 2) enterAmount
+                    ++ " "
+                    ++ Config.enteringTokenCurrencyLabel
+                    ++ " "
+                    ++ alreadyEnteredWithDescription
+
+            Advanced ->
+                "Enter "
+                    ++ String.fromInt nrBuckets
+                    ++ " buckets with "
+                    ++ TokenValue.toFloatString (Just 2) enterAmount
+                    ++ " "
+                    ++ Config.enteringTokenCurrencyLabel
+                    ++ " at "
+                    ++ String.fromFloat (TokenValue.toFloatWithWarning enterAmount / toFloat nrBuckets)
+                    ++ Config.enteringTokenCurrencyLabel
+                    ++ " per bucket"
         ]
         (EnterButtonClicked <|
             EnterInfo
@@ -2278,13 +2292,7 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                                         maybeReferrer
                                                         enteredIntoThisBucket
                                                         miningTotalForThisBucket
-                                                        (case saleType of
-                                                            Standard ->
-                                                                1
-
-                                                            Advanced ->
-                                                                nrBuckets
-                                                        )
+                                                        nrBuckets
                                                         saleType
 
                                                 else
