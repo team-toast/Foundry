@@ -2138,6 +2138,7 @@ continueButton dProfile userInfo bucketId enterAmount referrer minedTotal mining
                     ++ Config.enteringTokenCurrencyLabel
                     ++ " at "
                     ++ String.fromFloat (TokenValue.toFloatWithWarning enterAmount / toFloat nrBuckets)
+                    ++ " "
                     ++ Config.enteringTokenCurrencyLabel
                     ++ " per bucket"
         ]
