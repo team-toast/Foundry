@@ -195,6 +195,22 @@ saleTypeBlock dProfile saleType =
                 Advanced ->
                     EH.lightBlue
 
+        toggleAdvancedFontColor =
+            case saleType of
+                Standard ->
+                    EH.black
+
+                Advanced ->
+                    EH.white
+
+        toggleStandardFontColor =
+            case saleType of
+                Standard ->
+                    EH.white
+
+                Advanced ->
+                    EH.black
+
         saleTypeAttributes =
             [ Element.Border.rounded 10
             , Element.padding <| responsiveVal dProfile 10 5
@@ -211,6 +227,7 @@ saleTypeBlock dProfile saleType =
                         SaleTypeToggleClicked Standard
                    , Element.pointer
                    , Element.Background.color toggleStandardBgColor
+                   , Element.Font.color toggleStandardFontColor
                    ]
             )
           <|
@@ -221,6 +238,7 @@ saleTypeBlock dProfile saleType =
                         SaleTypeToggleClicked Advanced
                    , Element.pointer
                    , Element.Background.color toggleAdvancedBgColor
+                   , Element.Font.color toggleAdvancedFontColor
                    ]
             )
           <|
