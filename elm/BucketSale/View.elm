@@ -476,57 +476,52 @@ multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUser
                                     ]
                                 ]
                             ]
-                        , let
-                            inputAmount =
-                                enterUXModel.amount
-                                    |> Maybe.map Result.toMaybe
-                                    |> Maybe.Extra.join
-                                    |> Maybe.withDefault TokenValue.zero
 
-                            nrBuckets =
-                                enterUXModel.nrBucketsInt
-                                    |> Maybe.map Result.toMaybe
-                                    |> Maybe.Extra.join
-                                    |> Maybe.withDefault 1
-                                    |> toFloat
-
-                            fromBucket =
-                                enterUXModel.fromBucketId
-                                    |> Maybe.map Result.toMaybe
-                                    |> Maybe.Extra.join
-                                    |> Maybe.withDefault bucketId
-
-                            daiPerBucket =
-                                String.fromFloat (TokenValue.toFloatWithWarning inputAmount / nrBuckets)
-                          in
-                          case enterUXModel.fromBucketId of
-                            Just (Ok startBucket) ->
-                                case enterUXModel.nrBucketsInt of
-                                    Just (Ok numberBuckets) ->
-                                        case enterUXModel.amount of
-                                            Just (Ok amount) ->
-                                                Element.paragraph
-                                                    [ Element.Font.size fontSize ]
-                                                    [ Element.text <|
-                                                        "You will bid "
-                                                            ++ daiPerBucket
-                                                            ++ " "
-                                                            ++ Config.enteringTokenCurrencyLabel
-                                                            ++ " per bucket "
-                                                            ++ " over the next "
-                                                            ++ String.fromFloat nrBuckets
-                                                            ++ " buckets, starting at bucket #"
-                                                            ++ String.fromInt fromBucket
-                                                    ]
-
-                                            _ ->
-                                                Element.none
-
-                                    _ ->
-                                        Element.none
-
-                            _ ->
-                                Element.none
+                        -- , let
+                        --     inputAmount =
+                        --         enterUXModel.amount
+                        --             |> Maybe.map Result.toMaybe
+                        --             |> Maybe.Extra.join
+                        --             |> Maybe.withDefault TokenValue.zero
+                        --     nrBuckets =
+                        --         enterUXModel.nrBucketsInt
+                        --             |> Maybe.map Result.toMaybe
+                        --             |> Maybe.Extra.join
+                        --             |> Maybe.withDefault 1
+                        --             |> toFloat
+                        --     fromBucket =
+                        --         enterUXModel.fromBucketId
+                        --             |> Maybe.map Result.toMaybe
+                        --             |> Maybe.Extra.join
+                        --             |> Maybe.withDefault bucketId
+                        --     daiPerBucket =
+                        --         String.fromFloat (TokenValue.toFloatWithWarning inputAmount / nrBuckets)
+                        --   in
+                        --   case enterUXModel.fromBucketId of
+                        --     Just (Ok startBucket) ->
+                        --         case enterUXModel.nrBucketsInt of
+                        --             Just (Ok numberBuckets) ->
+                        --                 case enterUXModel.amount of
+                        --                     Just (Ok amount) ->
+                        --                         Element.paragraph
+                        --                             [ Element.Font.size fontSize ]
+                        --                             [ Element.text <|
+                        --                                 "You will bid "
+                        --                                     ++ daiPerBucket
+                        --                                     ++ " "
+                        --                                     ++ Config.enteringTokenCurrencyLabel
+                        --                                     ++ " per bucket "
+                        --                                     ++ " over the next "
+                        --                                     ++ String.fromFloat nrBuckets
+                        --                                     ++ " buckets, starting at bucket #"
+                        --                                     ++ String.fromInt fromBucket
+                        --                             ]
+                        --                     _ ->
+                        --                         Element.none
+                        --             _ ->
+                        --                 Element.none
+                        --     _ ->
+                        --         Element.none
                         , actionButton
                             dProfile
                             jurisdictionCheckStatus
