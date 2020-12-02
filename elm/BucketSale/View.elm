@@ -284,6 +284,13 @@ focusedBucketPane :
     -> TestMode
     -> Element Msg
 focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now saleType testMode =
+    let
+        currentBucketId =
+            getCurrentBucketId
+                bucketSale
+                now
+                testMode
+    in
     Element.column
         (commonPaneAttributes
             ++ [ Element.width Element.fill
@@ -342,6 +349,7 @@ focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUs
                                     jurisdictionCheckStatus
                                     trackedTxs
                                     saleType
+                                    currentBucketId
                                     testMode
                                 ]
                )
@@ -430,104 +438,8 @@ multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUser
                             enterUXModel
                             bucketInfo
                             saleType
+                            currentBucketId
                             testMode
-                        , centerpaneBlockContainer
-                            dProfile
-                            ActiveStyle
-                            [ Element.Font.color EH.darkGray ]
-                            [ Element.column
-                                [ Element.width Element.fill
-                                , Element.spacing 5
-                                ]
-                                [ Element.el
-                                    [ Element.Font.size fontSize
-                                    ]
-                                  <|
-                                    Element.text "Start bid at bucket: "
-                                , Element.row
-                                    [ Element.width Element.fill
-                                    ]
-                                    [ Element.Input.text
-                                        [ Element.width <| Element.px inputWidth
-                                        , Element.Font.color EH.darkGray
-                                        , Element.Font.size fontSize
-                                        ]
-                                        { onChange = MultiBucketFromBucketChanged
-                                        , text = enterUXModel.fromBucketInput
-                                        , label = Element.Input.labelHidden "starting bucket"
-                                        , placeholder = Nothing
-                                        }
-                                    , Element.text <| "  (min " ++ String.fromInt currentBucketId ++ ")"
-                                    ]
-                                , Element.el
-                                    [ Element.Font.size fontSize
-                                    , Element.paddingEach { edges | top = 10 }
-                                    ]
-                                  <|
-                                    Element.text "Number of buckets to bid on: "
-                                , Element.row
-                                    [ Element.width Element.fill
-                                    ]
-                                    [ Element.Input.text
-                                        [ Element.width <| Element.px inputWidth
-                                        , Element.Font.color EH.darkGray
-                                        , Element.Font.size fontSize
-                                        ]
-                                        { onChange = MultiBucketNumberOfBucketsChanged
-                                        , text = enterUXModel.nrBucketsInput
-                                        , label = Element.Input.labelHidden "number of buckets"
-                                        , placeholder = Nothing
-                                        }
-                                    , Element.text "  (max 100)"
-                                    ]
-                                ]
-                            ]
-
-                        -- , let
-                        --     inputAmount =
-                        --         enterUXModel.amount
-                        --             |> Maybe.map Result.toMaybe
-                        --             |> Maybe.Extra.join
-                        --             |> Maybe.withDefault TokenValue.zero
-                        --     nrBuckets =
-                        --         enterUXModel.nrBucketsInt
-                        --             |> Maybe.map Result.toMaybe
-                        --             |> Maybe.Extra.join
-                        --             |> Maybe.withDefault 1
-                        --             |> toFloat
-                        --     fromBucket =
-                        --         enterUXModel.fromBucketId
-                        --             |> Maybe.map Result.toMaybe
-                        --             |> Maybe.Extra.join
-                        --             |> Maybe.withDefault bucketId
-                        --     daiPerBucket =
-                        --         String.fromFloat (TokenValue.toFloatWithWarning inputAmount / nrBuckets)
-                        --   in
-                        --   case enterUXModel.fromBucketId of
-                        --     Just (Ok startBucket) ->
-                        --         case enterUXModel.nrBucketsInt of
-                        --             Just (Ok numberBuckets) ->
-                        --                 case enterUXModel.amount of
-                        --                     Just (Ok amount) ->
-                        --                         Element.paragraph
-                        --                             [ Element.Font.size fontSize ]
-                        --                             [ Element.text <|
-                        --                                 "You will bid "
-                        --                                     ++ daiPerBucket
-                        --                                     ++ " "
-                        --                                     ++ Config.enteringTokenCurrencyLabel
-                        --                                     ++ " per bucket "
-                        --                                     ++ " over the next "
-                        --                                     ++ String.fromFloat nrBuckets
-                        --                                     ++ " buckets, starting at bucket #"
-                        --                                     ++ String.fromInt fromBucket
-                        --                             ]
-                        --                     _ ->
-                        --                         Element.none
-                        --             _ ->
-                        --                 Element.none
-                        --     _ ->
-                        --         Element.none
                         , actionButton
                             dProfile
                             jurisdictionCheckStatus
@@ -1285,9 +1197,10 @@ bucketUX :
     -> JurisdictionCheckStatus
     -> List TrackedTx
     -> SaleType
+    -> Int
     -> TestMode
     -> Element Msg
-bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs saleType testMode =
+bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInfo jurisdictionCheckStatus trackedTxs saleType currentBucketId testMode =
     let
         miningEnters =
             trackedTxs
@@ -1338,6 +1251,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                             enterUXModel
                             bucketInfo
                             saleType
+                            currentBucketId
                             testMode
                         , actionButton
                             dProfile
@@ -1381,6 +1295,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                                     enterUXModel
                                     bucketInfo
                                     saleType
+                                    currentBucketId
                                     testMode
                             , actionButton
                                 dProfile
@@ -1408,154 +1323,209 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
         )
 
 
+bidInputBlockElements :
+    DisplayProfile
+    -> String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> (String -> Msg)
+    -> Maybe EnteringToken
+    -> SaleType
+    -> Maybe TokenValue
+    -> TestMode
+    -> List (Element Msg)
+bidInputBlockElements dProfile leftHeaderText rightHeaderText label placeHolderText inputValue onChangeEvent enteringToken saleType totalEntered testMode =
+    let
+        leftHeading =
+            emphasizedText ActiveStyle leftHeaderText
+
+        rightHeading =
+            emphasizedText ActiveStyle rightHeaderText
+
+        commonAttributes =
+            [ Element.Background.color <| Element.rgba 1 1 1 0.08
+            , Element.Border.rounded 4
+            , Element.padding <|
+                responsiveVal dProfile 13 4
+            , Element.width Element.fill
+            ]
+
+        inputEl =
+            Element.Input.text
+                [ Element.Font.size <| responsiveVal dProfile 19 12
+                , Element.Font.medium
+                , Element.Font.color EH.white
+                , Element.Border.width 0
+                , Element.width Element.fill
+                , Element.Background.color EH.transparent
+                ]
+                { onChange = onChangeEvent
+                , text = inputValue
+                , placeholder =
+                    Just <|
+                        Element.Input.placeholder
+                            [ Element.Font.medium
+                            , Element.Font.color <| Element.rgba 1 1 1 0.25
+                            ]
+                            (Element.text placeHolderText)
+                , label = Element.Input.labelHidden label
+                }
+
+        enteringTokenEl =
+            case enteringToken of
+                Nothing ->
+                    Element.none
+
+                _ ->
+                    Element.row
+                        [ Element.centerY
+                        , Element.spacing 10
+                        ]
+                        [ Images.toElement
+                            [ Element.height <| Element.px 30
+                            ]
+                          <|
+                            case enteringToken of
+                                _ ->
+                                    Images.enteringTokenSymbol
+                        , Element.text <|
+                            case enteringToken of
+                                Just DAI ->
+                                    "DAI"
+
+                                Just ETH ->
+                                    "ETH"
+
+                                Nothing ->
+                                    ""
+                        ]
+
+        pricePerTokenEl =
+            if saleType == Standard then
+                Maybe.map
+                    (\totalValueEntered ->
+                        pricePerTokenMsg
+                            dProfile
+                            totalValueEntered
+                            (TokenValue.fromString inputValue)
+                            testMode
+                    )
+                    totalEntered
+                    |> Maybe.withDefault loadingElement
+
+            else
+                Element.none
+    in
+    [ Element.row
+        [ Element.width Element.fill ]
+        [ leftHeading
+        , Element.column
+            [ Element.width Element.fill ]
+            [ Element.row
+                [ Element.alignRight ]
+                [ rightHeading ]
+            ]
+        ]
+    , Element.row
+        commonAttributes
+        [ inputEl
+        , enteringTokenEl
+        ]
+    , pricePerTokenEl
+    ]
+
+
 bidInputBlock :
     DisplayProfile
     -> EnterUXModel
     -> ValidBucketInfo
     -> SaleType
+    -> Int
     -> TestMode
     -> Element Msg
-bidInputBlock dProfile enterUXModel bucketInfo saleType testMode =
+bidInputBlock dProfile enterUXModel bucketInfo saleType currentBucketId testMode =
+    let
+        totalValueEntered =
+            case bucketInfo.bucketData.totalValueEntered of
+                Just totalEntered ->
+                    totalEntered
+
+                _ ->
+                    TokenValue.zero
+    in
     centerpaneBlockContainer
         dProfile
         ActiveStyle
         []
     <|
-        case dProfile of
-            Desktop ->
-                [ emphasizedText ActiveStyle "I want to bid:"
-                , Element.row
-                    [ Element.Background.color <| Element.rgba 1 1 1 0.08
-                    , Element.Border.rounded 4
-                    , Element.padding <|
-                        responsiveVal dProfile 13 7
-                    , Element.width Element.fill
-                    ]
-                    [ Element.Input.text
-                        [ Element.Font.size 19
-                        , Element.Font.medium
-                        , Element.Font.color EH.white
-                        , Element.Border.width 0
-                        , Element.width Element.fill
-                        , Element.Background.color EH.transparent
-                        ]
-                        { onChange = EnterInputChanged
-                        , text = enterUXModel.amountInput
-                        , placeholder =
-                            Just <|
-                                Element.Input.placeholder
-                                    [ Element.Font.medium
-                                    , Element.Font.color <| Element.rgba 1 1 1 0.25
-                                    ]
-                                    (Element.text "Enter Amount")
-                        , label = Element.Input.labelHidden "bid amount"
-                        }
-                    , Element.row
-                        [ Element.centerY
-                        , Element.spacing 10
-                        ]
-                        [ Images.enteringTokenSymbol
-                            |> Images.toElement [ Element.height <| Element.px 30 ]
-                        , Element.text Config.enteringTokenCurrencyLabel
-                        ]
-                    ]
-                , if saleType == Standard then
-                    Maybe.map
-                        (\totalValueEntered ->
-                            pricePerTokenMsg
-                                dProfile
+        case saleType of
+            Standard ->
+                bidInputBlockElements
+                    dProfile
+                    "I want to bid:"
+                    (case dProfile of
+                        Desktop ->
+                            ""
+
+                        SmallDesktop ->
+                            TokenValue.toConciseString
                                 totalValueEntered
-                                (enterUXModel.amountValidated
-                                    |> Maybe.map Result.toMaybe
-                                    |> Maybe.Extra.join
-                                )
-                                testMode
-                        )
-                        bucketInfo.bucketData.totalValueEntered
-                        |> Maybe.withDefault loadingElement
-
-                  else
-                    Element.none
-                ]
-
-            SmallDesktop ->
-                let
-                    totalValueEntered =
-                        case bucketInfo.bucketData.totalValueEntered of
-                            Just totalEntered ->
-                                totalEntered
-
-                            _ ->
-                                TokenValue.zero
-                in
-                [ Element.row
-                    [ Element.width Element.fill ]
-                    [ emphasizedText ActiveStyle <| "I want to bid:"
-                    , Element.column
-                        [ Element.width Element.fill ]
-                        [ Element.row
-                            [ Element.alignRight ]
-                            [ emphasizedText
-                                ActiveStyle
-                              <|
-                                TokenValue.toConciseString
-                                    totalValueEntered
-                                    ++ " "
-                                    ++ Config.enteringTokenCurrencyLabel
-                                    ++ " already bid"
-                            ]
-                        ]
-                    ]
-                , Element.row
-                    [ Element.Background.color <|
-                        Element.rgba 1 1 1 0.08
-                    , Element.Border.rounded 4
-                    , Element.padding 4
-                    , Element.width Element.fill
-                    ]
-                    [ Element.Input.text
-                        [ Element.Font.size 12
-                        , Element.Font.medium
-                        , Element.Font.color EH.white
-                        , Element.Border.width 0
-                        , Element.width Element.fill
-                        , Element.Background.color EH.transparent
-                        ]
-                        { onChange = EnterInputChanged
-                        , text = enterUXModel.amountInput
-                        , placeholder =
-                            Just <|
-                                Element.Input.placeholder
-                                    [ Element.Font.medium
-                                    , Element.Font.color <|
-                                        Element.rgba 1 1 1 0.25
-                                    ]
-                                    (Element.text "Enter Amount")
-                        , label = Element.Input.labelHidden "bid amount"
-                        }
-                    , Element.row
-                        [ Element.centerY
-                        , Element.spacing 8
-                        ]
-                        [ Images.enteringTokenSymbol
-                            |> Images.toElement [ Element.height <| Element.px 20 ]
-                        , Element.text Config.enteringTokenCurrencyLabel
-                        ]
-                    ]
-                , Maybe.map
-                    (\totalValue ->
-                        pricePerTokenMsg
-                            dProfile
-                            totalValue
-                            (enterUXModel.amountValidated
-                                |> Maybe.map Result.toMaybe
-                                |> Maybe.Extra.join
-                            )
-                            testMode
+                                ++ " "
+                                ++ Config.enteringTokenCurrencyLabel
+                                ++ " already bid"
                     )
+                    "bid amount"
+                    "Enter Amount"
+                    enterUXModel.amountInput
+                    EnterInputChanged
+                    (Just DAI)
+                    saleType
                     bucketInfo.bucketData.totalValueEntered
-                    |> Maybe.withDefault loadingElement
-                ]
+                    testMode
+
+            Advanced ->
+                bidInputBlockElements
+                    dProfile
+                    "I want to bid:"
+                    ""
+                    "bid amount"
+                    "Enter Amount"
+                    enterUXModel.amountInput
+                    EnterInputChanged
+                    (Just DAI)
+                    saleType
+                    bucketInfo.bucketData.totalValueEntered
+                    testMode
+                    ++ bidInputBlockElements
+                        dProfile
+                        ("Start bid at bucket "
+                            ++ "(min "
+                            ++ String.fromInt currentBucketId
+                            ++ "):"
+                        )
+                        ""
+                        "starting bucket"
+                        "Bucket #"
+                        enterUXModel.fromBucketInput
+                        MultiBucketFromBucketChanged
+                        Nothing
+                        saleType
+                        bucketInfo.bucketData.totalValueEntered
+                        testMode
+                    ++ bidInputBlockElements
+                        dProfile
+                        "Number of buckets to bid on:"
+                        ""
+                        "number of buckets"
+                        "Number of Buckets"
+                        enterUXModel.nrBucketsInput
+                        MultiBucketNumberOfBucketsChanged
+                        Nothing
+                        saleType
+                        bucketInfo.bucketData.totalValueEntered
+                        testMode
 
 
 pricePerTokenMsg : DisplayProfile -> TokenValue -> Maybe TokenValue -> TestMode -> Element Msg

@@ -1565,15 +1565,18 @@ validateMultiBucketNrOfBuckets nrBuckets fromBucket currentBucket =
                     currentBucket
 
         maxRangeError =
-            "Valid buckets range between 1 and "
+            "Valid nr of buckets range between 1 and "
 
         maxBucketId =
             Config.bucketSaleNumBuckets - 1
+
+        maxNrBuckets =
+            Config.maxMultiBucketRange - currentBucket + 1
     in
     case String.toInt nrBuckets of
         Just intVal ->
-            if intVal < 1 || intVal > Config.maxMultiBucketRange then
-                Err <| maxRangeError ++ String.fromInt Config.maxMultiBucketRange
+            if intVal < 1 || intVal > maxNrBuckets then
+                Err <| maxRangeError ++ String.fromInt maxNrBuckets
 
             else if (validStartBucket + intVal - 1) > maxBucketId then
                 Err <| "To bid on " ++ nrBuckets ++ " buckets starting bucket must be " ++ String.fromInt (maxBucketId + 1 - intVal)
@@ -1582,7 +1585,7 @@ validateMultiBucketNrOfBuckets nrBuckets fromBucket currentBucket =
                 Ok intVal
 
         Nothing ->
-            Err <| maxRangeError ++ String.fromInt Config.maxMultiBucketRange
+            Err <| maxRangeError ++ String.fromInt maxNrBuckets
 
 
 trackNewTx :

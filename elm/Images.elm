@@ -46,6 +46,14 @@ daiSymbol =
         }
 
 
+ethSymbol : Image
+ethSymbol =
+    JustImage
+        { src = "img/dai-symbol.png"
+        , description = "ETH"
+        }
+
+
 downArrow : Image
 downArrow =
     JustImage
