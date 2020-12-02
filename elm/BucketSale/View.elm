@@ -2205,6 +2205,13 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                 grayTextColor
 
                         Just extraUserInfo ->
+                            let
+                                enteringAmount =
+                                    enterUXModel.amount
+                                        |> Maybe.map Result.toMaybe
+                                        |> Maybe.Extra.join
+                                        |> Maybe.withDefault TokenValue.zero
+                            in
                             if unlockMining then
                                 msgInsteadOfButton
                                     dProfile
@@ -2218,6 +2225,11 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                     orangeWarningColor
 
                             else if TokenValue.isZero extraUserInfo.enteringTokenAllowance then
+                                enableTokenButton
+                                    dProfile
+                                    saleType
+
+                            else if TokenValue.toFloatWithWarning extraUserInfo.enteringTokenAllowance < TokenValue.toFloatWithWarning enteringAmount then
                                 enableTokenButton
                                     dProfile
                                     saleType
