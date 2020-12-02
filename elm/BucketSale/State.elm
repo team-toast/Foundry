@@ -1571,7 +1571,7 @@ validateMultiBucketNrOfBuckets nrBuckets fromBucket currentBucket =
             Config.bucketSaleNumBuckets - 1
 
         maxNrBuckets =
-            Config.maxMultiBucketRange - currentBucket + 1
+            Config.maxMultiBucketRange
     in
     case String.toInt nrBuckets of
         Just intVal ->

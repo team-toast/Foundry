@@ -1516,7 +1516,10 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType currentBucketId testMode
                         testMode
                     ++ bidInputBlockElements
                         dProfile
-                        "Number of buckets to bid on:"
+                        ("Number of buckets to bid on (max "
+                            ++ String.fromInt Config.maxMultiBucketRange
+                            ++ "):"
+                        )
                         ""
                         "number of buckets"
                         "Number of Buckets"

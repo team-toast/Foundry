@@ -163,4 +163,4 @@ multiBucketBotAddress testMode =
 
 maxMultiBucketRange : Int
 maxMultiBucketRange =
-    100
+    200
