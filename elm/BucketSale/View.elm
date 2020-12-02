@@ -1313,7 +1313,11 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                             Unlock typeOfSale ->
                                 case trackedTx.status of
                                     Signed _ Mining ->
-                                        True
+                                        if saleType == typeOfSale then
+                                            True
+
+                                        else
+                                            False
 
                                     _ ->
                                         False
