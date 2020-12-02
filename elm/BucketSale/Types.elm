@@ -78,7 +78,7 @@ type Msg
     | CloseReferralModal (Maybe Address)
     | GenerateReferralClicked Address
     | EnableTokenButtonClicked SaleType
-    | ClaimClicked UserInfo ExitInfo
+    | ClaimClicked UserInfo ExitInfo SaleType
     | CancelClicked
     | EnterButtonClicked EnterInfo
     | ConfirmClicked EnterInfo
@@ -162,15 +162,17 @@ type alias TrackedTx =
 
 
 type ActionData
-    = Unlock
+    = Unlock SaleType
     | Enter EnterInfo
     | Exit
 
 
-actionDataToString : ActionData -> String
+actionDataToString :
+    ActionData
+    -> String
 actionDataToString actionData =
     case actionData of
-        Unlock ->
+        Unlock typeOfSale ->
             "Unlock"
 
         Enter _ ->

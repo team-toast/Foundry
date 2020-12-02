@@ -810,7 +810,7 @@ update msg prevModel =
                     prevModel.trackedTxs
                         |> trackNewTx
                             (TrackedTx
-                                Unlock
+                                (Unlock saleType)
                                 Signing
                             )
 
@@ -818,7 +818,11 @@ update msg prevModel =
                     let
                         customSend =
                             { onMined = Nothing
-                            , onSign = Just <| TxSigned trackedTxId Unlock
+                            , onSign =
+                                Just <|
+                                    TxSigned
+                                        trackedTxId
+                                        (Unlock saleType)
                             , onBroadcast = Nothing
                             }
 
@@ -932,7 +936,7 @@ update msg prevModel =
                     0
                 ]
 
-        ClaimClicked userInfo exitInfo ->
+        ClaimClicked userInfo exitInfo saleType ->
             let
                 ( trackedTxId, newTrackedTxs ) =
                     prevModel.trackedTxs
@@ -1019,7 +1023,7 @@ update msg prevModel =
 
                         ( funnelIdStr, maybeEventValue ) =
                             case actionData of
-                                Unlock ->
+                                Unlock typeOfSale ->
                                     ( "4b - "
                                     , Nothing
                                     )
@@ -1093,7 +1097,7 @@ update msg prevModel =
                                     let
                                         ( funnelIdStr, maybeEventValue ) =
                                             case actionData of
-                                                Unlock ->
+                                                Unlock typeOfSale ->
                                                     ( "4c - "
                                                     , Nothing
                                                     )

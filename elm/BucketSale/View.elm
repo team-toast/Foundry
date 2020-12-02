@@ -261,6 +261,7 @@ closedBucketsPane dProfile model =
             dProfile
             model.wallet
             (model.extraUserInfo |> Maybe.map .exitInfo)
+            model.saleType
         , totalExitedBlock
             dProfile
             model.totalTokensExited
@@ -369,7 +370,7 @@ multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUser
                 |> List.any
                     (\trackedTx ->
                         case trackedTx.action of
-                            Unlock ->
+                            Unlock typeOfSale ->
                                 case trackedTx.status of
                                     Signed _ Mining ->
                                         True
@@ -880,8 +881,13 @@ maybeUserBalanceBlock dProfile wallet maybeExtraUserInfo =
                 ]
 
 
-maybeClaimBlock : DisplayProfile -> Wallet.State -> Maybe ExitInfo -> Element Msg
-maybeClaimBlock dProfile wallet maybeExitInfo =
+maybeClaimBlock :
+    DisplayProfile
+    -> Wallet.State
+    -> Maybe ExitInfo
+    -> SaleType
+    -> Element Msg
+maybeClaimBlock dProfile wallet maybeExitInfo saleType =
     case ( Wallet.userInfo wallet, maybeExitInfo ) of
         ( Nothing, _ ) ->
             Element.none
@@ -902,6 +908,7 @@ maybeClaimBlock dProfile wallet maybeExitInfo =
                                 dProfile
                                 userInfo
                                 exitInfo
+                                saleType
                         , exitInfo.totalExitable
                         )
             in
@@ -1303,7 +1310,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                 |> List.any
                     (\trackedTx ->
                         case trackedTx.action of
-                            Unlock ->
+                            Unlock typeOfSale ->
                                 case trackedTx.status of
                                     Signed _ Mining ->
                                         True
@@ -1359,6 +1366,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                                 dProfile
                                 wallet
                                 (maybeExtraUserInfo |> Maybe.map .exitInfo)
+                                saleType
                             , Element.el
                                 [ Element.width Element.fill
                                 , Element.alignTop
@@ -2582,8 +2590,16 @@ makeDescription :
     -> String
 makeDescription action =
     case action of
-        Unlock ->
-            "Enable " ++ Config.enteringTokenCurrencyLabel
+        Unlock typeOfSale ->
+            "Enable "
+                ++ Config.enteringTokenCurrencyLabel
+                ++ (case typeOfSale of
+                        Standard ->
+                            "Single Bucket"
+
+                        Advanced ->
+                            "Multi Bucket"
+                   )
 
         Enter enterInfo ->
             "Bid on bucket "
@@ -3517,13 +3533,14 @@ makeClaimButton :
     DisplayProfile
     -> UserInfo
     -> ExitInfo
+    -> SaleType
     -> Element Msg
-makeClaimButton dProfile userInfo exitInfo =
+makeClaimButton dProfile userInfo exitInfo saleType =
     EH.lightBlueButton
         dProfile
         [ Element.width Element.fill ]
         [ "Claim your " ++ Config.exitingTokenCurrencyLabel ++ "" ]
-        (ClaimClicked userInfo exitInfo)
+        (ClaimClicked userInfo exitInfo saleType)
 
 
 jumpToCurrentBucketButton :
