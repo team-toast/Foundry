@@ -139,12 +139,12 @@ initEnterUXModel :
     Maybe Address
     -> EnterUXModel
 initEnterUXModel maybeReferrer =
-    { input = ""
-    , amount = Nothing
-    , fromBucket = ""
-    , nrBuckets = ""
-    , fromBucketId = Nothing
-    , nrBucketsInt = Nothing
+    { amountInput = ""
+    , amountValidated = Nothing
+    , fromBucketInput = ""
+    , nrBucketsInput = ""
+    , fromBucketValidated = Nothing
+    , nrBucketsValidated = Nothing
     }
 
 
@@ -754,8 +754,8 @@ update msg prevModel =
                                 prevModel.enterUXModel
                         in
                         { oldEnterUXModel
-                            | input = input
-                            , amount =
+                            | amountInput = input
+                            , amountValidated =
                                 if input == "" then
                                     Nothing
 
@@ -1010,8 +1010,8 @@ update msg prevModel =
                                             prevModel.enterUXModel
                                     in
                                     { oldEnterUXModel
-                                        | input = ""
-                                        , amount = Nothing
+                                        | amountInput = ""
+                                        , amountValidated = Nothing
                                     }
 
                                 _ ->
@@ -1202,17 +1202,17 @@ update msg prevModel =
                                             )
                         in
                         { oldEnterUXModel
-                            | fromBucket = value
-                            , fromBucketId =
+                            | fromBucketInput = value
+                            , fromBucketValidated =
                                 newFromBucketId
-                            , nrBucketsInt =
+                            , nrBucketsValidated =
                                 if value == "" then
                                     Nothing
 
                                 else
                                     Just <|
                                         validateMultiBucketNrOfBuckets
-                                            oldEnterUXModel.nrBuckets
+                                            oldEnterUXModel.nrBucketsInput
                                             value
                                             (getCurrentBucketId
                                                 prevModel.bucketSale
@@ -1234,8 +1234,8 @@ update msg prevModel =
                                 prevModel.enterUXModel
                         in
                         { oldEnterUXModel
-                            | nrBuckets = value
-                            , nrBucketsInt =
+                            | nrBucketsInput = value
+                            , nrBucketsValidated =
                                 if value == "" then
                                     Nothing
 
@@ -1243,7 +1243,7 @@ update msg prevModel =
                                     Just <|
                                         validateMultiBucketNrOfBuckets
                                             value
-                                            prevModel.enterUXModel.fromBucket
+                                            prevModel.enterUXModel.fromBucketInput
                                             (getCurrentBucketId
                                                 prevModel.bucketSale
                                                 prevModel.now

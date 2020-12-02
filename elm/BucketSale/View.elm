@@ -452,7 +452,7 @@ multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUser
                                         , Element.Font.size fontSize
                                         ]
                                         { onChange = MultiBucketFromBucketChanged
-                                        , text = enterUXModel.fromBucket
+                                        , text = enterUXModel.fromBucketInput
                                         , label = Element.Input.labelHidden "starting bucket"
                                         , placeholder = Nothing
                                         }
@@ -473,7 +473,7 @@ multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUser
                                         , Element.Font.size fontSize
                                         ]
                                         { onChange = MultiBucketNumberOfBucketsChanged
-                                        , text = enterUXModel.nrBuckets
+                                        , text = enterUXModel.nrBucketsInput
                                         , label = Element.Input.labelHidden "number of buckets"
                                         , placeholder = Nothing
                                         }
@@ -1097,39 +1097,39 @@ maybeReferralIndicatorAndModal :
     -> TestMode
     -> Element Msg
 maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModalActive saleType testMode =
-    case maybeUserInfo of
-        Nothing ->
-            Element.none
+    Element.row
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        , Element.centerX
+        , Element.centerY
+        , Element.spacing 10
+        , Element.paddingEach { edges | bottom = 10 }
+        ]
+        [ case maybeUserInfo of
+            Nothing ->
+                Element.none
 
-        Just userInfo ->
-            let
-                maybeModalAttribute =
-                    responsiveVal
-                        dProfile
-                        Element.onRight
-                        Element.below
-                    <|
-                        if referralModalActive then
-                            Element.el
-                                [ Element.centerX
-                                , Element.moveRight <| responsiveVal dProfile 25 0
-                                , Element.moveUp (responsiveVal dProfile 50 0)
-                                , EH.moveToFront
-                                ]
-                                (referralModal dProfile userInfo maybeReferrer testMode)
+            Just userInfo ->
+                let
+                    maybeModalAttribute =
+                        responsiveVal
+                            dProfile
+                            Element.onRight
+                            Element.below
+                        <|
+                            if referralModalActive then
+                                Element.el
+                                    [ Element.centerX
+                                    , Element.moveRight <| responsiveVal dProfile 25 0
+                                    , Element.moveUp (responsiveVal dProfile 50 0)
+                                    , EH.moveToFront
+                                    ]
+                                    (referralModal dProfile userInfo maybeReferrer testMode)
 
-                        else
-                            Element.none
-            in
-            Element.row
-                [ Element.width Element.fill
-                , Element.height Element.fill
-                , Element.centerX
-                , Element.centerY
-                , Element.spacing 10
-                , Element.paddingEach { edges | bottom = 10 }
-                ]
-                [ Element.el
+                            else
+                                Element.none
+                in
+                Element.el
                     [ Element.centerX
                     , maybeModalAttribute
                     , Element.inFront <|
@@ -1145,15 +1145,15 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                         else
                             Element.none
                     ]
-                  <|
+                <|
                     referralBonusIndicator
                         dProfile
                         maybeReferrer
                         referralModalActive
-                , saleTypeBlock
-                    dProfile
-                    saleType
-                ]
+        , saleTypeBlock
+            dProfile
+            saleType
+        ]
 
 
 focusedBucketSubheaderEl : DisplayProfile -> ValidBucketInfo -> Element Msg
@@ -1428,7 +1428,7 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType testMode =
                         , Element.Background.color EH.transparent
                         ]
                         { onChange = EnterInputChanged
-                        , text = enterUXModel.input
+                        , text = enterUXModel.amountInput
                         , placeholder =
                             Just <|
                                 Element.Input.placeholder
@@ -1453,7 +1453,7 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType testMode =
                             pricePerTokenMsg
                                 dProfile
                                 totalValueEntered
-                                (enterUXModel.amount
+                                (enterUXModel.amountValidated
                                     |> Maybe.map Result.toMaybe
                                     |> Maybe.Extra.join
                                 )
@@ -1510,7 +1510,7 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType testMode =
                         , Element.Background.color EH.transparent
                         ]
                         { onChange = EnterInputChanged
-                        , text = enterUXModel.input
+                        , text = enterUXModel.amountInput
                         , placeholder =
                             Just <|
                                 Element.Input.placeholder
@@ -1535,7 +1535,7 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType testMode =
                         pricePerTokenMsg
                             dProfile
                             totalValue
-                            (enterUXModel.amount
+                            (enterUXModel.amountValidated
                                 |> Maybe.map Result.toMaybe
                                 |> Maybe.Extra.join
                             )
@@ -1670,7 +1670,7 @@ bidImpactBlock dProfile enterUXModel bucketInfo miningEnters testMode =
                                     |> List.foldl TokenValue.add TokenValue.zero
 
                             extraUserBidAmount =
-                                enterUXModel.amount
+                                enterUXModel.amountValidated
                                     |> Maybe.map Result.toMaybe
                                     |> Maybe.Extra.join
                                     |> Maybe.withDefault TokenValue.zero
@@ -2192,7 +2192,7 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                         Just extraUserInfo ->
                             let
                                 enteringAmount =
-                                    enterUXModel.amount
+                                    enterUXModel.amountValidated
                                         |> Maybe.map Result.toMaybe
                                         |> Maybe.Extra.join
                                         |> Maybe.withDefault TokenValue.zero
@@ -2275,13 +2275,13 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                             |> Maybe.withDefault TokenValue.zero
 
                                     nrBuckets =
-                                        enterUXModel.nrBucketsInt
+                                        enterUXModel.nrBucketsValidated
                                             |> Maybe.map Result.toMaybe
                                             |> Maybe.Extra.join
                                             |> Maybe.withDefault 1
 
                                     enterAmountSection =
-                                        case enterUXModel.amount of
+                                        case enterUXModel.amountValidated of
                                             Just (Ok enterAmount) ->
                                                 if List.any (\tx -> tx.status == Signing) trackedTxs then
                                                     disabledButton
@@ -2336,9 +2336,9 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                             infoText =
                                                 "Enter values above to continue."
                                         in
-                                        case enterUXModel.fromBucketId of
+                                        case enterUXModel.fromBucketValidated of
                                             Just (Ok startBucketId) ->
-                                                case enterUXModel.nrBucketsInt of
+                                                case enterUXModel.nrBucketsValidated of
                                                     Just (Ok numberOfBuckets) ->
                                                         enterAmountSection
 

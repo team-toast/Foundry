@@ -108,12 +108,12 @@ justModelUpdate model =
 
 
 type alias EnterUXModel =
-    { input : String
-    , amount : Maybe (Result String TokenValue)
-    , fromBucket : String
-    , nrBuckets : String
-    , fromBucketId : Maybe (Result String Int)
-    , nrBucketsInt : Maybe (Result String Int)
+    { amountInput : String
+    , amountValidated : Maybe (Result String TokenValue)
+    , fromBucketInput : String
+    , fromBucketValidated : Maybe (Result String Int)
+    , nrBucketsInput : String
+    , nrBucketsValidated : Maybe (Result String Int)
     }
 
 
