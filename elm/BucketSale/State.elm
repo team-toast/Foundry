@@ -825,7 +825,7 @@ update msg prevModel =
                         txParams =
                             BucketSaleWrappers.approveTransfer
                                 prevModel.testMode
-                                prevModel.saleType
+                                saleType
                                 |> Eth.toSend
                     in
                     ChainCmd.custom customSend txParams

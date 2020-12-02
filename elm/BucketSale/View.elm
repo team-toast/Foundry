@@ -160,7 +160,10 @@ commonPaneAttributes =
     ]
 
 
-blockTitleText : String -> List (Attribute Msg) -> Element Msg
+blockTitleText :
+    String
+    -> List (Attribute Msg)
+    -> Element Msg
 blockTitleText text attributes =
     Element.el
         ([ Element.width Element.fill
@@ -173,80 +176,64 @@ blockTitleText text attributes =
         Element.text text
 
 
+saleTypeToggleButton :
+    DisplayProfile
+    -> SaleType
+    -> SaleType
+    -> Element Msg
+saleTypeToggleButton dProfile newSaleType buttonSaleType =
+    let
+        attributes =
+            if newSaleType == buttonSaleType then
+                [ Element.Background.color EH.lightBlue
+                , Element.Font.color EH.white
+                ]
+
+            else
+                [ Element.Background.color EH.lightGray
+                , Element.Font.color EH.black
+                ]
+
+        buttonText =
+            case buttonSaleType of
+                Standard ->
+                    "Standard"
+
+                Advanced ->
+                    "Advanced"
+    in
+    Element.el
+        (attributes
+            ++ [ Element.Border.rounded 10
+               , Element.padding <| responsiveVal dProfile 10 5
+               , Element.Font.size <| responsiveVal dProfile 16 12
+               , Element.Events.onClick <|
+                    SaleTypeToggleClicked buttonSaleType
+               , Element.pointer
+               ]
+        )
+    <|
+        Element.text buttonText
+
+
 saleTypeBlock :
     DisplayProfile
     -> SaleType
     -> Element Msg
-saleTypeBlock dProfile saleType =
-    let
-        toggleStandardBgColor =
-            case saleType of
-                Standard ->
-                    EH.lightBlue
-
-                Advanced ->
-                    EH.lightGray
-
-        toggleAdvancedBgColor =
-            case saleType of
-                Standard ->
-                    EH.lightGray
-
-                Advanced ->
-                    EH.lightBlue
-
-        toggleAdvancedFontColor =
-            case saleType of
-                Standard ->
-                    EH.black
-
-                Advanced ->
-                    EH.white
-
-        toggleStandardFontColor =
-            case saleType of
-                Standard ->
-                    EH.white
-
-                Advanced ->
-                    EH.black
-
-        saleTypeAttributes =
-            [ Element.Border.rounded 10
-            , Element.padding <| responsiveVal dProfile 10 5
-            , Element.Font.size <| responsiveVal dProfile 16 12
-            ]
-    in
+saleTypeBlock dProfile newSaleType =
     Element.row
         [ Element.centerX
         , Element.spacing 2
         ]
-        [ Element.el
-            (saleTypeAttributes
-                ++ [ Element.Events.onClick <|
-                        SaleTypeToggleClicked Standard
-                   , Element.pointer
-                   , Element.Background.color toggleStandardBgColor
-                   , Element.Font.color toggleStandardFontColor
-                   ]
-            )
-          <|
-            Element.text "Standard"
-        , Element.el
-            (saleTypeAttributes
-                ++ [ Element.Events.onClick <|
-                        SaleTypeToggleClicked Advanced
-                   , Element.pointer
-                   , Element.Background.color toggleAdvancedBgColor
-                   , Element.Font.color toggleAdvancedFontColor
-                   ]
-            )
-          <|
-            Element.text "Advanced"
+        [ saleTypeToggleButton dProfile newSaleType Standard
+        , saleTypeToggleButton dProfile newSaleType Advanced
         ]
 
 
-closedBucketsPane : DisplayProfile -> Model -> Element Msg
+closedBucketsPane :
+    DisplayProfile
+    -> Model
+    -> Element Msg
 closedBucketsPane dProfile model =
     Element.column
         (commonPaneAttributes
@@ -1144,8 +1131,6 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                 ]
                 [ Element.el
                     [ Element.centerX
-
-                    --, Element.paddingEach { edges | bottom = 10 }
                     , maybeModalAttribute
                     , Element.inFront <|
                         if referralModalActive then
