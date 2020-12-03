@@ -27,9 +27,9 @@ module Contracts.BucketSale.Generated.BucketSale exposing
     , treasury
     )
 
+import BigInt exposing (BigInt)
 import Eth.Abi.Decode as D exposing (abiDecode, andMap, data, toElmDecoder, topic)
 import Eth.Abi.Encode as E exposing (Encoding(..), abiEncode)
-import BigInt exposing (BigInt)
 import Eth.Types exposing (..)
 import Eth.Utils as U
 import Json.Decode as Decode exposing (Decoder, succeed)
@@ -46,7 +46,13 @@ import Json.Decode.Pipeline exposing (custom)
 -- agreeToTermsAndConditionsListedInThisContractAndEnterSale(address,uint256,uint256,address) function
 
 
-agreeToTermsAndConditionsListedInThisContractAndEnterSale : Address -> Address -> BigInt -> BigInt -> Address -> Call ()
+agreeToTermsAndConditionsListedInThisContractAndEnterSale :
+    Address
+    -> Address
+    -> BigInt
+    -> BigInt
+    -> Address
+    -> Call ()
 agreeToTermsAndConditionsListedInThisContractAndEnterSale contractAddress buyer_ bucketId_ amount_ referrer_ =
     { to = Just contractAddress
     , from = Nothing
@@ -59,10 +65,13 @@ agreeToTermsAndConditionsListedInThisContractAndEnterSale contractAddress buyer_
     }
 
 
+
 -- bucketCount() function
 
 
-bucketCount : Address -> Call BigInt
+bucketCount :
+    Address
+    -> Call BigInt
 bucketCount contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -75,10 +84,13 @@ bucketCount contractAddress =
     }
 
 
+
 -- bucketPeriod() function
 
 
-bucketPeriod : Address -> Call BigInt
+bucketPeriod :
+    Address
+    -> Call BigInt
 bucketPeriod contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -91,10 +103,13 @@ bucketPeriod contractAddress =
     }
 
 
+
 -- bucketSupply() function
 
 
-bucketSupply : Address -> Call BigInt
+bucketSupply :
+    Address
+    -> Call BigInt
 bucketSupply contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -107,10 +122,14 @@ bucketSupply contractAddress =
     }
 
 
+
 -- buckets(uint256) function
 
 
-buckets : Address -> BigInt -> Call BigInt
+buckets :
+    Address
+    -> BigInt
+    -> Call BigInt
 buckets contractAddress a_ =
     { to = Just contractAddress
     , from = Nothing
@@ -123,10 +142,13 @@ buckets contractAddress a_ =
     }
 
 
+
 -- buyerReferralRewardPerc() function
 
 
-buyerReferralRewardPerc : Address -> Call BigInt
+buyerReferralRewardPerc :
+    Address
+    -> Call BigInt
 buyerReferralRewardPerc contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -139,6 +161,7 @@ buyerReferralRewardPerc contractAddress =
     }
 
 
+
 -- buys(uint256,address) function
 
 
@@ -148,7 +171,11 @@ type alias Buy =
     }
 
 
-buys : Address -> BigInt -> Address -> Call Buy
+buys :
+    Address
+    -> BigInt
+    -> Address
+    -> Call Buy
 buys contractAddress a_ b_ =
     { to = Just contractAddress
     , from = Nothing
@@ -169,10 +196,15 @@ buysDecoder =
         |> toElmDecoder
 
 
+
 -- calculateExitableTokens(uint256,address) function
 
 
-calculateExitableTokens : Address -> BigInt -> Address -> Call BigInt
+calculateExitableTokens :
+    Address
+    -> BigInt
+    -> Address
+    -> Call BigInt
 calculateExitableTokens contractAddress bucketId_ buyer_ =
     { to = Just contractAddress
     , from = Nothing
@@ -185,10 +217,13 @@ calculateExitableTokens contractAddress bucketId_ buyer_ =
     }
 
 
+
 -- currentBucket() function
 
 
-currentBucket : Address -> Call BigInt
+currentBucket :
+    Address
+    -> Call BigInt
 currentBucket contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -201,10 +236,15 @@ currentBucket contractAddress =
     }
 
 
+
 -- exit(uint256,address) function
 
 
-exit : Address -> BigInt -> Address -> Call ()
+exit :
+    Address
+    -> BigInt
+    -> Address
+    -> Call ()
 exit contractAddress bucketId_ buyer_ =
     { to = Just contractAddress
     , from = Nothing
@@ -217,10 +257,14 @@ exit contractAddress bucketId_ buyer_ =
     }
 
 
+
 -- referredTotal(address) function
 
 
-referredTotal : Address -> Address -> Call BigInt
+referredTotal :
+    Address
+    -> Address
+    -> Call BigInt
 referredTotal contractAddress a_ =
     { to = Just contractAddress
     , from = Nothing
@@ -233,10 +277,14 @@ referredTotal contractAddress a_ =
     }
 
 
+
 -- referrerReferralRewardPerc(address) function
 
 
-referrerReferralRewardPerc : Address -> Address -> Call BigInt
+referrerReferralRewardPerc :
+    Address
+    -> Address
+    -> Call BigInt
 referrerReferralRewardPerc contractAddress referrerAddress_ =
     { to = Just contractAddress
     , from = Nothing
@@ -249,10 +297,13 @@ referrerReferralRewardPerc contractAddress referrerAddress_ =
     }
 
 
+
 -- startOfSale() function
 
 
-startOfSale : Address -> Call BigInt
+startOfSale :
+    Address
+    -> Call BigInt
 startOfSale contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -265,10 +316,13 @@ startOfSale contractAddress =
     }
 
 
+
 -- termsAndConditions() function
 
 
-termsAndConditions : Address -> Call String
+termsAndConditions :
+    Address
+    -> Call String
 termsAndConditions contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -281,10 +335,13 @@ termsAndConditions contractAddress =
     }
 
 
+
 -- tokenOnSale() function
 
 
-tokenOnSale : Address -> Call Address
+tokenOnSale :
+    Address
+    -> Call Address
 tokenOnSale contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -297,10 +354,13 @@ tokenOnSale contractAddress =
     }
 
 
+
 -- tokenSoldFor() function
 
 
-tokenSoldFor : Address -> Call Address
+tokenSoldFor :
+    Address
+    -> Call Address
 tokenSoldFor contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -313,10 +373,13 @@ tokenSoldFor contractAddress =
     }
 
 
+
 -- totalExitedTokens() function
 
 
-totalExitedTokens : Address -> Call BigInt
+totalExitedTokens :
+    Address
+    -> Call BigInt
 totalExitedTokens contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -329,10 +392,13 @@ totalExitedTokens contractAddress =
     }
 
 
+
 -- treasury() function
 
 
-treasury : Address -> Call Address
+treasury :
+    Address
+    -> Call Address
 treasury contractAddress =
     { to = Just contractAddress
     , from = Nothing
@@ -343,6 +409,7 @@ treasury contractAddress =
     , nonce = Nothing
     , decoder = toElmDecoder D.address
     }
+
 
 
 -- Entered(address,uint256,address,uint256,uint256,address,uint256) event
@@ -359,12 +426,16 @@ type alias Entered =
     }
 
 
-enteredEvent : Address -> Maybe Address -> Maybe Address -> LogFilter
-enteredEvent contractAddress buyer_ referrer_ = 
+enteredEvent :
+    Address
+    -> Maybe Address
+    -> Maybe Address
+    -> LogFilter
+enteredEvent contractAddress buyer_ referrer_ =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics = 
+    , topics =
         [ Just <| U.unsafeToHex "161e0456cd3270520befa83f5fdd74084ad38cd70a096dcf24ccf7edc368b04f"
         , Maybe.map (abiEncode << E.address) buyer_
         , Maybe.map (abiEncode << E.address) referrer_
@@ -373,7 +444,7 @@ enteredEvent contractAddress buyer_ referrer_ =
 
 
 enteredDecoder : Decoder Entered
-enteredDecoder = 
+enteredDecoder =
     Decode.succeed Entered
         |> custom (data 0 D.address)
         |> custom (data 1 D.uint)
@@ -382,6 +453,7 @@ enteredDecoder =
         |> custom (data 3 D.uint)
         |> custom (topic 2 D.address)
         |> custom (data 4 D.uint)
+
 
 
 -- Exited(uint256,address,uint256) event
@@ -394,12 +466,15 @@ type alias Exited =
     }
 
 
-exitedEvent : Address -> Maybe Address -> LogFilter
-exitedEvent contractAddress buyer_ = 
+exitedEvent :
+    Address
+    -> Maybe Address
+    -> LogFilter
+exitedEvent contractAddress buyer_ =
     { fromBlock = LatestBlock
     , toBlock = LatestBlock
     , address = contractAddress
-    , topics = 
+    , topics =
         [ Just <| U.unsafeToHex "0808b45a422e0acd47a625c74fff3eb8d6d4dd063e0845deb1e57581c27b32f5"
         , Maybe.map (abiEncode << E.address) buyer_
         ]
@@ -407,10 +482,8 @@ exitedEvent contractAddress buyer_ =
 
 
 exitedDecoder : Decoder Exited
-exitedDecoder = 
+exitedDecoder =
     Decode.succeed Exited
         |> custom (data 0 D.uint)
         |> custom (topic 1 D.address)
         |> custom (data 1 D.uint)
-
-

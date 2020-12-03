@@ -33,6 +33,16 @@ type alias UserInfo =
     }
 
 
+type SaleType
+    = Standard
+    | Advanced
+
+
+type EnteringToken
+    = DAI
+    | ETH
+
+
 screenWidthToDisplayProfile : Int -> DisplayProfile
 screenWidthToDisplayProfile width =
     if width >= 1300 then

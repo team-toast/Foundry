@@ -1,4 +1,4 @@
-port module BucketSale.State exposing (init, runCmdDown, subscriptions, update)
+port module BucketSale.State exposing (fetchFastGasPriceCmd, init, runCmdDown, subscriptions, update)
 
 import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
@@ -8,6 +8,7 @@ import CmdUp exposing (CmdUp)
 import CommonTypes exposing (..)
 import Config exposing (forbiddenJurisdictionCodes)
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers
+import Contracts.MultiBucket.Wrappers as MultiBucketWrappers
 import Contracts.Wrappers as TokenWrappers
 import Css exposing (Display)
 import Dict exposing (Dict)
@@ -72,12 +73,14 @@ init dProfile bucketSale maybeReferrer testMode wallet now =
       , feedbackUXModel =
             initFeedbackUXModel
       , showYoutubeBlock = False
+      , saleType = Standard
       }
     , Cmd.batch
         [ fetchFastGasPriceCmd
         , fetchStateUpdateInfoCmd
             (Wallet.userInfo wallet)
             Nothing
+            Standard
             testMode
         , fetchBucketDataCmd
             (getCurrentBucketId
@@ -136,12 +139,19 @@ initEnterUXModel :
     Maybe Address
     -> EnterUXModel
 initEnterUXModel maybeReferrer =
-    { input = ""
-    , amount = Nothing
+    { amountInput = ""
+    , amountValidated = Nothing
+    , fromBucketInput = ""
+    , nrBucketsInput = ""
+    , fromBucketValidated = Nothing
+    , nrBucketsValidated = Nothing
     }
 
 
-update : Msg -> Model -> UpdateResult
+update :
+    Msg
+    -> Model
+    -> UpdateResult
 update msg prevModel =
     case msg of
         NoOp ->
@@ -160,6 +170,7 @@ update msg prevModel =
                     fetchStateUpdateInfoCmd
                         (Wallet.userInfo prevModel.wallet)
                         (Just <| getFocusedBucketId prevModel.bucketSale prevModel.bucketView prevModel.now prevModel.testMode)
+                        prevModel.saleType
                         prevModel.testMode
 
                 checkTxsCmd =
@@ -743,8 +754,8 @@ update msg prevModel =
                                 prevModel.enterUXModel
                         in
                         { oldEnterUXModel
-                            | input = input
-                            , amount =
+                            | amountInput = input
+                            , amountValidated =
                                 if input == "" then
                                     Nothing
 
@@ -793,13 +804,13 @@ update msg prevModel =
                 , CmdUp.gTag "generate referral" "referral" (Eth.Utils.addressToString address) 0
                 ]
 
-        EnableTokenButtonClicked ->
+        EnableTokenButtonClicked saleType ->
             let
                 ( trackedTxId, newTrackedTxs ) =
                     prevModel.trackedTxs
                         |> trackNewTx
                             (TrackedTx
-                                Unlock
+                                (Unlock saleType)
                                 Signing
                             )
 
@@ -807,12 +818,18 @@ update msg prevModel =
                     let
                         customSend =
                             { onMined = Nothing
-                            , onSign = Just <| TxSigned trackedTxId Unlock
+                            , onSign =
+                                Just <|
+                                    TxSigned
+                                        trackedTxId
+                                        (Unlock saleType)
                             , onBroadcast = Nothing
                             }
 
                         txParams =
-                            BucketSaleWrappers.approveTransfer prevModel.testMode
+                            BucketSaleWrappers.approveTransfer
+                                prevModel.testMode
+                                saleType
                                 |> Eth.toSend
                     in
                     ChainCmd.custom customSend txParams
@@ -880,14 +897,28 @@ update msg prevModel =
                             }
 
                         txParams =
-                            BucketSaleWrappers.enter
-                                enterInfo.userInfo.address
-                                enterInfo.bucketId
-                                enterInfo.amount
-                                enterInfo.maybeReferrer
-                                prevModel.fastGasPrice
-                                prevModel.testMode
-                                |> Eth.toSend
+                            case enterInfo.saleType of
+                                Standard ->
+                                    BucketSaleWrappers.enter
+                                        enterInfo.userInfo.address
+                                        enterInfo.bucketId
+                                        enterInfo.amount
+                                        enterInfo.maybeReferrer
+                                        prevModel.fastGasPrice
+                                        prevModel.testMode
+                                        |> Eth.toSend
+
+                                Advanced ->
+                                    -- userAddress bucketId amount numberOfBuckets maybeReferrer maybeGasPrice testMode
+                                    MultiBucketWrappers.enter
+                                        enterInfo.userInfo.address
+                                        enterInfo.bucketId
+                                        enterInfo.amount
+                                        enterInfo.nrBuckets
+                                        enterInfo.maybeReferrer
+                                        prevModel.fastGasPrice
+                                        prevModel.testMode
+                                        |> Eth.toSend
                     in
                     ChainCmd.custom customSend txParams
             in
@@ -905,7 +936,7 @@ update msg prevModel =
                     0
                 ]
 
-        ClaimClicked userInfo exitInfo ->
+        ClaimClicked userInfo exitInfo saleType ->
             let
                 ( trackedTxId, newTrackedTxs ) =
                     prevModel.trackedTxs
@@ -983,8 +1014,8 @@ update msg prevModel =
                                             prevModel.enterUXModel
                                     in
                                     { oldEnterUXModel
-                                        | input = ""
-                                        , amount = Nothing
+                                        | amountInput = ""
+                                        , amountValidated = Nothing
                                     }
 
                                 _ ->
@@ -992,7 +1023,7 @@ update msg prevModel =
 
                         ( funnelIdStr, maybeEventValue ) =
                             case actionData of
-                                Unlock ->
+                                Unlock typeOfSale ->
                                     ( "4b - "
                                     , Nothing
                                     )
@@ -1066,7 +1097,7 @@ update msg prevModel =
                                     let
                                         ( funnelIdStr, maybeEventValue ) =
                                             case actionData of
-                                                Unlock ->
+                                                Unlock typeOfSale ->
                                                     ( "4c - "
                                                     , Nothing
                                                     )
@@ -1097,6 +1128,7 @@ update msg prevModel =
                                       fetchStateUpdateInfoCmd
                                         (Wallet.userInfo prevModel.wallet)
                                         maybeBucketRefreshId
+                                        prevModel.saleType
                                         prevModel.testMode
                                     , [ CmdUp.gTag
                                             (funnelIdStr ++ actionDataToString actionData ++ " tx success")
@@ -1133,7 +1165,98 @@ update msg prevModel =
                             True
                 }
                 Cmd.none
-                ChainCmd.None
+                ChainCmd.none
+                []
+
+        SaleTypeToggleClicked newSaleType ->
+            UpdateResult
+                { prevModel
+                    | saleType = newSaleType
+                    , extraUserInfo = Nothing
+                }
+                (fetchStateUpdateInfoCmd
+                    (Wallet.userInfo prevModel.wallet)
+                    Nothing
+                    newSaleType
+                    prevModel.testMode
+                )
+                ChainCmd.none
+                []
+
+        MultiBucketFromBucketChanged value ->
+            UpdateResult
+                { prevModel
+                    | enterUXModel =
+                        let
+                            oldEnterUXModel =
+                                prevModel.enterUXModel
+
+                            newFromBucketId =
+                                if value == "" then
+                                    Nothing
+
+                                else
+                                    Just <|
+                                        validateMultiBucketStartBucket
+                                            value
+                                            (getCurrentBucketId
+                                                prevModel.bucketSale
+                                                prevModel.now
+                                                prevModel.testMode
+                                            )
+                        in
+                        { oldEnterUXModel
+                            | fromBucketInput = value
+                            , fromBucketValidated =
+                                newFromBucketId
+                            , nrBucketsValidated =
+                                if value == "" then
+                                    Nothing
+
+                                else
+                                    Just <|
+                                        validateMultiBucketNrOfBuckets
+                                            oldEnterUXModel.nrBucketsInput
+                                            value
+                                            (getCurrentBucketId
+                                                prevModel.bucketSale
+                                                prevModel.now
+                                                prevModel.testMode
+                                            )
+                        }
+                }
+                Cmd.none
+                ChainCmd.none
+                []
+
+        MultiBucketNumberOfBucketsChanged value ->
+            UpdateResult
+                { prevModel
+                    | enterUXModel =
+                        let
+                            oldEnterUXModel =
+                                prevModel.enterUXModel
+                        in
+                        { oldEnterUXModel
+                            | nrBucketsInput = value
+                            , nrBucketsValidated =
+                                if value == "" then
+                                    Nothing
+
+                                else
+                                    Just <|
+                                        validateMultiBucketNrOfBuckets
+                                            value
+                                            prevModel.enterUXModel.fromBucketInput
+                                            (getCurrentBucketId
+                                                prevModel.bucketSale
+                                                prevModel.now
+                                                prevModel.testMode
+                                            )
+                        }
+                }
+                Cmd.none
+                ChainCmd.none
                 []
 
 
@@ -1167,6 +1290,7 @@ runCmdDown cmdDown prevModel =
                                 prevModel.now
                                 prevModel.testMode
                         )
+                        prevModel.saleType
                         prevModel.testMode
                     )
                     ChainCmd.none
@@ -1308,15 +1432,17 @@ fetchTotalTokensExitedCmd testMode =
 fetchStateUpdateInfoCmd :
     Maybe UserInfo
     -> Maybe Int
+    -> SaleType
     -> TestMode
     -> Cmd Msg
-fetchStateUpdateInfoCmd maybeUserInfo maybeBucketId testMode =
+fetchStateUpdateInfoCmd maybeUserInfo maybeBucketId saleType testMode =
     BucketSaleWrappers.getStateUpdateInfo
         testMode
         (maybeUserInfo |> Maybe.map .address)
         (maybeBucketId
             |> Maybe.withDefault 0
         )
+        saleType
         StateUpdateInfoFetched
 
 
@@ -1397,6 +1523,69 @@ validateTokenInput input =
 
         Nothing ->
             Err "Can't interpret that number"
+
+
+validateMultiBucketStartBucket :
+    String
+    -> Int
+    -> Result String Int
+validateMultiBucketStartBucket fromBucket currentBucket =
+    let
+        rangeError =
+            "Valid buckets are numbered 0 to 1999"
+    in
+    case String.toInt fromBucket of
+        Just intVal ->
+            if intVal < 0 || intVal > 1999 then
+                Err rangeError
+
+            else if intVal < currentBucket then
+                Err <| "Cannot start before current bucket (" ++ String.fromInt currentBucket ++ ")"
+
+            else
+                Ok intVal
+
+        Nothing ->
+            Err rangeError
+
+
+validateMultiBucketNrOfBuckets :
+    String
+    -> String
+    -> Int
+    -> Result String Int
+validateMultiBucketNrOfBuckets nrBuckets fromBucket currentBucket =
+    let
+        validStartBucket =
+            case validateMultiBucketStartBucket fromBucket currentBucket of
+                Ok startBucket ->
+                    startBucket
+
+                _ ->
+                    currentBucket
+
+        maxRangeError =
+            "Valid nr of buckets range between 1 and "
+
+        maxBucketId =
+            Config.bucketSaleNumBuckets - 1
+
+        maxNrBuckets =
+            Config.maxMultiBucketRange
+    in
+    case String.toInt nrBuckets of
+        Just intVal ->
+            if intVal < 1 || intVal > maxNrBuckets then
+                Err <| maxRangeError ++ String.fromInt maxNrBuckets
+
+            else if (validStartBucket + intVal - 1) > maxBucketId then
+                Err <| "To bid on " ++ nrBuckets ++ " buckets starting bucket must be " ++ String.fromInt (maxBucketId + 1 - intVal)
+
+            else
+                Ok intVal
+
+        Nothing ->
+            Err <| maxRangeError ++ String.fromInt maxNrBuckets
 
 
 trackNewTx :
