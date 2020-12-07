@@ -2579,12 +2579,29 @@ makeDescription action =
                    )
 
         Enter enterInfo ->
-            "Bid on bucket "
-                ++ String.fromInt enterInfo.bucketId
-                ++ " with "
-                ++ TokenValue.toConciseString enterInfo.amount
-                ++ " "
-                ++ Config.enteringTokenCurrencyLabel
+            case enterInfo.saleType of
+                Standard ->
+                    "Bid on bucket "
+                        ++ String.fromInt enterInfo.bucketId
+                        ++ " with "
+                        ++ TokenValue.toConciseString enterInfo.amount
+                        ++ " "
+                        ++ Config.enteringTokenCurrencyLabel
+
+                Advanced ->
+                    "Bid "
+                        ++ TokenValue.toConciseString enterInfo.amount
+                        ++ " "
+                        ++ Config.enteringTokenCurrencyLabel
+                        ++ " over "
+                        ++ String.fromInt enterInfo.nrBuckets
+                        ++ " bucket "
+                        ++ (if enterInfo.nrBuckets > 1 then
+                                "s"
+
+                            else
+                                ""
+                           )
 
         Exit ->
             "Claim " ++ Config.exitingTokenCurrencyLabel ++ ""

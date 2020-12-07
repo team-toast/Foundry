@@ -172,7 +172,7 @@ actionDataToString :
     -> String
 actionDataToString actionData =
     case actionData of
-        Unlock typeOfSale ->
+        Unlock _ ->
             "Unlock"
 
         Enter _ ->
