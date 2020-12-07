@@ -222,7 +222,7 @@ saleTypeBlock :
     -> Element Msg
 saleTypeBlock dProfile newSaleType =
     Element.row
-        [ Element.centerX
+        [ Element.alignRight
         , Element.spacing 2
         ]
         [ saleTypeToggleButton dProfile newSaleType Standard
@@ -1049,8 +1049,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
                                 Element.none
                 in
                 Element.el
-                    [ Element.centerX
-                    , maybeModalAttribute
+                    [ maybeModalAttribute
                     , Element.inFront <|
                         if referralModalActive then
                             Element.el
@@ -2212,7 +2211,10 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                                 (\tx ->
                                                     case tx.action of
                                                         Enter enterInfo ->
-                                                            enterInfo.bucketId == bucketInfo.id
+                                                            enterInfo.bucketId
+                                                                == bucketInfo.id
+                                                                && saleType
+                                                                == enterInfo.saleType
 
                                                         _ ->
                                                             False
@@ -2595,7 +2597,7 @@ makeDescription action =
                         ++ Config.enteringTokenCurrencyLabel
                         ++ " over "
                         ++ String.fromInt enterInfo.nrBuckets
-                        ++ " bucket "
+                        ++ " bucket"
                         ++ (if enterInfo.nrBuckets > 1 then
                                 "s"
 
