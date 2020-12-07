@@ -45,7 +45,7 @@ type EnteringToken
 
 screenWidthToDisplayProfile : Int -> DisplayProfile
 screenWidthToDisplayProfile width =
-    if width >= 1300 then
+    if width >= 1280 then
         Desktop
 
     else
