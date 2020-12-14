@@ -4,7 +4,7 @@ var networkChangeNotifier = require('./networkChangeNotifier');
 var locationCheck = require('./dualLocationCheck.js');
 var addFryToMetaMask = require('./addFryToMetaMask.js');
 require('@metamask/legacy-web3');
- 
+
 const { web3 } = window;
 
 import { Elm } from '../../elm/App'
@@ -36,7 +36,8 @@ function startDapp() {
                     width: window.innerWidth,
                     height: window.innerHeight,
                     nowInMillis: Date.now(),
-                    maybeReferralAddressString: getReferralAddressStringFromStorageOrNull()
+                    maybeReferralAddressString: getReferralAddressStringFromStorageOrNull(),
+                    cookieConsent: getCookieConsent(),
                 }
             });
 
@@ -56,7 +57,8 @@ function startDapp() {
                 width: window.innerWidth,
                 height: window.innerHeight,
                 nowInMillis: Date.now(),
-                maybeReferralAddressString: getReferralAddressStringFromStorageOrNull()
+                maybeReferralAddressString: getReferralAddressStringFromStorageOrNull(),
+                cookieConsent: getCookieConsent(),
             }
         });
 
@@ -87,6 +89,17 @@ function gtagPortStuff(app) {
             'value': data.value
         });
     });
+
+    app.ports.consentToCookies.subscribe(function () {
+        setCookieConsent();
+    });
+}
+
+function getCookieConsent() {
+    return Boolean(window.localStorage.getItem('cookie-consent'))
+}
+function setCookieConsent() {
+    window.localStorage.setItem('cookie-consent', true)
 }
 
 function referrerStoragePortStuff(app) {

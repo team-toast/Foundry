@@ -11,6 +11,7 @@ import Element.Events
 import Element.Font
 import Helpers.Element as EH
 import Images exposing (Image)
+import Maybe.Extra
 import Routing
 import Time
 import Types exposing (..)
@@ -403,7 +404,7 @@ submodelElementAndModal :
     -> ( Element Msg, List (Element Msg) )
 submodelElementAndModal model =
     let
-        ( submodelEl, modalEls ) =
+        ( submodelEl, submodelModalEls ) =
             case model.submodel of
                 LoadingSaleModel bucketSaleLoadingModel ->
                     ( viewBucketSaleLoading
@@ -429,8 +430,54 @@ submodelElementAndModal model =
         , Element.Border.rounded 10
         ]
         submodelEl
-    , modalEls
+    , submodelModalEls
+        ++ Maybe.Extra.values
+            [ if not model.cookieConsentGranted then
+                Just <| viewCookieConsentModal model.dProfile
+
+              else
+                Nothing
+            ]
     )
+
+
+viewCookieConsentModal : DisplayProfile -> Element Msg
+viewCookieConsentModal dProfile =
+    Element.row
+        [ Element.alignBottom
+        , Element.centerX
+        , Element.Border.roundEach
+            { topLeft = 5
+            , topRight = 5
+            , bottomLeft = 0
+            , bottomRight = 0
+            }
+        , Element.padding 15
+        , Element.spacing 15
+        , Element.Background.color <| Element.rgb255 7 27 92
+        , Element.Font.color EH.white
+        , Element.Border.glow
+            (Element.rgba 0 0 0 0.2)
+            10
+        ]
+        [ Element.paragraph
+            [ Element.width <| Element.px 800 ]
+            [ Element.text "Foundry products use cookies and analytics to track behavior patterns, to help zero in on effective marketing strategies. To avoid being tracked in this way, we recommend using the "
+            , Element.newTabLink
+                [ Element.Font.color EH.blue ]
+                { url = "https://brave.com/"
+                , label = Element.text "Brave browser"
+                }
+            , Element.text " or installing the "
+            , Element.newTabLink
+                [ Element.Font.color EH.blue ]
+                { url = "https://tools.google.com/dlpage/gaoptout"
+                , label = Element.text "Google Analytics Opt-Out browser addon"
+                }
+            , Element.text "."
+            ]
+        , EH.blueButton dProfile [] [ "Understood" ] CookieConsentGranted
+        ]
 
 
 userNoticeEls :

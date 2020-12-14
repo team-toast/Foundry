@@ -10,7 +10,6 @@ import Eth.Sentry.Tx as TxSentry exposing (TxSentry)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (Address)
 import Http
--- import Routing
 import Time
 import TokenValue exposing (TokenValue)
 import Url exposing (Url)
@@ -24,12 +23,14 @@ type alias Flags =
     , height : Int
     , nowInMillis : Int
     , maybeReferralAddressString : Maybe String
+    , cookieConsent : Bool
     }
 
 
 type alias Model =
     { key : Browser.Navigation.Key
     , testMode : TestMode
+
     -- , pageRoute : Routing.PageRoute
     , userAddress : Maybe Address -- `wallet` will store this but only after commPubkey has been generated
     , wallet : Wallet.State
@@ -41,6 +42,7 @@ type alias Model =
     , maybeReferrer : Maybe Address
     , displayMobileWarning : Bool
     , nonRepeatingGTagsSent : List String
+    , cookieConsentGranted : Bool
     }
 
 
@@ -50,17 +52,17 @@ type Msg
     | SaleStartTimestampFetched (Result Http.Error BigInt)
     | FetchUserEnteringTokenBalance Address
     | UserEnteringTokenBalanceFetched Address (Result Http.Error TokenValue)
-    -- | GotoRoute Routing.PageRoute
+      -- | GotoRoute Routing.PageRoute
     | LinkClicked Browser.UrlRequest
-    -- | UrlChanged Url.Url
+      -- | UrlChanged Url.Url
     | ClickHappened
     | BucketSaleMsg BucketSale.Types.Msg
-    
     | CmdUp (CmdUp Msg)
     | ConnectToWeb3
     | WalletStatus WalletSentry
     | TxSentryMsg TxSentry.Msg
     | Resize Int Int
+    | CookieConsentGranted
     | Test String
     | DismissNotice Int
 
@@ -79,6 +81,7 @@ type alias BucketSaleLoadingModel =
 type LoadingState
     = Loading
     | Error BucketSaleError
+
 
 type BucketSaleError
     = SaleNotDeployed

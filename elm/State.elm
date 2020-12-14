@@ -136,6 +136,7 @@ init flags url key =
 
             --flags.width < 1024
             , nonRepeatingGTagsSent = []
+            , cookieConsentGranted = flags.cookieConsent
             }
 
         -- |> updateFromPageRoute fullRoute.pageRoute
@@ -504,6 +505,22 @@ update msg prevModel =
             in
             ( { prevModel | txSentry = newTxSentry }, subCmd )
 
+        CookieConsentGranted ->
+            ( { prevModel
+                | cookieConsentGranted = True
+              }
+            , Cmd.batch
+                [ consentToCookies ()
+                , gTagOut <|
+                    encodeGTag <|
+                        GTagData
+                            "accept cookies"
+                            ""
+                            ""
+                            0
+                ]
+            )
+
         ClickHappened ->
             prevModel |> runCmdDown CmdDown.CloseAnyDropdownsOrModals
 
@@ -784,3 +801,6 @@ port gTagOut : Json.Decode.Value -> Cmd msg
 
 
 port storeReferrerAddress : Json.Decode.Value -> Cmd msg
+
+
+port consentToCookies : () -> Cmd msg
