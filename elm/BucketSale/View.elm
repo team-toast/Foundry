@@ -197,16 +197,16 @@ saleTypeToggleButton dProfile newSaleType buttonSaleType =
         buttonText =
             case buttonSaleType of
                 Standard ->
-                    "Standard"
+                    "Single Bucket"
 
                 Advanced ->
-                    "Advanced"
+                    "Multi Bucket"
     in
     Element.el
         (attributes
             ++ [ Element.Border.rounded 10
                , Element.padding <| responsiveVal dProfile 10 5
-               , Element.Font.size <| responsiveVal dProfile 16 12
+               , Element.Font.size <| responsiveVal dProfile 16 11
                , Element.Events.onClick <|
                     SaleTypeToggleClicked buttonSaleType
                , Element.pointer
@@ -1021,7 +1021,7 @@ maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModa
         , Element.height Element.fill
         , Element.centerX
         , Element.centerY
-        , Element.spacing 10
+        , Element.spacing <| responsiveVal dProfile 10 5
         , Element.paddingEach { edges | bottom = 10 }
         ]
         [ case maybeUserInfo of
