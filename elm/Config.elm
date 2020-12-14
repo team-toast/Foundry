@@ -98,13 +98,13 @@ bucketSaleScriptsAddress : TestMode -> Address
 bucketSaleScriptsAddress testMode =
     case testMode of
         None ->
-            Eth.Utils.unsafeToAddress "0xf0B2B0A7bcd35cc119E12Cf4F04B2739Ac400bef"
+            Eth.Utils.unsafeToAddress "0xfF0E22aDd363A90bB5cAd3e74A21341C1a9A80AE"
 
         TestKovan ->
             Debug.todo ""
 
         TestMainnet ->
-            Eth.Utils.unsafeToAddress "0xf0B2B0A7bcd35cc119E12Cf4F04B2739Ac400bef"
+            Eth.Utils.unsafeToAddress "0xfF0E22aDd363A90bB5cAd3e74A21341C1a9A80AE"
 
         TestGanache ->
             Debug.todo ""
@@ -143,3 +143,24 @@ ipCountryCodeEndpointUrl =
 forbiddenJurisdictionCodes : Set String
 forbiddenJurisdictionCodes =
     Set.fromList [ "US" ]
+
+
+multiBucketBotAddress : TestMode -> Address
+multiBucketBotAddress testMode =
+    case testMode of
+        None ->
+            Eth.Utils.unsafeToAddress "0x7d6ea6ae58ddc0c237557035ad873b5a978d108b"
+
+        TestKovan ->
+            Debug.todo ""
+
+        TestMainnet ->
+            Eth.Utils.unsafeToAddress "0x7d6ea6ae58ddc0c237557035ad873b5a978d108b"
+
+        TestGanache ->
+            Debug.todo ""
+
+
+maxMultiBucketRange : Int
+maxMultiBucketRange =
+    200

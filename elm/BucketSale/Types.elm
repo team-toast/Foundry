@@ -44,6 +44,7 @@ type alias Model =
     , showFeedbackUXModel : Bool
     , feedbackUXModel : FeedbackUXModel
     , showYoutubeBlock : Bool
+    , saleType : SaleType
     }
 
 
@@ -76,22 +77,17 @@ type Msg
     | ReferralIndicatorClicked (Maybe Address)
     | CloseReferralModal (Maybe Address)
     | GenerateReferralClicked Address
-    | EnableTokenButtonClicked
-    | ClaimClicked UserInfo ExitInfo
+    | EnableTokenButtonClicked SaleType
+    | ClaimClicked UserInfo ExitInfo SaleType
     | CancelClicked
     | EnterButtonClicked EnterInfo
     | ConfirmClicked EnterInfo
     | TxSigned Int ActionData (Result String TxHash)
     | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
     | YoutubeBlockClicked
-
-
-type alias ExtraUserInfo =
-    { ethBalance : TokenValue
-    , enteringTokenBalance : TokenValue
-    , exitingTokenBalance : TokenValue
-    , enteringTokenAllowance : TokenValue
-    }
+    | SaleTypeToggleClicked SaleType
+    | MultiBucketFromBucketChanged String
+    | MultiBucketNumberOfBucketsChanged String
 
 
 type alias UpdateResult =
@@ -112,8 +108,12 @@ justModelUpdate model =
 
 
 type alias EnterUXModel =
-    { input : String
-    , amount : Maybe (Result String TokenValue)
+    { amountInput : String
+    , amountValidated : Maybe (Result String TokenValue)
+    , fromBucketInput : String
+    , fromBucketValidated : Maybe (Result String Int)
+    , nrBucketsInput : String
+    , nrBucketsValidated : Maybe (Result String Int)
     }
 
 
@@ -150,6 +150,8 @@ type alias EnterInfo =
     , bucketId : Int
     , amount : TokenValue
     , maybeReferrer : Maybe Address
+    , nrBuckets : Int
+    , saleType : SaleType
     }
 
 
@@ -160,15 +162,17 @@ type alias TrackedTx =
 
 
 type ActionData
-    = Unlock
+    = Unlock SaleType
     | Enter EnterInfo
     | Exit
 
 
-actionDataToString : ActionData -> String
+actionDataToString :
+    ActionData
+    -> String
 actionDataToString actionData =
     case actionData of
-        Unlock ->
+        Unlock _ ->
             "Unlock"
 
         Enter _ ->
