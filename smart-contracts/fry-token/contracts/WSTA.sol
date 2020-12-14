@@ -34,7 +34,7 @@ contract WSTA is Context, ERC20Detailed, ERC20Mintable, ERC20Burnable
         public
     {
         uint balanceBefore = STA.balanceOf(address(this));
-        STA.transfer(msg.sender, _amount);
+        STA.transfer(address(this), _amount);
         uint realAmount = STA.balanceOf(address(this)).sub(balanceBefore);
         _burn(msg.sender, _amount);
         emit Unwrap(msg.sender, _amount, realAmount);
