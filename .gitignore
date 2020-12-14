@@ -21,3 +21,5 @@ smart-contracts/bucket-sale/tests/.vs/Tests/DesignTimeBuild/.dtbcache
 
 .fake
 .ionide
+smart-contracts/wsta-token/contracts/artifacts/
+

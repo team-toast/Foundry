@@ -9,31 +9,34 @@ contract WSTA is Context, ERC20Detailed, ERC20Mintable, ERC20Burnable
 {
     using SafeMath for uint;
 
-    IERC20 public STA;
+    ERC20Mintable public STA;
     
     constructor()
         public
         ERC20Detailed("Wrapper STA", "WSTA", 18)
-    { }
+    { 
+        STA = ERC20Mintable(0xa7DE087329BFcda5639247F96140f9DAbe3DeED1);
+    }
 
     event Wrap(address _wrapper, uint _amountIn, uint _amountWrapped);
-
     function wrap(uint _amount)
         public
     {
         uint balanceBefore = STA.balanceOf(address(this));
         STA.transferFrom(msg.sender, address(this), _amount);
-        uint realAmount = STA.balanceOf(address(this)) - balanceBefore;
+        uint realAmount = STA.balanceOf(address(this)).sub(balanceBefore);
         _mint(msg.sender, realAmount);
-        emit Wrap(msg.sender, uint _amount, realAmount);
+        emit Wrap(msg.sender, _amount, realAmount);
     }
 
-    event Unwrap(address _unwrapper, uint _amountOut, uint _amountUnwrapped);
+    event Unwrap(address _unwrapper, uint _amountUnwrapped, uint _amountOut);
     function unwrap(uint _amount)
         public
     {
+        uint balanceBefore = STA.balanceOf(address(this));
         STA.transfer(address(this), _amount);
+        uint realAmount = STA.balanceOf(address(this)).sub(balanceBefore);
         _burn(msg.sender, _amount);
-        emit Unwrap(msg.sender, uint _amount, realAmount);
+        emit Unwrap(msg.sender, _amount, realAmount);
     }
 }
