@@ -1663,7 +1663,13 @@ locationCheckDecoder =
             [ Json.Decode.field "errorMessage" Json.Decode.string
             , Json.Decode.field "ErrorMessage" Json.Decode.string
             ]
-            |> Json.Decode.map Err
+            |> Json.Decode.map (\str ->
+                Err <|
+                    if str == "Unknown" then
+                        "Tell Schalk to get his shit together and poke the server."
+                    else
+                        str
+            )
         , locationInfoDecoder
             |> Json.Decode.map Ok
         ]
