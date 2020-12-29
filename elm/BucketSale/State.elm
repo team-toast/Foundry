@@ -73,14 +73,14 @@ init dProfile bucketSale maybeReferrer testMode wallet now =
       , feedbackUXModel =
             initFeedbackUXModel
       , showYoutubeBlock = False
-      , saleType = Standard
+      , saleType = SingleBucket
       }
     , Cmd.batch
         [ fetchFastGasPriceCmd
         , fetchStateUpdateInfoCmd
             (Wallet.userInfo wallet)
             Nothing
-            Standard
+            SingleBucket
             testMode
         , fetchBucketDataCmd
             (getCurrentBucketId
@@ -898,7 +898,7 @@ update msg prevModel =
 
                         txParams =
                             case enterInfo.saleType of
-                                Standard ->
+                                SingleBucket ->
                                     BucketSaleWrappers.enter
                                         enterInfo.userInfo.address
                                         enterInfo.bucketId
@@ -908,7 +908,7 @@ update msg prevModel =
                                         prevModel.testMode
                                         |> Eth.toSend
 
-                                Advanced ->
+                                MultiBucket ->
                                     -- userAddress bucketId amount numberOfBuckets maybeReferrer maybeGasPrice testMode
                                     MultiBucketWrappers.enter
                                         enterInfo.userInfo.address
@@ -1432,7 +1432,7 @@ fetchTotalTokensExitedCmd testMode =
 fetchStateUpdateInfoCmd :
     Maybe UserInfo
     -> Maybe Int
-    -> SaleType
+    -> SaleTypeUI
     -> TestMode
     -> Cmd Msg
 fetchStateUpdateInfoCmd maybeUserInfo maybeBucketId saleType testMode =

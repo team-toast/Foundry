@@ -124,7 +124,7 @@ getStateUpdateInfo :
     TestMode
     -> Maybe Address
     -> Int
-    -> SaleType
+    -> SaleTypeUI
     -> (Result Http.Error (Maybe StateUpdateInfo) -> msg)
     -> Cmd msg
 getStateUpdateInfo testMode maybeUserAddress bucketId saleType msgConstructor =
@@ -133,7 +133,7 @@ getStateUpdateInfo testMode maybeUserAddress bucketId saleType msgConstructor =
         (BigInt.fromInt bucketId)
         (Config.bucketSaleAddress testMode)
         (maybeUserAddress |> Maybe.withDefault EthHelpers.zeroAddress)
-        (if saleType == Advanced then
+        (if saleType == MultiBucket then
             Config.multiBucketBotAddress testMode
 
          else
@@ -180,16 +180,16 @@ getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId bindingStruct =
 
 approveTransfer :
     TestMode
-    -> SaleType
+    -> SaleTypeUI
     -> Call Bool
 approveTransfer testMode saleType =
     Token.approve
         (Config.enteringTokenAddress testMode)
         (case saleType of
-            Standard ->
+            SingleBucket ->
                 Config.bucketSaleAddress testMode
 
-            Advanced ->
+            MultiBucket ->
                 Config.multiBucketBotAddress testMode
         )
         EthHelpers.maxUintValue

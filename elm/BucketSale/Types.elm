@@ -44,7 +44,7 @@ type alias Model =
     , showFeedbackUXModel : Bool
     , feedbackUXModel : FeedbackUXModel
     , showYoutubeBlock : Bool
-    , saleType : SaleType
+    , saleType : SaleTypeUI
     }
 
 
@@ -77,15 +77,15 @@ type Msg
     | ReferralIndicatorClicked (Maybe Address)
     | CloseReferralModal (Maybe Address)
     | GenerateReferralClicked Address
-    | EnableTokenButtonClicked SaleType
-    | ClaimClicked UserInfo ExitInfo SaleType
+    | EnableTokenButtonClicked SaleTypeUI
+    | ClaimClicked UserInfo ExitInfo SaleTypeUI
     | CancelClicked
     | EnterButtonClicked EnterInfo
     | ConfirmClicked EnterInfo
     | TxSigned Int ActionData (Result String TxHash)
     | TxStatusFetched Int ActionData (Result Http.Error TxReceipt)
     | YoutubeBlockClicked
-    | SaleTypeToggleClicked SaleType
+    | SaleTypeToggleClicked SaleTypeUI
     | MultiBucketFromBucketChanged String
     | MultiBucketNumberOfBucketsChanged String
 
@@ -147,11 +147,12 @@ type alias TosCheckbox =
 
 type alias EnterInfo =
     { userInfo : UserInfo
-    , bucketId : Int
-    , amount : TokenValue
+    , enterType : SaleTypeUI
     , maybeReferrer : Maybe Address
-    , nrBuckets : Int
-    , saleType : SaleType
+    , amount : TokenValue
+    , singlebucketId : Maybe Int
+    , multiNumberOfBuckets : Maybe Int
+    , multiFromBucket : Maybe Int
     }
 
 
@@ -162,7 +163,7 @@ type alias TrackedTx =
 
 
 type ActionData
-    = Unlock SaleType
+    = Unlock SaleTypeUI
     | Enter EnterInfo
     | Exit
 

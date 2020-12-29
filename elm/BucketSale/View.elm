@@ -40,10 +40,10 @@ root dProfile model maybeReferrer =
     let
         paneToShow =
             case model.saleType of
-                Standard ->
+                SingleBucket ->
                     focusedBucketPane
 
-                Advanced ->
+                MultiBucket ->
                     multiBucketPane
     in
     ( Element.column
@@ -178,8 +178,8 @@ blockTitleText text attributes =
 
 saleTypeToggleButton :
     DisplayProfile
-    -> SaleType
-    -> SaleType
+    -> SaleTypeUI
+    -> SaleTypeUI
     -> Element Msg
 saleTypeToggleButton dProfile newSaleType buttonSaleType =
     let
@@ -196,10 +196,10 @@ saleTypeToggleButton dProfile newSaleType buttonSaleType =
 
         buttonText =
             case buttonSaleType of
-                Standard ->
+                SingleBucket ->
                     "Single Bucket"
 
-                Advanced ->
+                MultiBucket ->
                     "Multi Bucket"
     in
     Element.el
@@ -218,15 +218,15 @@ saleTypeToggleButton dProfile newSaleType buttonSaleType =
 
 saleTypeBlock :
     DisplayProfile
-    -> SaleType
+    -> SaleTypeUI
     -> Element Msg
 saleTypeBlock dProfile newSaleType =
     Element.row
         [ Element.alignRight
         , Element.spacing 2
         ]
-        [ saleTypeToggleButton dProfile newSaleType Standard
-        , saleTypeToggleButton dProfile newSaleType Advanced
+        [ saleTypeToggleButton dProfile newSaleType SingleBucket
+        , saleTypeToggleButton dProfile newSaleType MultiBucket
         ]
 
 
@@ -280,7 +280,7 @@ focusedBucketPane :
     -> List TrackedTx
     -> Bool
     -> Time.Posix
-    -> SaleType
+    -> SaleTypeUI
     -> TestMode
     -> Element Msg
 focusedBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now saleType testMode =
@@ -368,7 +368,7 @@ multiBucketPane :
     -> List TrackedTx
     -> Bool
     -> Time.Posix
-    -> SaleType
+    -> SaleTypeUI
     -> TestMode
     -> Element Msg
 multiBucketPane dProfile maybeReferrer bucketSale bucketId wallet maybeExtraUserInfo enterUXModel jurisdictionCheckStatus trackedTxs referralModalActive now saleType testMode =
@@ -797,7 +797,7 @@ maybeClaimBlock :
     DisplayProfile
     -> Wallet.State
     -> Maybe ExitInfo
-    -> SaleType
+    -> SaleTypeUI
     -> Element Msg
 maybeClaimBlock dProfile wallet maybeExitInfo saleType =
     case ( Wallet.userInfo wallet, maybeExitInfo ) of
@@ -927,7 +927,7 @@ focusedBucketHeaderEl :
     -> Maybe UserInfo
     -> Maybe Address
     -> Bool
-    -> SaleType
+    -> SaleTypeUI
     -> TestMode
     -> Element Msg
 focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeReferrer referralModalActive saleType testMode =
@@ -1012,7 +1012,7 @@ maybeReferralIndicatorAndModal :
     -> Maybe UserInfo
     -> Maybe Address
     -> Bool
-    -> SaleType
+    -> SaleTypeUI
     -> TestMode
     -> Element Msg
 maybeReferralIndicatorAndModal dProfile maybeUserInfo maybeReferrer referralModalActive saleType testMode =
@@ -1195,7 +1195,7 @@ bucketUX :
     -> ValidBucketInfo
     -> JurisdictionCheckStatus
     -> List TrackedTx
-    -> SaleType
+    -> SaleTypeUI
     -> Int
     -> TestMode
     -> Element Msg
@@ -1331,7 +1331,7 @@ bidInputBlockElements :
     -> String
     -> (String -> Msg)
     -> Maybe EnteringToken
-    -> SaleType
+    -> SaleTypeUI
     -> Maybe TokenValue
     -> TestMode
     -> List (Element Msg)
@@ -1402,7 +1402,7 @@ bidInputBlockElements dProfile leftHeaderText rightHeaderText label placeHolderT
                         ]
 
         pricePerTokenEl =
-            if saleType == Standard then
+            if saleType == SingleBucket then
                 Maybe.map
                     (\totalValueEntered ->
                         pricePerTokenMsg
@@ -1440,7 +1440,7 @@ bidInputBlock :
     DisplayProfile
     -> EnterUXModel
     -> ValidBucketInfo
-    -> SaleType
+    -> SaleTypeUI
     -> Int
     -> TestMode
     -> Element Msg
@@ -1460,7 +1460,7 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType currentBucketId testMode
         []
     <|
         case saleType of
-            Standard ->
+            SingleBucket ->
                 bidInputBlockElements
                     dProfile
                     "I want to bid:"
@@ -1484,7 +1484,7 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType currentBucketId testMode
                     bucketInfo.bucketData.totalValueEntered
                     testMode
 
-            Advanced ->
+            MultiBucket ->
                 bidInputBlockElements
                     dProfile
                     "I want to bid:"
@@ -1530,7 +1530,12 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType currentBucketId testMode
                         testMode
 
 
-pricePerTokenMsg : DisplayProfile -> TokenValue -> Maybe TokenValue -> TestMode -> Element Msg
+pricePerTokenMsg :
+    DisplayProfile
+    -> TokenValue
+    -> Maybe TokenValue
+    -> TestMode
+    -> Element Msg
 pricePerTokenMsg dProfile totalValueEntered maybeEnterAmount testMode =
     case dProfile of
         Desktop ->
@@ -2003,7 +2008,7 @@ verifyJurisdictionButtonOrResult dProfile jurisdictionCheckStatus =
 
 enableTokenButton :
     DisplayProfile
-    -> SaleType
+    -> SaleTypeUI
     -> Element Msg
 enableTokenButton dProfile saleType =
     EH.redButton
@@ -2046,7 +2051,7 @@ continueButton :
     -> TokenValue
     -> TokenValue
     -> Int
-    -> SaleType
+    -> SaleTypeUI
     -> Element Msg
 continueButton dProfile userInfo bucketId enterAmount referrer minedTotal miningTotal nrBuckets saleType =
     let
@@ -2103,7 +2108,7 @@ continueButton dProfile userInfo bucketId enterAmount referrer minedTotal mining
                )
         )
         [ case saleType of
-            Standard ->
+            SingleBucket ->
                 "Enter with "
                     ++ TokenValue.toFloatString (Just 2) enterAmount
                     ++ " "
@@ -2111,7 +2116,7 @@ continueButton dProfile userInfo bucketId enterAmount referrer minedTotal mining
                     ++ " "
                     ++ alreadyEnteredWithDescription
 
-            Advanced ->
+            MultiBucket ->
                 let
                     perBucketAmount =
                         TokenValue.toFloatWithWarning enterAmount / toFloat nrBuckets
@@ -2153,7 +2158,7 @@ actionButton :
     -> EnterUXModel
     -> ValidBucketInfo
     -> List TrackedTx
-    -> SaleType
+    -> SaleTypeUI
     -> TestMode
     -> Element Msg
 actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUserInfo unlockMining enterUXModel bucketInfo trackedTxs saleType testMode =
@@ -2315,10 +2320,10 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                 in
                                 -- Allowance is loaded and nonzero, and we are not mining an Unlock
                                 case saleType of
-                                    Standard ->
+                                    SingleBucket ->
                                         enterAmountSection
 
-                                    Advanced ->
+                                    MultiBucket ->
                                         let
                                             infoText =
                                                 "Enter values above to continue."
@@ -2573,16 +2578,16 @@ makeDescription action =
             "Enable "
                 ++ Config.enteringTokenCurrencyLabel
                 ++ (case typeOfSale of
-                        Standard ->
+                        SingleBucket ->
                             "Single Bucket"
 
-                        Advanced ->
+                        MultiBucket ->
                             "Multi Bucket"
                    )
 
         Enter enterInfo ->
             case enterInfo.saleType of
-                Standard ->
+                SingleBucket ->
                     "Bid on bucket "
                         ++ String.fromInt enterInfo.bucketId
                         ++ " with "
@@ -2590,7 +2595,7 @@ makeDescription action =
                         ++ " "
                         ++ Config.enteringTokenCurrencyLabel
 
-                Advanced ->
+                MultiBucket ->
                     "Bid "
                         ++ TokenValue.toConciseString enterInfo.amount
                         ++ " "
@@ -3529,7 +3534,7 @@ makeClaimButton :
     DisplayProfile
     -> UserInfo
     -> ExitInfo
-    -> SaleType
+    -> SaleTypeUI
     -> Element Msg
 makeClaimButton dProfile userInfo exitInfo saleType =
     EH.lightBlueButton

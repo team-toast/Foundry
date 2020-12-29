@@ -33,9 +33,9 @@ type alias UserInfo =
     }
 
 
-type SaleType
-    = Standard
-    | Advanced
+type SaleTypeUI
+    = SingleBucket
+    | MultiBucket
 
 
 type EnteringToken
