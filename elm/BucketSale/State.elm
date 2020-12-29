@@ -1659,7 +1659,10 @@ countryCodeToJurisdiction ipCode geoCode =
 locationCheckDecoder : Json.Decode.Decoder (Result String LocationInfo)
 locationCheckDecoder =
     Json.Decode.oneOf
-        [ Json.Decode.field "errorMessage" Json.Decode.string
+        [ Json.Decode.oneOf
+            [ Json.Decode.field "errorMessage" Json.Decode.string
+            , Json.Decode.field "ErrorMessage" Json.Decode.string
+            ]
             |> Json.Decode.map Err
         , locationInfoDecoder
             |> Json.Decode.map Ok
