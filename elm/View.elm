@@ -1,15 +1,17 @@
 module View exposing (root)
 
+import Common.View exposing (..)
+import Theme
 import Browser
 import BucketSale.View
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Config
 import Element exposing (Attribute, Element)
 import Element.Background
 import Element.Border
 import Element.Events
 import Element.Font
-import Helpers.Element as EH
+import ElementHelpers as EH exposing (DisplayProfile(..), responsiveVal)
 import Images exposing (Image)
 import Maybe.Extra
 import Routing
@@ -70,7 +72,7 @@ pageElementAndModal model =
                     responsiveVal model.dProfile 24 10
                 , Element.Font.bold
                 , Element.Font.italic
-                , Element.Font.color EH.softRed
+                , Element.Font.color Theme.softRed
                 ]
             <|
                 case model.testMode of
@@ -119,7 +121,7 @@ headerBackground dProfile =
                 Desktop ->
                     Element.px 600
 
-                SmallDesktop ->
+                Mobile ->
                     Element.fill
             )
         , Element.Background.color <| Element.rgb255 20 53 138
@@ -152,7 +154,7 @@ header dProfile =
                     (smLinks dProfile)
                 ]
 
-        SmallDesktop ->
+        Mobile ->
             Element.column
                 [ Element.width Element.fill ]
                 [ Element.el
@@ -192,7 +194,7 @@ brandAndLogo dProfile =
                         Element.text "Foundry Sale"
                     , Element.newTabLink
                         [ Element.alignLeft
-                        , Element.Background.color EH.lightBlue
+                        , Element.Background.color Theme.lightBlue
                         , Element.paddingXY 10 3
                         , Element.Border.rounded 4
                         , Element.Font.color EH.white
@@ -205,7 +207,7 @@ brandAndLogo dProfile =
                     ]
                 ]
 
-        SmallDesktop ->
+        Mobile ->
             Element.row
                 [ Element.height Element.fill
                 , Element.centerX
@@ -229,7 +231,7 @@ brandAndLogo dProfile =
                   <|
                     Element.text "Foundry Sale"
                 , Element.newTabLink
-                    [ Element.Background.color EH.lightBlue
+                    [ Element.Background.color Theme.lightBlue
                     , Element.paddingXY 5 2
                     , Element.Border.rounded 4
                     , Element.Font.color EH.white
@@ -277,7 +279,7 @@ smLinks dProfile =
                         Desktop ->
                             []
 
-                        SmallDesktop ->
+                        Mobile ->
                             [ Element.centerX
                             ]
                    )
@@ -348,7 +350,7 @@ headerLink dProfile maybeIcon title onClick style =
 
                 Important ->
                     [ Element.Border.rounded 4
-                    , Element.Background.color EH.softRed
+                    , Element.Background.color Theme.softRed
                     ]
     in
     Element.row
@@ -383,7 +385,7 @@ logoElement dProfile =
         , EH.noSelectText
         ]
         (Element.el
-            [ Element.Font.color EH.softRed ]
+            [ Element.Font.color Theme.softRed ]
          <|
             Element.text "Foundry"
         )
@@ -464,19 +466,19 @@ viewCookieConsentModal dProfile =
             [ Element.width <| Element.px 800 ]
             [ Element.text "Foundry products use cookies and analytics to track behavior patterns, to help zero in on effective marketing strategies. To avoid being tracked in this way, we recommend using the "
             , Element.newTabLink
-                [ Element.Font.color EH.blue ]
+                [ Element.Font.color Theme.blue ]
                 { url = "https://brave.com/"
                 , label = Element.text "Brave browser"
                 }
             , Element.text " or installing the "
             , Element.newTabLink
-                [ Element.Font.color EH.blue ]
+                [ Element.Font.color Theme.blue ]
                 { url = "https://tools.google.com/dlpage/gaoptout"
                 , label = Element.text "Google Analytics Opt-Out browser addon"
                 }
             , Element.text "."
             ]
-        , EH.blueButton dProfile [] [ "Understood" ] CookieConsentGranted
+        , Theme.blueButton dProfile [] [ "Understood" ] (EH.Action CookieConsentGranted)
         ]
 
 
@@ -555,7 +557,7 @@ userNotice dProfile ( id, notice ) =
                 , Element.moveUp 5
                 , Element.moveRight 5
                 ]
-                (EH.closeButton True (DismissNotice id))
+                (closeButton True (DismissNotice id))
     in
     Element.el
         [ Element.Background.color color

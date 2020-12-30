@@ -4,7 +4,7 @@ import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
 import CmdUp exposing (CmdUp)
 import Color
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Config
 import Contracts.BucketSale.Wrappers exposing (ExitInfo, UserStateInfo)
 import Css exposing (true)
@@ -14,10 +14,10 @@ import Element.Border
 import Element.Events
 import Element.Font
 import Element.Input
+import ElementHelpers as EH exposing (DisplayProfile(..), responsiveVal)
 import Eth.Types exposing (Address)
 import Eth.Utils
 import FormatFloat exposing (formatFloat)
-import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Html.Attributes
@@ -26,6 +26,7 @@ import List.Extra
 import Maybe.Extra
 import Result.Extra
 import Routing
+import Theme
 import Time
 import TokenValue exposing (TokenValue, toConciseString)
 import Wallet
@@ -113,7 +114,7 @@ root dProfile model maybeReferrer =
                     ]
                 ]
 
-            SmallDesktop ->
+            Mobile ->
                 [ Element.column
                     [ Element.width Element.fill
                     , Element.spacing 5
@@ -185,12 +186,12 @@ saleTypeToggleButton dProfile newSaleType buttonSaleType =
     let
         attributes =
             if newSaleType == buttonSaleType then
-                [ Element.Background.color EH.lightBlue
+                [ Element.Background.color Theme.lightBlue
                 , Element.Font.color EH.white
                 ]
 
             else
-                [ Element.Background.color EH.lightGray
+                [ Element.Background.color Theme.lightGray
                 , Element.Font.color EH.black
                 ]
 
@@ -499,7 +500,7 @@ focusedBucketClosedPane dProfile bucketInfo timingInfo wallet testMode =
             Desktop ->
                 [ Element.height <| Element.px 310 ]
 
-            SmallDesktop ->
+            Mobile ->
                 []
         )
     <|
@@ -603,11 +604,11 @@ feedbackButtonBlock showFeedbackUXModel feedbackUXModel =
             viewFeedbackForm feedbackUXModel
 
           else
-            EH.blueButton
+            Theme.blueButton
                 Desktop
                 [ Element.centerX ]
                 [ "Leave Feedback / Get Help" ]
-                FeedbackButtonClicked
+                (EH.Action FeedbackButtonClicked)
         ]
 
 
@@ -640,43 +641,43 @@ viewFeedbackForm feedbackUXModel =
         errorEls =
             [ case feedbackUXModel.maybeError of
                 Just inputErrStr ->
-                    textElInsteadOfButton EH.softRed inputErrStr
+                    textElInsteadOfButton Theme.softRed inputErrStr
 
                 Nothing ->
                     Element.none
             , case feedbackUXModel.sendState of
                 SendFailed sendErrStr ->
-                    textElInsteadOfButton EH.softRed <| "Submit failed: " ++ sendErrStr
+                    textElInsteadOfButton Theme.softRed <| "Submit failed: " ++ sendErrStr
 
                 _ ->
                     Element.none
             ]
 
         submitFeedbackButton text =
-            EH.blueButton
+            Theme.blueButton
                 Desktop
                 [ Element.alignLeft ]
                 [ text ]
-                FeedbackSubmitClicked
+                (EH.Action FeedbackSubmitClicked)
 
         backButton =
-            EH.lightBlueButton
+            Theme.lightBlueButton
                 Desktop
                 [ Element.alignRight ]
                 [ "Back" ]
-                FeedbackBackClicked
+                (EH.Action FeedbackBackClicked)
 
         submitButtonOrMsg =
             case feedbackUXModel.sendState of
                 Sending ->
-                    textElInsteadOfButton EH.blue "Sending..."
+                    textElInsteadOfButton Theme.blue "Sending..."
 
                 Sent ->
                     Element.column
                         [ Element.spacing 5
                         , Element.width Element.fill
                         ]
-                        [ textElInsteadOfButton EH.green
+                        [ textElInsteadOfButton Theme.green
                             ("Sent!"
                                 ++ (if feedbackUXModel.email == "" then
                                         ""
@@ -686,7 +687,7 @@ viewFeedbackForm feedbackUXModel =
                                    )
                             )
                         , Element.el
-                            [ Element.Font.color EH.lightBlue
+                            [ Element.Font.color Theme.lightBlue
                             , Element.pointer
                             , Element.Events.onClick FeedbackSendMoreClicked
                             ]
@@ -762,7 +763,7 @@ maybeUserBalanceBlock dProfile wallet maybeExtraUserInfo =
                                 Desktop ->
                                     []
 
-                                SmallDesktop ->
+                                Mobile ->
                                     [ Element.Font.size 10 ]
                            )
                     )
@@ -775,16 +776,16 @@ maybeUserBalanceBlock dProfile wallet maybeExtraUserInfo =
                     Element.paragraph
                         ([ Element.centerX
                          , Element.width Element.shrink
-                         , Element.Font.color EH.lightBlue
+                         , Element.Font.color Theme.lightBlue
                          , Element.pointer
                          , Element.Events.onClick AddFryToMetaMaskClicked
-                         , EH.withTitle <| "Add " ++ Config.exitingTokenCurrencyLabel ++ " to Metamask or another EIP 747 compliant Web3 wallet"
+                         , EH.withHovertext <| "Add " ++ Config.exitingTokenCurrencyLabel ++ " to Metamask or another EIP 747 compliant Web3 wallet"
                          ]
                             ++ (case dProfile of
                                     Desktop ->
                                         []
 
-                                    SmallDesktop ->
+                                    Mobile ->
                                         [ Element.Font.size 10 ]
                                )
                         )
@@ -824,7 +825,7 @@ maybeClaimBlock dProfile wallet maybeExitInfo saleType =
                         , exitInfo.totalExitable
                         )
             in
-            if dProfile == SmallDesktop && exitableValue == TokenValue.zero then
+            if dProfile == Mobile && exitableValue == TokenValue.zero then
                 Element.none
 
             else
@@ -847,7 +848,7 @@ maybeClaimBlock dProfile wallet maybeExitInfo saleType =
                                             Desktop ->
                                                 []
 
-                                            SmallDesktop ->
+                                            Mobile ->
                                                 [ Element.Font.size 10 ]
                                        )
                                 )
@@ -861,7 +862,7 @@ maybeClaimBlock dProfile wallet maybeExitInfo saleType =
                                 |> Maybe.withDefault Element.none
                             ]
 
-                        SmallDesktop ->
+                        Mobile ->
                             [ Element.row [ Element.width Element.fill, Element.spacing 5 ]
                                 [ bigNumberElement
                                     dProfile
@@ -877,7 +878,7 @@ maybeClaimBlock dProfile wallet maybeExitInfo saleType =
                                                 Desktop ->
                                                     []
 
-                                                SmallDesktop ->
+                                                Mobile ->
                                                     [ Element.Font.size 10 ]
                                            )
                                     )
@@ -964,7 +965,7 @@ focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeRefer
                     Desktop ->
                         Element.none
 
-                    SmallDesktop ->
+                    Mobile ->
                         Element.row
                             [ Element.centerX
                             ]
@@ -994,7 +995,7 @@ focusedBucketHeaderEl dProfile bucketId currentBucketId maybeUserInfo maybeRefer
                         Element.none
                     ]
 
-            SmallDesktop ->
+            Mobile ->
                 Element.none
         ]
 
@@ -1089,7 +1090,7 @@ focusedBucketSubheaderEl dProfile bucketInfo =
                 , Element.Font.size (responsiveVal dProfile 15 7)
                 ]
                 (case dProfile of
-                    SmallDesktop ->
+                    Mobile ->
                         [ Element.none ]
 
                     Desktop ->
@@ -1166,7 +1167,7 @@ focusedBucketTimeLeftEl dProfile timingInfo testMode =
                 Desktop ->
                     [ Element.Font.color deepBlue ]
 
-                SmallDesktop ->
+                Mobile ->
                     [ Element.Font.color deepBlue
                     , Element.Font.size 12
                     ]
@@ -1274,7 +1275,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                             dProfile
                         ]
 
-                    SmallDesktop ->
+                    Mobile ->
                         [ Element.column
                             [ Element.width <| Element.fillPortion 3
                             , Element.spacingXY 0 3
@@ -1468,7 +1469,7 @@ bidInputBlock dProfile enterUXModel bucketInfo saleType currentBucketId testMode
                         Desktop ->
                             ""
 
-                        SmallDesktop ->
+                        Mobile ->
                             TokenValue.toConciseString
                                 totalValueEntered
                                 ++ " "
@@ -1577,7 +1578,7 @@ pricePerTokenMsg dProfile totalValueEntered maybeEnterAmount testMode =
                        )
                 )
 
-        SmallDesktop ->
+        Mobile ->
             let
                 listEl =
                     Element.el [ Element.paddingXY 0 3 ]
@@ -1956,7 +1957,7 @@ verifyJurisdictionButtonOrResult :
 verifyJurisdictionButtonOrResult dProfile jurisdictionCheckStatus =
     case jurisdictionCheckStatus of
         WaitingForClick ->
-            EH.redButton
+            Theme.redButton
                 dProfile
                 [ Element.width Element.fill
                 , Element.Font.size 16
@@ -1964,10 +1965,10 @@ verifyJurisdictionButtonOrResult dProfile jurisdictionCheckStatus =
                 , Element.spacing 3
                 ]
                 [ "Confirm you are not a US citizen" ]
-                VerifyJurisdictionClicked
+                (EH.Action VerifyJurisdictionClicked)
 
         Checking ->
-            EH.disabledButton
+            Theme.disabledButton
                 dProfile
                 [ Element.width Element.fill ]
                 "Verifying Jurisdiction..."
@@ -1981,18 +1982,18 @@ verifyJurisdictionButtonOrResult dProfile jurisdictionCheckStatus =
                 [ msgInsteadOfButton
                     dProfile
                     "Error verifying jurisdiction."
-                    EH.red
+                    Theme.red
                 , verifyJurisdictionErrorEl
                     dProfile
                     jurisdictionCheckStatus
-                    [ Element.Font.color EH.red ]
+                    [ Element.Font.color Theme.red ]
                 ]
 
         Checked ForbiddenJurisdictions ->
             msgInsteadOfButton
                 dProfile
                 "Sorry, US citizens and residents are excluded."
-                EH.red
+                Theme.red
 
         Checked JurisdictionsWeArentIntimidatedIntoExcluding ->
             msgInsteadOfButton
@@ -2006,11 +2007,11 @@ enableTokenButton :
     -> SaleType
     -> Element Msg
 enableTokenButton dProfile saleType =
-    EH.redButton
+    Theme.redButton
         dProfile
         [ Element.width Element.fill ]
         [ "Enable " ++ Config.enteringTokenCurrencyLabel ]
-        (EnableTokenButtonClicked saleType)
+        (EH.Action <| EnableTokenButtonClicked saleType)
 
 
 disabledButton :
@@ -2018,7 +2019,7 @@ disabledButton :
     -> String
     -> Element Msg
 disabledButton dProfile disableText =
-    EH.disabledButton
+    Theme.disabledButton
         dProfile
         [ Element.width Element.fill ]
         disableText
@@ -2030,7 +2031,7 @@ successButton :
     -> String
     -> Element Msg
 successButton dProfile text =
-    EH.disabledSuccessButton
+    Theme.disabledSuccessButton
         dProfile
         [ Element.width Element.fill ]
         text
@@ -2091,14 +2092,14 @@ continueButton dProfile userInfo bucketId enterAmount referrer minedTotal mining
                 Nothing ->
                     ""
     in
-    EH.redButton
+    Theme.redButton
         dProfile
         ([ Element.width Element.fill ]
             ++ (case dProfile of
                     Desktop ->
                         []
 
-                    SmallDesktop ->
+                    Mobile ->
                         [ Element.padding 10 ]
                )
         )
@@ -2128,14 +2129,15 @@ continueButton dProfile userInfo bucketId enterAmount referrer minedTotal mining
                     ++ Config.enteringTokenCurrencyLabel
                     ++ " per bucket"
         ]
-        (EnterButtonClicked <|
-            EnterInfo
-                userInfo
-                bucketId
-                enterAmount
-                referrer
-                nrBuckets
-                saleType
+        (EH.Action <|
+            EnterButtonClicked <|
+                EnterInfo
+                    userInfo
+                    bucketId
+                    enterAmount
+                    referrer
+                    nrBuckets
+                    saleType
         )
 
 
@@ -2501,7 +2503,7 @@ trackedTxRow trackedTx =
                                         { url = "https://etherscan.io/tx/" ++ Eth.Utils.txHashToString txHash
                                         , label =
                                             Element.el
-                                                [ Element.Font.color EH.lightBlue ]
+                                                [ Element.Font.color Theme.lightBlue ]
                                             <|
                                                 Element.text "Inspect"
                                         }
@@ -2662,7 +2664,7 @@ viewYoutubeLinksBlock dProfile showBlock =
                     Desktop ->
                         []
 
-                    SmallDesktop ->
+                    Mobile ->
                         [ Element.spacing 5 ]
                )
         )
@@ -2671,7 +2673,7 @@ viewYoutubeLinksBlock dProfile showBlock =
                 Desktop ->
                     []
 
-                SmallDesktop ->
+                Mobile ->
                     [ Element.Events.onClick YoutubeBlockClicked
                     , Element.Font.size 16
                     ]
@@ -2693,7 +2695,7 @@ viewYoutubeLinksColumn :
     -> List ( String, String, String )
     -> Element Msg
 viewYoutubeLinksColumn dProfile showBlock linkInfoList =
-    if dProfile == SmallDesktop && showBlock == False then
+    if dProfile == Mobile && showBlock == False then
         Element.none
 
     else
@@ -2717,20 +2719,20 @@ viewYoutubeLinksColumn dProfile showBlock linkInfoList =
                                             Desktop ->
                                                 []
 
-                                            SmallDesktop ->
+                                            Mobile ->
                                                 [ Element.Font.size 14 ]
                                        )
                                 )
                               <|
                                 Element.text preTitle
                             , Element.newTabLink
-                                ([ Element.Font.color EH.lightBlue
+                                ([ Element.Font.color Theme.lightBlue
                                  ]
                                     ++ (case dProfile of
                                             Desktop ->
                                                 []
 
-                                            SmallDesktop ->
+                                            Mobile ->
                                                 [ Element.Font.size 14 ]
                                        )
                                 )
@@ -2774,7 +2776,7 @@ viewAgreeToTosModal dProfile confirmTosModel enterInfo =
                             , Element.padding 20
                             ]
 
-                        SmallDesktop ->
+                        Mobile ->
                             [ Element.height <| Element.px 500
                             , Element.padding 5
                             ]
@@ -2901,7 +2903,7 @@ viewTosCheckbox dProfile ( checkboxText, checked ) pointRef =
         [ Element.Border.rounded 5
         , Element.Background.color <|
             if checked then
-                EH.green
+                Theme.green
 
             else
                 Element.rgb 1 0.3 0.3
@@ -2949,7 +2951,7 @@ viewTosPageNavigationButtons dProfile confirmTosModel enterInfo =
             Element.el
                 [ Element.centerX
                 , Element.Border.rounded 5
-                , Element.Background.color EH.blue
+                , Element.Background.color Theme.blue
                 , Element.Font.color EH.white
                 , Element.Font.size (responsiveVal dProfile 30 12)
                 , responsiveVal dProfile (Element.paddingXY 20 10) (Element.padding 8)
@@ -2984,7 +2986,7 @@ viewTosPageNavigationButtons dProfile confirmTosModel enterInfo =
                     TosNextPageClicked
 
             else if isAllPointsChecked confirmTosModel then
-                EH.redButton
+                Theme.redButton
                     dProfile
                     [ Element.width Element.fill ]
                     [ "Confirm & deposit "
@@ -2993,7 +2995,7 @@ viewTosPageNavigationButtons dProfile confirmTosModel enterInfo =
                         ++ Config.enteringTokenCurrencyLabel
                         ++ ""
                     ]
-                    (ConfirmClicked enterInfo)
+                    (EH.Action <| ConfirmClicked enterInfo)
 
             else
                 Element.none
@@ -3018,11 +3020,11 @@ referralBonusIndicator dProfile maybeReferrer focusedStyle =
         , Element.Events.onClick (ReferralIndicatorClicked maybeReferrer)
         , Element.Background.color
             (if hasReferral then
-                EH.green
+                Theme.green
 
              else
-                EH.red
-                    |> EH.addAlpha
+                Theme.red
+                    |> EH.withAlpha
                         (if focusedStyle then
                             1
 
@@ -3038,7 +3040,7 @@ referralBonusIndicator dProfile maybeReferrer focusedStyle =
                 EH.white
 
              else
-                EH.red
+                Theme.red
             )
         ]
         (Element.text <|
@@ -3079,7 +3081,7 @@ referralModal dProfile userInfo maybeReferrer testMode =
                 Desktop ->
                     []
 
-                SmallDesktop ->
+                Mobile ->
                     [ Element.Font.size 12 ]
 
         ( firstElsChunk, maybeSecondElsChunk ) =
@@ -3092,7 +3094,7 @@ referralModal dProfile userInfo maybeReferrer testMode =
                                     24
                                     14
                             , Element.Font.bold
-                            , Element.Font.color EH.red
+                            , Element.Font.color Theme.red
                             ]
                             [ Element.text "Oh no! You’ve haven’t got a referral bonus." ]
                       , Element.column
@@ -3119,7 +3121,7 @@ referralModal dProfile userInfo maybeReferrer testMode =
                                 mobileFontAttribute
                                 [ Element.newTabLink
                                     [ Element.Font.color <|
-                                        EH.lightBlue
+                                        Theme.lightBlue
                                     ]
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
                                     , label = Element.text "More info on how this works"
@@ -3147,7 +3149,7 @@ referralModal dProfile userInfo maybeReferrer testMode =
                             ( deepBlue, deepBlueWithAlpha 0.8, deepBlueWithAlpha 0.6 )
                             EH.white
                             [ "Generate My Referral Link" ]
-                            (GenerateReferralClicked userInfo.address)
+                            (EH.Action <| GenerateReferralClicked userInfo.address)
                         ]
                     )
 
@@ -3169,7 +3171,7 @@ referralModal dProfile userInfo maybeReferrer testMode =
                                 )
                                 [ Element.text "This means you'll get both bonuses! More info "
                                 , Element.newTabLink
-                                    ([ Element.Font.color EH.lightBlue ]
+                                    ([ Element.Font.color Theme.lightBlue ]
                                         ++ mobileFontAttribute
                                     )
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
@@ -3216,7 +3218,7 @@ referralModal dProfile userInfo maybeReferrer testMode =
                                 mobileFontAttribute
                                 [ Element.text <| "Share your own referral code with others to earn " ++ Config.exitingTokenCurrencyLabel ++ "! More info "
                                 , Element.newTabLink
-                                    ([ Element.Font.color EH.lightBlue ]
+                                    ([ Element.Font.color Theme.lightBlue ]
                                         ++ mobileFontAttribute
                                     )
                                     { url = "https://youtu.be/AAGZZKpTcuQ"
@@ -3323,7 +3325,7 @@ referralLinkElement dProfile referrerAddress testMode =
                             |> (\path -> "https://sale.foundrydao.com" ++ path)
                         )
 
-            SmallDesktop ->
+            Mobile ->
                 Element.paragraph
                     [ EH.withIdAttribute "copyable-link" ]
                 <|
@@ -3356,7 +3358,7 @@ referralLinkCopyButton dProfile =
         ( deepBlue, deepBlueWithAlpha 0.8, deepBlueWithAlpha 0.6 )
         EH.white
         [ "Copy Link" ]
-        NoOp
+        (EH.Action NoOp)
 
 
 progressBarElement :
@@ -3532,11 +3534,11 @@ makeClaimButton :
     -> SaleType
     -> Element Msg
 makeClaimButton dProfile userInfo exitInfo saleType =
-    EH.lightBlueButton
+    Theme.lightBlueButton
         dProfile
         [ Element.width Element.fill ]
         [ "Claim your " ++ Config.exitingTokenCurrencyLabel ++ "" ]
-        (ClaimClicked userInfo exitInfo saleType)
+        (EH.Action <| ClaimClicked userInfo exitInfo saleType)
 
 
 jumpToCurrentBucketButton :
@@ -3549,17 +3551,17 @@ jumpToCurrentBucketButton dProfile currentBucketId =
             Element.el
                 [ Element.pointer
                 , Element.Events.onClick (FocusToBucket currentBucketId)
-                , Element.Font.color EH.lightBlue
+                , Element.Font.color Theme.lightBlue
                 , Element.Font.size (responsiveVal dProfile 20 10)
                 ]
                 (Element.text "Return to Current Bucket")
 
-        SmallDesktop ->
-            EH.lightBlueButton
+        Mobile ->
+            Theme.lightBlueButton
                 dProfile
                 [ Element.alignRight ]
                 [ "Return to Current Bucket" ]
-                (FocusToBucket currentBucketId)
+                (EH.Action <| FocusToBucket currentBucketId)
 
 
 loadingElement : Element Msg
@@ -3592,7 +3594,7 @@ deepBlueWithAlpha :
     -> Element.Color
 deepBlueWithAlpha a =
     deepBlue
-        |> EH.addAlpha a
+        |> EH.withAlpha a
 
 
 grayTextColor : Element.Color
@@ -3623,7 +3625,7 @@ connectToWeb3Button dProfile wallet =
             , Element.Font.size <| responsiveVal dProfile 20 16
             , Element.Font.semiBold
             , Element.Font.center
-            , Element.Background.color EH.softRed
+            , Element.Background.color Theme.softRed
             , Element.Font.color EH.white
             , Element.pointer
             ]
@@ -3641,7 +3643,7 @@ connectToWeb3Button dProfile wallet =
         Wallet.NoneDetected ->
             Element.el
                 (commonTextStyles
-                    ++ [ Element.Font.color EH.softRed ]
+                    ++ [ Element.Font.color Theme.softRed ]
                 )
                 (Element.text "No web3 wallet found")
 
@@ -3655,14 +3657,14 @@ connectToWeb3Button dProfile wallet =
         Wallet.WrongNetwork ->
             Element.el
                 (commonTextStyles
-                    ++ [ Element.Font.color EH.softRed ]
+                    ++ [ Element.Font.color Theme.softRed ]
                 )
                 (Element.text "Your web3 wallet is on the wrong network.")
 
         Wallet.Active _ ->
             Element.el
                 (commonTextStyles
-                    ++ [ Element.Font.color EH.green ]
+                    ++ [ Element.Font.color Theme.green ]
                 )
                 (Element.text "Wallet connected!")
 

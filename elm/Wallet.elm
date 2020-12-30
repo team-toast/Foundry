@@ -1,10 +1,12 @@
 module Wallet exposing (..)
 
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
+import Config
+import SelectHttpProvider exposing (..)
 import Eth.Net
 import Eth.Types exposing (Address, HttpProvider, TxHash, WebsocketProvider)
 import Helpers.Eth as EthHelpers
-import Config
+
 
 type State
     = NoneDetected
@@ -26,7 +28,8 @@ userInfo walletState =
 httpProvider : State -> Maybe HttpProvider
 httpProvider walletState =
     network walletState
-        |> Maybe.andThen EthHelpers.networkToHttpProvider 
+        |> Maybe.andThen networkToHttpProvider
+
 
 
 -- httpProviderWithDefault : State -> HttpProvider
@@ -43,7 +46,7 @@ network walletState =
 
         OnlyNetwork network_ ->
             Just network_
-        
+
         WrongNetwork ->
             Nothing
 

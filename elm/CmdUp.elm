@@ -1,6 +1,6 @@
 module CmdUp exposing (..)
 
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Eth.Types exposing (Address)
 import Routing
 import UserNotice as UN exposing (UserNotice)

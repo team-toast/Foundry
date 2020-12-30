@@ -5,7 +5,7 @@ import BucketSale.Types exposing (..)
 import ChainCmd exposing (ChainCmd)
 import CmdDown exposing (CmdDown)
 import CmdUp exposing (CmdUp)
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Config exposing (forbiddenJurisdictionCodes)
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers
 import Contracts.MultiBucket.Wrappers as MultiBucketWrappers
@@ -14,12 +14,12 @@ import Css exposing (Display)
 import Dict exposing (Dict)
 import Element exposing (Element)
 import Element.Font
+import ElementHelpers as EH
 import Eth
 import Eth.Net
 import Eth.Types exposing (Address, HttpProvider, Tx, TxHash, TxReceipt)
 import Eth.Utils
 import Helpers.BigInt as BigIntHelpers
-import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
 import Helpers.Http as HttpHelpers
 import Helpers.Time as TimeHelpers
@@ -30,8 +30,10 @@ import Json.Encode
 import List.Extra
 import Maybe.Extra
 import Result.Extra
+import SelectHttpProvider exposing (..)
 import Set
 import Task
+import Theme
 import Time
 import TokenValue exposing (TokenValue)
 import Utils
@@ -39,7 +41,7 @@ import Wallet
 
 
 init :
-    DisplayProfile
+    EH.DisplayProfile
     -> BucketSale
     -> Maybe Address
     -> TestMode
@@ -95,7 +97,7 @@ init dProfile bucketSale maybeReferrer testMode wallet now =
 
 
 initConfirmTosModel :
-    DisplayProfile
+    EH.DisplayProfile
     -> ConfirmTosModel
 initConfirmTosModel dProfile =
     { points =
@@ -181,7 +183,7 @@ update msg prevModel =
                                     Signed txHash Mining ->
                                         Just
                                             (Eth.getTxReceipt
-                                                (EthHelpers.appHttpProvider prevModel.testMode)
+                                                (appHttpProvider prevModel.testMode)
                                                 txHash
                                                 |> Task.attempt
                                                     (TxStatusFetched id trackedTx.action)
@@ -1663,13 +1665,15 @@ locationCheckDecoder =
             [ Json.Decode.field "errorMessage" Json.Decode.string
             , Json.Decode.field "ErrorMessage" Json.Decode.string
             ]
-            |> Json.Decode.map (\str ->
-                Err <|
-                    if str == "Unknown" then
-                        "Tell Schalk to get his shit together and poke the server."
-                    else
-                        str
-            )
+            |> Json.Decode.map
+                (\str ->
+                    Err <|
+                        if str == "Unknown" then
+                            "Tell Schalk to get his shit together and poke the server."
+
+                        else
+                            str
+                )
         , locationInfoDecoder
             |> Json.Decode.map Ok
         ]
@@ -1706,13 +1710,13 @@ port addFryToMetaMask : () -> Cmd msg
 port tagTwitterConversion : Float -> Cmd msg
 
 
-tosLines : DisplayProfile -> List (List ( List (Element Msg), Maybe String ))
+tosLines : EH.DisplayProfile -> List (List ( List (Element Msg), Maybe String ))
 tosLines dProfile =
     case dProfile of
-        Desktop ->
+        EH.Desktop ->
             [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
                   , Element.newTabLink
-                        [ Element.Font.color EH.blue ]
+                        [ Element.Font.color Theme.blue ]
                         { url = "https://foundrydao.com/contact"
                         , label = Element.text "Contact info"
                         }
@@ -1725,7 +1729,7 @@ tosLines dProfile =
                 )
               , ( [ Element.text "A text version if this agreement can be found "
                   , Element.newTabLink
-                        [ Element.Font.color EH.blue ]
+                        [ Element.Font.color Theme.blue ]
                         { url = "https://foundrydao.com/blog/sale-terms"
                         , label = Element.text "here"
                         }
@@ -1776,12 +1780,12 @@ tosLines dProfile =
               ]
             ]
 
-        SmallDesktop ->
+        EH.Mobile ->
             [ [ ( [ Element.paragraph
                         [ Element.Font.size 12 ]
                         [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
                         , Element.newTabLink
-                            [ Element.Font.color EH.blue ]
+                            [ Element.Font.color Theme.blue ]
                             { url = "https://foundrydao.com/contact"
                             , label = Element.text "Contact info"
                             }
@@ -1800,7 +1804,7 @@ tosLines dProfile =
                         [ Element.Font.size 12 ]
                         [ Element.text "A text version if this agreement can be found "
                         , Element.newTabLink
-                            [ Element.Font.color EH.blue ]
+                            [ Element.Font.color Theme.blue ]
                             { url = "https://foundrydao.com/blog/sale-terms"
                             , label = Element.text "here"
                             }

@@ -5,11 +5,12 @@ import Browser
 import Browser.Navigation
 import BucketSale.Types
 import CmdUp exposing (CmdUp)
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Eth.Sentry.Tx as TxSentry exposing (TxSentry)
 import Eth.Sentry.Wallet as WalletSentry exposing (WalletSentry)
 import Eth.Types exposing (Address)
 import Http
+import ElementHelpers as EH
 import Time
 import TokenValue exposing (TokenValue)
 import Url exposing (Url)
@@ -38,7 +39,7 @@ type alias Model =
     , txSentry : Maybe (TxSentry Msg)
     , submodel : Submodel
     , userNotices : List (UserNotice Msg)
-    , dProfile : DisplayProfile
+    , dProfile : EH.DisplayProfile
     , maybeReferrer : Maybe Address
     , displayMobileWarning : Bool
     , nonRepeatingGTagsSent : List String
