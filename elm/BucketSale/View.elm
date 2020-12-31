@@ -2425,11 +2425,8 @@ maybeSoldTokenInFutureBucketsBlock dProfile bucketSale now testMode =
             dProfile
             [ Element.centerX ]
             (TokenNum
-                (TokenValue.mul
-                    (Config.bucketSaleTokensPerBucket testMode)
-                    (Config.bucketSaleNumBuckets
-                        - currentBucketId
-                    )
+                (Config.bucketSaleTokensPerBucket testMode
+                    |> TokenValue.mulByInt (Config.bucketSaleNumBuckets - currentBucketId)
                 )
             )
             Config.exitingTokenCurrencyLabel

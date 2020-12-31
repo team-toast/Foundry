@@ -10,10 +10,9 @@ import Contracts.BucketSale.Wrappers as BucketSaleWrappers exposing (ExitInfo)
 import Dict exposing (Dict)
 import Element exposing (Element)
 import Element.Font
-
+import ElementHelpers as EH exposing (DisplayProfile(..))
 import Eth.Types exposing (Address, Tx, TxHash, TxReceipt)
 import Eth.Utils
-import ElementHelpers as EH exposing (DisplayProfile(..))
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
@@ -407,9 +406,8 @@ calcClaimableTokens totalValueEntered tokensIn testMode =
                 TokenValue.toFloatWithWarning tokensIn
                     / TokenValue.toFloatWithWarning totalValueEntered
         in
-        TokenValue.mulFloatWithWarning
-            (Config.bucketSaleTokensPerBucket testMode)
-            claimableRatio
+        Config.bucketSaleTokensPerBucket testMode
+            |> TokenValue.mulByFloatWithWarning claimableRatio
 
 
 calcEffectivePricePerToken :
