@@ -445,7 +445,7 @@ viewCookieConsentModal : DisplayProfile -> Element Msg
 viewCookieConsentModal dProfile =
     Element.row
         [ Element.alignBottom
-        , Element.centerX
+        , responsiveVal dProfile Element.centerX (Element.width Element.fill)
         , Element.Border.roundEach
             { topLeft = 5
             , topRight = 5
@@ -461,7 +461,9 @@ viewCookieConsentModal dProfile =
             10
         ]
         [ Element.paragraph
-            [ Element.width <| Element.px 800 ]
+            [ Element.width <| responsiveVal dProfile (Element.px 800) Element.fill
+            , Element.Font.size <| responsiveVal dProfile 20 12
+            ]
             [ Element.text "Foundry products use cookies and analytics to track behavior patterns, to help zero in on effective marketing strategies. To avoid being tracked in this way, we recommend using the "
             , Element.newTabLink
                 [ Element.Font.color EH.blue ]
