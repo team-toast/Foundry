@@ -3,6 +3,7 @@ var clipboardLib = require('clipboard');
 var networkChangeNotifier = require('./networkChangeNotifier');
 var locationCheck = require('./dualLocationCheck.js');
 var addFryToMetaMask = require('./addFryToMetaMask.js');
+window.web3 = undefined; // hacky fix to metamask's mishandling of the web3 object and the following library
 require('@metamask/legacy-web3');
 
 const { web3 } = window;
