@@ -1,7 +1,7 @@
 module Contracts.BucketSale.Wrappers exposing (..)
 
 import BigInt exposing (BigInt)
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Config
 import Contracts.BucketSale.Generated.BucketSale as BucketSaleBindings
 import Contracts.BucketSale.Generated.BucketSaleScripts as BucketSaleBindings
@@ -12,6 +12,7 @@ import Helpers.BigInt as BigIntHelpers
 import Helpers.Eth as EthHelpers
 import Http
 import List.Extra
+import SelectHttpProvider exposing (..)
 import Task
 import TokenValue exposing (TokenValue)
 
@@ -22,7 +23,7 @@ getSaleStartTimestampCmd :
     -> Cmd msg
 getSaleStartTimestampCmd testMode msgConstructor =
     BucketSaleBindings.startOfSale (Config.bucketSaleAddress testMode)
-        |> Eth.call (EthHelpers.appHttpProvider testMode)
+        |> Eth.call (appHttpProvider testMode)
         |> Task.attempt msgConstructor
 
 
@@ -33,7 +34,7 @@ getTotalValueEnteredForBucket :
     -> Cmd msg
 getTotalValueEnteredForBucket testMode bucketId msgConstructor =
     BucketSaleBindings.buckets (Config.bucketSaleAddress testMode) (BigInt.fromInt bucketId)
-        |> Eth.call (EthHelpers.appHttpProvider testMode)
+        |> Eth.call (appHttpProvider testMode)
         |> Task.map TokenValue.tokenValue
         |> Task.attempt msgConstructor
 
@@ -46,7 +47,7 @@ getUserBuyForBucket :
     -> Cmd msg
 getUserBuyForBucket testMode userAddress bucketId msgConstructor =
     BucketSaleBindings.buys (Config.bucketSaleAddress testMode) (BigInt.fromInt bucketId) userAddress
-        |> Eth.call (EthHelpers.appHttpProvider testMode)
+        |> Eth.call (appHttpProvider testMode)
         |> Task.attempt msgConstructor
 
 
@@ -56,7 +57,7 @@ getTotalExitedTokens :
     -> Cmd msg
 getTotalExitedTokens testMode msgConstructor =
     BucketSaleBindings.totalExitedTokens (Config.bucketSaleAddress testMode)
-        |> Eth.call (EthHelpers.appHttpProvider testMode)
+        |> Eth.call (appHttpProvider testMode)
         |> Task.map TokenValue.tokenValue
         |> Task.attempt msgConstructor
 
@@ -70,7 +71,7 @@ getSoldTokenBalance testMode userAddress msgConstructor =
     Token.balanceOf
         (Config.exitingTokenAddress testMode)
         userAddress
-        |> Eth.call (EthHelpers.appHttpProvider testMode)
+        |> Eth.call (appHttpProvider testMode)
         |> Task.map TokenValue.tokenValue
         |> Task.attempt msgConstructor
 
@@ -91,7 +92,7 @@ getUserExitInfo testMode userAddress msgConstructor =
         (Config.bucketSaleScriptsAddress testMode)
         (Config.bucketSaleAddress testMode)
         userAddress
-        |> Eth.call (EthHelpers.appHttpProvider testMode)
+        |> Eth.call (appHttpProvider testMode)
         |> Task.map queryBigIntListToMaybExitInfo
         |> Task.attempt msgConstructor
 
@@ -140,7 +141,7 @@ getStateUpdateInfo testMode maybeUserAddress bucketId saleType msgConstructor =
             EthHelpers.zeroAddress
         )
         (Config.enteringTokenAddress testMode)
-        |> Eth.call (EthHelpers.appHttpProvider testMode)
+        |> Eth.call (appHttpProvider testMode)
         |> Task.map (getGeneralInfoToStateUpdateInfo maybeUserAddress bucketId)
         |> Task.attempt msgConstructor
 

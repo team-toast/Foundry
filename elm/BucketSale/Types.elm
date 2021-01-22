@@ -3,16 +3,16 @@ module BucketSale.Types exposing (..)
 import BigInt exposing (BigInt)
 import ChainCmd exposing (ChainCmd)
 import CmdUp exposing (CmdUp)
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Config
 import Contracts.BucketSale.Generated.BucketSale as BucketSaleBindings
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers exposing (ExitInfo)
 import Dict exposing (Dict)
 import Element exposing (Element)
 import Element.Font
+import ElementHelpers as EH exposing (DisplayProfile(..))
 import Eth.Types exposing (Address, Tx, TxHash, TxReceipt)
 import Eth.Utils
-import Helpers.Element as EH
 import Helpers.Eth as EthHelpers
 import Helpers.Time as TimeHelpers
 import Http
@@ -406,9 +406,8 @@ calcClaimableTokens totalValueEntered tokensIn testMode =
                 TokenValue.toFloatWithWarning tokensIn
                     / TokenValue.toFloatWithWarning totalValueEntered
         in
-        TokenValue.mulFloatWithWarning
-            (Config.bucketSaleTokensPerBucket testMode)
-            claimableRatio
+        Config.bucketSaleTokensPerBucket testMode
+            |> TokenValue.mulByFloatWithWarning claimableRatio
 
 
 calcEffectivePricePerToken :
@@ -567,7 +566,7 @@ tosLines dProfile =
         Desktop ->
             [ [ ( [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
                   , Element.newTabLink
-                        [ Element.Font.color EH.blue ]
+                        [ Element.Font.color (Element.rgb 0 0 1) ]
                         { url = "https://foundrydao.com/contact"
                         , label = Element.text "Contact info"
                         }
@@ -580,7 +579,7 @@ tosLines dProfile =
                 )
               , ( [ Element.text "A text version if this agreement can be found "
                   , Element.newTabLink
-                        [ Element.Font.color EH.blue ]
+                        [ Element.Font.color (Element.rgb 0 0 1) ]
                         { url = "https://foundrydao.com/blog/sale-terms"
                         , label = Element.text "here"
                         }
@@ -631,12 +630,12 @@ tosLines dProfile =
               ]
             ]
 
-        SmallDesktop ->
+        Mobile ->
             [ [ ( [ Element.paragraph
                         [ Element.Font.size 12 ]
                         [ Element.text "This constitutes an agreement between you and the Decentralized Autonomous Organization Advancement Institute (\"DAOAI\") ("
                         , Element.newTabLink
-                            [ Element.Font.color EH.blue ]
+                            [ Element.Font.color (Element.rgb 0 0 1) ]
                             { url = "https://foundrydao.com/contact"
                             , label = Element.text "Contact info"
                             }
@@ -655,7 +654,7 @@ tosLines dProfile =
                         [ Element.Font.size 12 ]
                         [ Element.text "A text version if this agreement can be found "
                         , Element.newTabLink
-                            [ Element.Font.color EH.blue ]
+                            [ Element.Font.color (Element.rgb 0 0 1) ]
                             { url = "https://foundrydao.com/blog/sale-terms"
                             , label = Element.text "here"
                             }

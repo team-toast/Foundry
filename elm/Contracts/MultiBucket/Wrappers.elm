@@ -1,7 +1,7 @@
 module Contracts.MultiBucket.Wrappers exposing (..)
 
 import BigInt exposing (BigInt)
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Config
 import Contracts.Generated.ERC20Token as Token
 import Contracts.MultiBucket.Generated.MultiBucket as MultiBucketBot

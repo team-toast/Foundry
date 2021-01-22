@@ -1,0 +1,9 @@
+[submodule "elm-submodules/helpers"]
+	path = elm-submodules/helpers
+	url = https://github.com/team-toast/elm-helpers
+[submodule "elm-submodules/element-helpers"]
+	path = elm-submodules/element-helpers
+	url = https://github.com/team-toast/common-elm-ui-elements
+[submodule "elm-submodules/tokenvalue"]
+	path = elm-submodules/tokenvalue
+	url = https://github.com/team-toast/elm-tokenvalue18

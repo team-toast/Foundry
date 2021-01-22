@@ -1,5 +1,6 @@
 port module State exposing (init, subscriptions, update)
 
+import ElementHelpers as EH
 import BigInt exposing (BigInt)
 import Browser
 import Browser.Events
@@ -9,7 +10,7 @@ import BucketSale.Types as BucketSale
 import ChainCmd exposing (ChainCmd)
 import CmdDown exposing (CmdDown)
 import CmdUp exposing (CmdUp)
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Config
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers
 import Contracts.Wrappers as TokenWrappers
@@ -71,7 +72,7 @@ init flags url key =
                     )
 
         dProfile =
-            screenWidthToDisplayProfile flags.width
+            EH.screenWidthToDisplayProfile Config.displayProfileBreakpoint flags.width
 
         ( maybeReferrer, maybeReferrerStoreCmd ) =
             let
@@ -219,7 +220,7 @@ update msg prevModel =
 
         Resize width _ ->
             ( { prevModel
-                | dProfile = screenWidthToDisplayProfile width
+                | dProfile = EH.screenWidthToDisplayProfile Config.displayProfileBreakpoint width
               }
             , Cmd.none
             )

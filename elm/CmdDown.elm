@@ -1,6 +1,6 @@
 module CmdDown exposing (CmdDown(..))
 
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Wallet
 import Eth.Types exposing (Address)
 

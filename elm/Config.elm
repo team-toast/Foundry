@@ -1,12 +1,17 @@
 module Config exposing (..)
 
 import BigInt exposing (BigInt)
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Eth.Types exposing (Address)
 import Eth.Utils
 import Set exposing (Set)
 import Time
 import TokenValue exposing (TokenValue)
+
+
+displayProfileBreakpoint : Int
+displayProfileBreakpoint =
+    1280
 
 
 mainnetHttpProviderUrl : String

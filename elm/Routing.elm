@@ -1,6 +1,6 @@
 module Routing exposing (FullRoute, PageRoute(..), routeToString, urlToFullRoute)
 
-import CommonTypes exposing (..)
+import Common.Types exposing (..)
 import Eth.Types exposing (Address)
 import Eth.Utils
 import Url exposing (Url)
