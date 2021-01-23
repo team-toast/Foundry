@@ -2272,12 +2272,7 @@ actionButton dProfile jurisdictionCheckStatus maybeReferrer wallet maybeExtraUse
                                     enterAmountSection =
                                         case enterUXModel.amountValidated of
                                             Just (Ok enterAmount) ->
-                                                if List.any (\tx -> tx.status == Signing) trackedTxs then
-                                                    disabledButton
-                                                        dProfile
-                                                        "Sign or reject pending transactions to continue"
-
-                                                else if TokenValue.compare enterAmount extraUserInfo.enteringTokenAllowance /= GT && TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= LT then
+                                                if TokenValue.compare enterAmount extraUserInfo.enteringTokenAllowance /= GT && TokenValue.compare enterAmount extraUserInfo.enteringTokenBalance /= LT then
                                                     disabledButton
                                                         dProfile
                                                         ("You only have "

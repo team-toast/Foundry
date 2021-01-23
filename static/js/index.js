@@ -137,7 +137,7 @@ function twitterConversionTrackingPortStuff(app) {
         twq('init', 'o4l06');
         twq('track', 'Purchase', {
             //required parameters
-            value: str(amount),
+            value: toString(amount),
             currency: 'USD',
             num_items: '1',
         });
