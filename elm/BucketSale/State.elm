@@ -133,8 +133,11 @@ verifyWalletCorrectNetwork wallet testMode =
         ( TestGanache, Just (Eth.Net.Private 123456) ) ->
             wallet
 
-        _ ->
+        ( None, Just Eth.Net.Kovan ) ->
             Wallet.WrongNetwork
+
+        _ ->
+            Wallet.NoneDetected
 
 
 initEnterUXModel :

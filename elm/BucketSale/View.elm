@@ -3651,7 +3651,7 @@ connectToWeb3Button dProfile wallet =
                 (commonTextStyles
                     ++ [ Element.Font.color Theme.softRed ]
                 )
-                (Element.text "No web3 provider detected. Is Metamask or some other web3 provider installed and unlocked?")
+                (Element.text "Make sure your wallet is set to the Ethereum mainnet.")
 
         Wallet.Active _ ->
             Element.el
