@@ -3637,7 +3637,7 @@ connectToWeb3Button dProfile wallet =
                 (commonTextStyles
                     ++ [ Element.Font.color Theme.softRed ]
                 )
-                (Element.text "No web3 wallet found")
+                (Element.text "No web3 provider detected. Is Metamask or some other web3 provider installed and unlocked?")
 
         Wallet.OnlyNetwork _ ->
             Element.el
@@ -3651,7 +3651,7 @@ connectToWeb3Button dProfile wallet =
                 (commonTextStyles
                     ++ [ Element.Font.color Theme.softRed ]
                 )
-                (Element.text "Your web3 wallet is on the wrong network.")
+                (Element.text "No web3 provider detected. Is Metamask or some other web3 provider installed and unlocked?")
 
         Wallet.Active _ ->
             Element.el
