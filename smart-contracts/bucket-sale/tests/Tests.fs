@@ -80,10 +80,15 @@ let ``B_C001|B_C002|B_C003|B_C004|B_C005|B_C006- Cannot construct the contract w
 [<Specification("BucketSale", "constructor", 8)>]
 [<Fact>]
 let ``B_C008 - Can construct the contract``() =
+    let oneBlockTime = BigInteger(10UL * hours)
+
+    debug.EthConn.TimeTravel oneBlockTime
+    
     let abi = Abi("../../../../build/contracts/BucketSale.json")
     let tokenOnSale = makeAccount().Address
     let tokenSoldFor = makeAccount().Address
-    let startOfSale = debug.BlockTimestamp + BigInteger(10UL * hours)
+    // static initializers contain operations that mine blocks so a value is hardcoded here
+    let startOfSale = debug.BlockTimestamp + oneBlockTime * BigInteger 3 
   
     let deployTxReceipt =
         ethConn.DeployContractAsync abi
