@@ -8,7 +8,7 @@ import Common.Types exposing (..)
 import Config
 import Contracts.BucketSale.Wrappers exposing (ExitInfo, UserStateInfo)
 import Css exposing (true)
-import Element exposing (Attribute, Element)
+import Element exposing (Attribute, Element, column, el, fill, padding, paragraph, spacing, text, width)
 import Element.Background
 import Element.Border
 import Element.Events
@@ -1253,6 +1253,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                             saleType
                             currentBucketId
                             testMode
+                        , gasWarning
                         , actionButton
                             dProfile
                             jurisdictionCheckStatus
@@ -1297,6 +1298,7 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                                     saleType
                                     currentBucketId
                                     testMode
+                            , gasWarning
                             , actionButton
                                 dProfile
                                 jurisdictionCheckStatus
@@ -1321,6 +1323,38 @@ bucketUX dProfile wallet maybeReferrer maybeExtraUserInfo enterUXModel bucketInf
                         ]
                )
         )
+
+
+gasWarning : Element msg
+gasWarning =
+    column
+        [ padding 20
+        , spacing 10
+        , Element.Background.color Theme.daiYellow
+        , Element.Border.rounded 4
+        , width fill
+        ]
+        [ text "Warning!"
+            |> el
+                [ Element.Font.bold
+                , Element.centerX
+                , Element.Font.size 22
+                ]
+        , [ text "Gas prices for this sale are extremely high, especially if you enter and exit multiple buckets!" ]
+            |> paragraph []
+        , [ text "If you're planning to buy smaller amounts, we recommend picking up "
+          , Element.newTabLink
+                [ Element.Font.underline
+                , Element.Font.bold
+                , Element.mouseOver [ Element.alpha 0.7 ]
+                ]
+                { url = "https://v2.info.uniswap.org/token/0x6c972b70c533e2e045f333ee28b9ffb8d717be69"
+                , label = text "FRY on Uniswap"
+                }
+          , text " instead."
+          ]
+            |> Element.paragraph []
+        ]
 
 
 bidInputBlockElements :
