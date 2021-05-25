@@ -1,4 +1,4 @@
-port module BucketSale.State exposing (fetchFastGasPriceCmd, init, runCmdDown, subscriptions, update)
+port module BucketSale.State exposing (fetchFastGasPriceCmd, init, log, runCmdDown, subscriptions, update)
 
 import BigInt exposing (BigInt)
 import BucketSale.Types exposing (..)
@@ -161,6 +161,7 @@ update msg prevModel =
     case msg of
         NoOp ->
             justModelUpdate prevModel
+                Cmd.none
 
         CmdUp cmdUp ->
             UpdateResult
@@ -248,17 +249,15 @@ update msg prevModel =
             case fetchResult of
                 Err httpErr ->
                     -- Just ignore it
-                    let
-                        _ =
-                            Debug.log "error fetching gasstation info" httpErr
-                    in
                     justModelUpdate prevModel
+                        (log "error fetching gasstation info")
 
                 Ok fastGasPrice ->
                     justModelUpdate
                         { prevModel
                             | fastGasPrice = Just fastGasPrice
                         }
+                        Cmd.none
 
         TosPreviousPageClicked ->
             justModelUpdate
@@ -275,6 +274,7 @@ update msg prevModel =
                                     0
                         }
                 }
+                Cmd.none
 
         TosNextPageClicked ->
             justModelUpdate
@@ -291,6 +291,7 @@ update msg prevModel =
                                     (List.length prevTosModel.points)
                         }
                 }
+                Cmd.none
 
         TosCheckboxClicked pointRef ->
             let
@@ -348,6 +349,7 @@ update msg prevModel =
                 { prevModel
                     | showFeedbackUXModel = True
                 }
+                Cmd.none
 
         FeedbackEmailChanged newEmail ->
             justModelUpdate
@@ -360,6 +362,7 @@ update msg prevModel =
                         { prev | email = newEmail }
                             |> updateAnyFeedbackUXErrors
                 }
+                Cmd.none
 
         FeedbackDescriptionChanged newDescription ->
             justModelUpdate
@@ -372,6 +375,7 @@ update msg prevModel =
                         { prev | description = newDescription }
                             |> updateAnyFeedbackUXErrors
                 }
+                Cmd.none
 
         FeedbackSubmitClicked ->
             let
@@ -407,6 +411,7 @@ update msg prevModel =
                             | feedbackUXModel =
                                 { prevFeedbackModel | maybeError = Just errStr }
                         }
+                        Cmd.none
 
         FeedbackHttpResponse responseResult ->
             let
@@ -440,6 +445,7 @@ update msg prevModel =
                 { prevModel
                     | showFeedbackUXModel = False
                 }
+                Cmd.none
 
         FeedbackSendMoreClicked ->
             justModelUpdate
@@ -453,6 +459,7 @@ update msg prevModel =
                             | sendState = NotSent
                         }
                 }
+                Cmd.none
 
         LocationCheckResult decodeResult ->
             let
@@ -500,11 +507,8 @@ update msg prevModel =
         BucketValueEnteredFetched bucketId fetchResult ->
             case fetchResult of
                 Err httpErr ->
-                    let
-                        _ =
-                            Debug.log "http error when fetching total bucket value entered" ( bucketId, fetchResult )
-                    in
                     justModelUpdate prevModel
+                        (log "http error when fetching total bucket value entered")
 
                 Ok valueEntered ->
                     let
@@ -518,11 +522,8 @@ update msg prevModel =
                     in
                     case maybeNewBucketSale of
                         Nothing ->
-                            let
-                                _ =
-                                    Debug.log "Warning! Somehow trying to update a bucket that doesn't exist!" ""
-                            in
                             justModelUpdate prevModel
+                                (log "Warning! Somehow trying to update a bucket that doesn't exist!")
 
                         Just newBucketSale ->
                             justModelUpdate
@@ -530,19 +531,18 @@ update msg prevModel =
                                     | bucketSale =
                                         newBucketSale
                                 }
+                                Cmd.none
 
         UserBuyFetched userAddress bucketId fetchResult ->
             if (Wallet.userInfo prevModel.wallet |> Maybe.map .address) /= Just userAddress then
                 justModelUpdate prevModel
+                    Cmd.none
 
             else
                 case fetchResult of
                     Err httpErr ->
-                        let
-                            _ =
-                                Debug.log "http error when fetching buy for user" ( userAddress, bucketId, httpErr )
-                        in
                         justModelUpdate prevModel
+                            (log "http error when fetching buy for user")
 
                     Ok bindingBuy ->
                         let
@@ -562,31 +562,23 @@ update msg prevModel =
                         in
                         case maybeNewBucketSale of
                             Nothing ->
-                                let
-                                    _ =
-                                        Debug.log "Warning! Somehow trying to update a bucket that does not exist or is in the future!" ""
-                                in
                                 justModelUpdate prevModel
+                                    (log "Warning! Somehow trying to update a bucket that does not exist or is in the future!")
 
                             Just newBucketSale ->
                                 justModelUpdate
                                     { prevModel | bucketSale = newBucketSale }
+                                    Cmd.none
 
         StateUpdateInfoFetched fetchResult ->
             case fetchResult of
                 Err httpErr ->
-                    let
-                        _ =
-                            Debug.log "http error when fetching stateUpdateInfo" httpErr
-                    in
                     justModelUpdate prevModel
+                        (log "http error when fetching stateUpdateInfo")
 
                 Ok Nothing ->
-                    let
-                        _ =
-                            Debug.log "Query contract returned an invalid result" ""
-                    in
                     justModelUpdate prevModel
+                        (log "Query contract returned an invalid result")
 
                 Ok (Just stateUpdateInfo) ->
                     let
@@ -631,10 +623,7 @@ update msg prevModel =
                                         in
                                         case maybeNewBucketSale of
                                             Nothing ->
-                                                let
-                                                    _ =
-                                                        Debug.log "Warning! Somehow trying to update a bucket that does not exist or is in the future!" ""
-                                                in
+                                                --Debug.log "Warning! Somehow trying to update a bucket that does not exist or is in the future!" ""
                                                 model
 
                                             Just newBucketSale ->
@@ -689,17 +678,15 @@ update msg prevModel =
         TotalTokensExitedFetched fetchResult ->
             case fetchResult of
                 Err httpErr ->
-                    let
-                        _ =
-                            Debug.log "http error when fetching totalTokensExited" httpErr
-                    in
                     justModelUpdate prevModel
+                        (log "http error when fetching totalTokensExited")
 
                 Ok totalTokensExited ->
                     justModelUpdate
                         { prevModel
                             | totalTokensExited = Just totalTokensExited
                         }
+                        Cmd.none
 
         FocusToBucket bucketId ->
             let
@@ -986,10 +973,6 @@ update msg prevModel =
         TxSigned trackedTxId actionData txHashResult ->
             case txHashResult of
                 Err errStr ->
-                    let
-                        _ =
-                            Debug.log "Error signing tx" ( actionData, errStr )
-                    in
                     UpdateResult
                         { prevModel
                             | trackedTxs =
@@ -1003,6 +986,12 @@ update msg prevModel =
                             "funnel abort - tx"
                             errStr
                             0
+                        , [ "Error signing tx"
+                          , actionDataToString actionData
+                          , errStr
+                          ]
+                            |> String.join "\n"
+                            |> CmdUp.Log
                         ]
 
                 Ok txHash ->
@@ -1072,6 +1061,7 @@ update msg prevModel =
                     -- Usually indicates the tx has not yet been mined. Ignore and do nothing.
                     justModelUpdate
                         prevModel
+                        Cmd.none
 
                 Ok txReceipt ->
                     let
@@ -1274,6 +1264,7 @@ runCmdDown cmdDown prevModel =
         CmdDown.UpdateWallet newWallet ->
             if prevModel.wallet == newWallet then
                 justModelUpdate prevModel
+                    Cmd.none
 
             else
                 let
@@ -1356,6 +1347,7 @@ runCmdDown cmdDown prevModel =
         CmdDown.CloseAnyDropdownsOrModals ->
             justModelUpdate
                 prevModel
+                Cmd.none
 
 
 toggleAssentForPoint :
@@ -1894,3 +1886,6 @@ tosLines dProfile =
                 )
               ]
             ]
+
+
+port log : String -> Cmd msg

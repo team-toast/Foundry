@@ -123,10 +123,6 @@ wrongWeb3Network =
 
 unexpectedError : String -> a -> UserNotice msg
 unexpectedError text debugObj =
-    let
-        _ =
-            Debug.log text debugObj
-    in
     { label = "unexpectedError"
     , noticeType = ShouldBeImpossible
     , mainParagraphs = [ [ Element.text text ] ]
@@ -136,10 +132,6 @@ unexpectedError text debugObj =
 
 web3FetchError : String -> Http.Error -> UserNotice msg
 web3FetchError label httpError =
-    let
-        _ =
-            Debug.log (label ++ " fetch error") httpError
-    in
     { label = "web3FetchError"
     , noticeType = Error
     , mainParagraphs =

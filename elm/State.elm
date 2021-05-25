@@ -1,12 +1,11 @@
 port module State exposing (init, subscriptions, update)
 
-import ElementHelpers as EH
 import BigInt exposing (BigInt)
 import Browser
 import Browser.Events
 import Browser.Navigation
-import BucketSale.State as BucketSale
-import BucketSale.Types as BucketSale
+import BucketSale.State as BucketSale exposing (log)
+import BucketSale.Types as BucketTypes
 import ChainCmd exposing (ChainCmd)
 import CmdDown exposing (CmdDown)
 import CmdUp exposing (CmdUp)
@@ -14,6 +13,7 @@ import Common.Types exposing (..)
 import Config
 import Contracts.BucketSale.Wrappers as BucketSaleWrappers
 import Contracts.Wrappers as TokenWrappers
+import ElementHelpers as EH
 import Eth.Net
 import Eth.Sentry.Tx as TxSentry
 import Eth.Sentry.Wallet as WalletSentry
@@ -76,35 +76,38 @@ init flags url key =
 
         ( maybeReferrer, maybeReferrerStoreCmd ) =
             let
-                maybeReferrerFromStorage =
+                ( maybeReferrerFromStorage, logCmd ) =
                     case flags.maybeReferralAddressString |> Maybe.map Eth.Utils.toAddress of
                         Nothing ->
-                            Nothing
+                            ( Nothing, Cmd.none )
 
                         Just (Err errStr) ->
-                            let
-                                _ =
-                                    Debug.log "Error decoding stored referrer address" errStr
-                            in
-                            Nothing
+                            ( Nothing
+                            , log <| "Error decoding stored referrer address:\n" ++ errStr
+                            )
 
                         Just (Ok address) ->
-                            Just address
+                            ( Just address, Cmd.none )
 
                 maybeReferrerFromUrl =
                     fullRoute.maybeReferrer
             in
             case maybeReferrerFromStorage of
                 Just referrerFromStorage ->
-                    ( Just referrerFromStorage, Cmd.none )
+                    ( Just referrerFromStorage, logCmd )
 
                 Nothing ->
                     case maybeReferrerFromUrl of
                         Just referrerFromUrl ->
-                            ( Just referrerFromUrl, storeNewReferrerCmd referrerFromUrl )
+                            ( Just referrerFromUrl
+                            , [ storeNewReferrerCmd referrerFromUrl
+                              , logCmd
+                              ]
+                                |> Cmd.batch
+                            )
 
                         Nothing ->
-                            ( Nothing, Cmd.none )
+                            ( Nothing, logCmd )
 
         -- newUrlCmd =
         --     let
@@ -176,6 +179,11 @@ update msg prevModel =
                 CmdUp.GTag gtag ->
                     ( prevModel
                     , gTagOut (encodeGTag gtag)
+                    )
+
+                CmdUp.Log str ->
+                    ( prevModel
+                    , log str
                     )
 
                 CmdUp.NonRepeatingGTag gtag ->
@@ -291,11 +299,9 @@ update msg prevModel =
                                                 )
 
                                 Err httpErr ->
-                                    let
-                                        _ =
-                                            Debug.log "http error when fetching sale startTime" httpErr
-                                    in
-                                    ( prevModel, Cmd.none )
+                                    ( prevModel
+                                    , log "http error when fetching sale startTime"
+                                    )
 
                         Error _ ->
                             -- ignore, we shouldn't get another timestamp fetched
@@ -537,26 +543,22 @@ update msg prevModel =
             ( prevModel, Cmd.none )
 
         Test s ->
-            let
-                _ =
-                    Debug.log "test" s
-            in
-            ( prevModel, Cmd.none )
+            ( prevModel, log <| "test: " ++ s )
 
 
-initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result BucketSaleError BucketSale.BucketSale
+initBucketSale : TestMode -> Time.Posix -> Time.Posix -> Result BucketSaleError BucketTypes.BucketSale
 initBucketSale testMode saleStartTime now =
     if TimeHelpers.compare saleStartTime now == GT then
         Err <| SaleNotStarted <| saleStartTime
 
     else
         Ok <|
-            BucketSale.BucketSale
+            BucketTypes.BucketSale
                 saleStartTime
                 (List.range 0 (Config.bucketSaleNumBuckets - 1)
                     |> List.map
                         (\id ->
-                            BucketSale.BucketData
+                            BucketTypes.BucketData
                                 (TimeHelpers.add
                                     saleStartTime
                                     (TimeHelpers.mul

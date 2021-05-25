@@ -1333,12 +1333,13 @@ gasWarning =
         , Element.Background.color Theme.daiYellow
         , Element.Border.rounded 4
         , width fill
+        , Element.Font.size 17
         ]
         [ text "Warning!"
             |> el
                 [ Element.Font.bold
                 , Element.centerX
-                , Element.Font.size 22
+                , Element.Font.size 20
                 ]
         , [ text "Gas prices for this sale are extremely high, especially if you enter and exit multiple buckets!" ]
             |> paragraph []

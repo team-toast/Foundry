@@ -46,6 +46,8 @@ function startDapp() {
       addFryToMetaMaskStuff(app);
       twitterConversionTrackingPortStuff(app);
 
+      window.app.ports.log.subscribe((txt) => console.log(txt));
+
       web3PortStuff(app, web3);
     });
   } else {
@@ -60,6 +62,8 @@ function startDapp() {
         cookieConsent: getCookieConsent(),
       },
     });
+
+    window.app.ports.log.subscribe((txt) => console.log(txt));
 
     gtagPortStuff(app);
     referrerStoragePortStuff(app);

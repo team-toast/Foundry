@@ -8,11 +8,12 @@ import UserNotice as UN exposing (UserNotice)
 
 type CmdUp msg
     = Web3Connect
-    -- | GotoRoute Routing.PageRoute
+      -- | GotoRoute Routing.PageRoute
     | GTag GTagData
     | NonRepeatingGTag GTagData
     | UserNotice (UserNotice msg)
     | NewReferralGenerated Address
+    | Log String
 
 
 gTag : String -> String -> String -> Int -> CmdUp msg
@@ -24,6 +25,7 @@ gTag event category label value =
             label
             value
 
+
 nonRepeatingGTag : String -> String -> String -> Int -> CmdUp msg
 nonRepeatingGTag event category label value =
     NonRepeatingGTag <|
@@ -33,6 +35,7 @@ nonRepeatingGTag event category label value =
             label
             value
 
+
 map : (msg1 -> msg2) -> CmdUp msg1 -> CmdUp msg2
 map f cmdUp =
     case cmdUp of
@@ -41,10 +44,12 @@ map f cmdUp =
 
         -- GotoRoute route ->
         --     GotoRoute route
-
         GTag data ->
             GTag data
-        
+
+        Log str ->
+            Log str
+
         NonRepeatingGTag data ->
             NonRepeatingGTag data
 

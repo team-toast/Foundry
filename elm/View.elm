@@ -1,10 +1,9 @@
 module View exposing (root)
 
-import Common.View exposing (..)
-import Theme
 import Browser
 import BucketSale.View
 import Common.Types exposing (..)
+import Common.View exposing (..)
 import Config
 import Element exposing (Attribute, Element)
 import Element.Background
@@ -15,6 +14,7 @@ import ElementHelpers as EH exposing (DisplayProfile(..), responsiveVal)
 import Images exposing (Image)
 import Maybe.Extra
 import Routing
+import Theme
 import Time
 import Types exposing (..)
 import UserNotice as UN exposing (UserNotice)

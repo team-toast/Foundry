@@ -98,10 +98,10 @@ type alias UpdateResult =
     }
 
 
-justModelUpdate : Model -> UpdateResult
-justModelUpdate model =
+justModelUpdate : Model -> Cmd Msg -> UpdateResult
+justModelUpdate model cmd =
     { model = model
-    , cmd = Cmd.none
+    , cmd = cmd
     , chainCmd = ChainCmd.none
     , cmdUps = []
     }
