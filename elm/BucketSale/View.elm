@@ -1335,24 +1335,24 @@ gasWarning =
         , width fill
         , Element.Font.size 17
         ]
-        [ text "Warning!"
+        [ text "Please note!"
             |> el
                 [ Element.Font.bold
                 , Element.centerX
                 , Element.Font.size 20
                 ]
-        , [ text "Gas prices for this sale are extremely high, especially if you enter and exit multiple buckets!" ]
+        , [ text "The sale is quite gas intense, especially when entering multiple buckets." ]
             |> paragraph []
-        , [ text "If you're planning to buy smaller amounts, we recommend picking up "
+        , [ text "If gas prices are currently high, please consider buying "
           , Element.newTabLink
                 [ Element.Font.underline
                 , Element.Font.bold
                 , Element.mouseOver [ Element.alpha 0.7 ]
                 ]
-                { url = "https://v2.info.uniswap.org/token/0x6c972b70c533e2e045f333ee28b9ffb8d717be69"
-                , label = text "FRY on Uniswap"
+                { url = "https://app.1inch.io/#/1/swap/DAI/FRY"
+                , label = text "$FRY via 1inch"
                 }
-          , text " instead."
+          , text " for smaller amounts."
           ]
             |> Element.paragraph []
         ]
