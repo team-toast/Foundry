@@ -1664,7 +1664,7 @@ locationCheckDecoder =
                 (\str ->
                     Err <|
                         if str == "Unknown" then
-                            "Tell Schalk to get his shit together and poke the server."
+                            "The jurisdiction check server is not responding. This shouldn't happen - please email support@foundrydao.com and we will respond quickly to resolve this."
 
                         else
                             str
